@@ -1,0 +1,12 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = ["parser-implementations"]
+description = "Parser for the NAViz input files"
+edition = "2021"
+keywords = ["naviz", "parser"]
+license = "LGPL-3.0-or-later"
+name = "naviz-parser"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]
