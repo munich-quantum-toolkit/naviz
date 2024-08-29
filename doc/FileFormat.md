@@ -2,16 +2,16 @@
 
 ## Types
 
-| Type                   | Description                                            | Examples                        |
-| ---------------------- | ------------------------------------------------------ | ------------------------------- |
-| `number`               | Decimal                                                | `42`, `0.2`, `-1.8`             |
-| `id`                   | Alphanumeric or `_` identifier                         | `zone0`, `Foo`, `atom_99`       |
-| `percentage`           | Relative number; specified as percentage               | `5%`, `-4%`, `3.8%`             |
-| `color`                | Hex-color in `#RRGGBBAA` format; alpha is optional     | `#1eb69dcc`, `#ac52f6`          |
-| `string`               | A single-line string; Can also be put in double-quotes | `Hello World!`, `"Some string"` |
-| `tuple(<a>, <b>, ...)` | A tuple; element-types are specified in parentheses    | `(5, 2)`                        |
-| `regex`                | A regex; Can also be put in `^`, `$`                   | `atom.*`, `^Foo:Bar$`           |
-| `boolean`              | A boolean (`true`/`false`) value                       | `true`, `false`                 |
+| Type                   | Description                                                  | Examples                          |
+| ---------------------- | ------------------------------------------------------------ | --------------------------------- |
+| `number`               | Decimal                                                      | `42`, `0.2`, `-1.8`               |
+| `id`                   | Alphanumeric or `_` identifier; Must not only contain digits | `zone0`, `Foo`, `atom_99`         |
+| `percentage`           | Relative number; specified as percentage                     | `5%`, `-4%`, `3.8%`               |
+| `color`                | Hex-color in `#RRGGBBAA` format; alpha is optional           | `#1eb69dcc`, `#ac52f6`            |
+| `string`               | A string; Must be enclosed in double-quotes                  | `"Hello World!"`, `"Some string"` |
+| `tuple(<a>, <b>, ...)` | A tuple; element-types are specified in parentheses          | `(5, 2)`                          |
+| `regex`                | A regex; Must be enclosed in `^`, `$`                        | `^atom.*$`, `^Foo:Bar$`           |
+| `boolean`              | A boolean (`true`/`false`) value                             | `true`, `false`                   |
 
 ### Type aliases
 
@@ -117,7 +117,7 @@ atom {
 	legend {
 		name {
 			<regex>: <string> // Display a text over all atoms whose ID matches the key-regex; the displayed text is the replacement from the value
-			// Example to display all ids: `.*: $0`
+			// Example to display all ids: `^.*$: "$0"`
 		}
 		font {
 			family: <string> // Font-Family of the text on the atoms
