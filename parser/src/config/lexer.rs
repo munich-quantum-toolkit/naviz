@@ -8,53 +8,71 @@ use winnow::{
     combinator::{delimited, repeat},
     error::ParserError,
     prelude::*,
+    stream::{AsChar, Compare, FindSlice, SliceLen, Stream, StreamIsPartial},
     token::take_until,
 };
 
 /// A value with a type
 #[derive(Debug, PartialEq, Eq)]
-pub enum Value<'src> {
+pub enum Value<T> {
     /// A string
-    String(&'src str),
+    String(T),
     /// A regex
-    Regex(&'src str),
+    Regex(T),
     /// A number
-    Number(&'src str),
+    Number(T),
     /// A boolean
-    Boolean(&'src str),
+    Boolean(T),
     /// A color
-    Color(&'src str),
+    Color(T),
 }
 
 /// A token of the config format
 #[derive(Debug, PartialEq, Eq)]
-pub enum Token<'src> {
+pub enum Token<T> {
     /// Opening-symbol for a block
     BlockOpen,
     /// Closing-symbol for a block
     BlockClose,
     /// An identifier
-    Identifier(&'src str),
+    Identifier(T),
     /// A property-separator
     Separator,
     /// A value; see [Value]
-    Value(Value<'src>),
+    Value(Value<T>),
     /// A comment, either single- or multiline
-    Comment(&'src str),
+    Comment(T),
 }
 
 /// Lexes a [str] into a [Vec] of [Token]s,
 /// or returns an [Err] if lexing failed.
-pub fn lex(
-    input: &str,
-) -> Result<Vec<Token>, winnow::error::ParseError<&str, winnow::error::ContextError>> {
+pub fn lex<
+    I: Stream
+        + StreamIsPartial
+        + Compare<&'static str>
+        + FindSlice<&'static str>
+        + FindSlice<(char, char)>
+        + Copy,
+>(
+    input: I,
+) -> Result<
+    Vec<Token<<I as Stream>::Slice>>,
+    winnow::error::ParseError<I, winnow::error::ContextError>,
+>
+where
+    <I as Stream>::Token: AsChar + Clone,
+    I::Slice: SliceLen,
+{
     repeat(0.., delimited(multispace0, token, multispace0)).parse(input)
 }
 
-pub fn delimited_by<'src, E: ParserError<&'src str>>(
+pub fn delimited_by<
+    I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>,
+    E: ParserError<I>,
+>(
     start: &'static str,
     end: &'static str,
-) -> impl Parser<&'src str, &'src str, E> {
+) -> impl Parser<I, <I as Stream>::Slice, E> {
     delimited(start, take_until(0.., end), end)
 }
 
@@ -69,50 +87,81 @@ pub mod token {
     use winnow::{
         ascii::{line_ending, till_line_ending},
         combinator::{alt, delimited},
+        stream::{AsChar, Compare, FindSlice, SliceLen},
         token::{take_until, take_while},
     };
 
     /// Tries to parse a [Token::BlockOpen].
-    pub fn block_open<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn block_open<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
         "{".map(|_| Token::BlockOpen).parse_next(input)
     }
 
     /// Tries to parse a [Token::BlockClose].
-    pub fn block_close<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn block_close<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
         "}".map(|_| Token::BlockClose).parse_next(input)
     }
 
     /// Tries to parse a [Token::Identifier].
     /// Valid identifier characters are `[0-9a-zA-Z_]`.
     /// Does not allow empty identifiers.
-    pub fn identifier<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn identifier<I: Stream + StreamIsPartial>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>>
+    where
+        <I as Stream>::Token: AsChar + Clone,
+    {
         take_while(1.., ('0'..='9', 'a'..='z', 'A'..='Z', '_'))
             .map(Token::Identifier)
             .parse_next(input)
     }
 
     /// Tries to parse a [Token::Separator].
-    pub fn separator<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn separator<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
         ":".map(|_| Token::Separator).parse_next(input)
     }
 
     /// Tries to parse a [Token::Value].
     /// Valid values are parsed using [value::value].
-    pub fn value<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn value<
+        I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str> + Copy,
+    >(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>>
+    where
+        I::Token: AsChar + Clone,
+        I::Slice: SliceLen,
+    {
         value::value.map(Token::Value).parse_next(input)
     }
 
     /// Tries to parse a single-line [Token::Comment].
     ///
     /// Consumes the newline which ends the comment.
-    pub fn comment_single<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn comment_single<
+        I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<(char, char)>,
+    >(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>>
+    where
+        <I as Stream>::Token: AsChar + Clone,
+    {
         delimited("//", till_line_ending, line_ending)
             .map(Token::Comment)
             .parse_next(input)
     }
 
     /// Tries to parse a multi-line [Token::Comment].
-    pub fn comment_multi<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn comment_multi<
+        I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>,
+    >(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
         delimited("/*", take_until(0.., "*/"), "*/")
             .map(Token::Comment)
             .parse_next(input)
@@ -120,12 +169,36 @@ pub mod token {
 
     /// Tries to parse a [Token::Comment]
     /// (either [single-][comment_single] or [multi-line][comment_multi]).
-    pub fn comment<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn comment<
+        I: Stream
+            + StreamIsPartial
+            + Compare<&'static str>
+            + FindSlice<&'static str>
+            + FindSlice<(char, char)>,
+    >(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>>
+    where
+        <I as Stream>::Token: AsChar + Clone,
+    {
         alt((comment_single, comment_multi)).parse_next(input)
     }
 
     /// Tries to parse any [Token].
-    pub fn token<'src>(input: &mut &'src str) -> PResult<Token<'src>> {
+    pub fn token<
+        I: Stream
+            + StreamIsPartial
+            + Compare<&'static str>
+            + FindSlice<&'static str>
+            + FindSlice<(char, char)>
+            + Copy,
+    >(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>>
+    where
+        <I as Stream>::Token: AsChar + Clone,
+        I::Slice: SliceLen,
+    {
         alt((
             block_open,
             block_close,
@@ -143,18 +216,21 @@ pub mod token {
 /// All lexers assume their value starts immediately (i.e., no preceding whitespace)
 /// and will not consume any subsequent whitespace.
 pub mod value {
+
     use super::*;
     use winnow::{
         ascii::{digit0, digit1},
         combinator::{alt, opt, preceded},
-        stream::AsChar,
+        stream::{AsChar, SliceLen, Stream, StreamIsPartial},
         token::take_while,
     };
 
     /// Tries to parse a [Value::String].
     /// Does not allow escaping (`\"`).
     /// Zero-length strings (`""`) are allowed.
-    pub fn string<'src>(input: &mut &'src str) -> PResult<Value<'src>> {
+    pub fn string<I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>> {
         delimited_by("\"", "\"")
             .map(Value::String)
             .parse_next(input)
@@ -163,35 +239,57 @@ pub mod value {
     /// Tries to parse a [Value::Regex].
     /// Does not allow escaping (`\$`).
     /// Zero-length regexes (`^$`) are allowed.
-    pub fn regex<'src>(input: &mut &'src str) -> PResult<Value<'src>> {
+    pub fn regex<I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>> {
         delimited_by("^", "$").map(Value::Regex).parse_next(input)
     }
 
     /// Tries to parse a [Value::Number].
-    pub fn number<'src>(input: &mut &'src str) -> PResult<Value<'src>> {
-        let src = *input;
-        (digit1, opt(('.', digit0)))
-            .map(|(a, b): (&str, Option<(char, &str)>)| {
-                a.len()
+    pub fn number<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>>
+    where
+        I::Token: AsChar,
+        I::Slice: SliceLen,
+    {
+        let mut src = *input;
+        type R<I> = (
+            <I as Stream>::Slice,
+            Option<(<I as Stream>::Slice, <I as Stream>::Slice)>,
+        );
+        (digit1, opt((".", digit0)))
+            // get the parsed slice of the input
+            // by summing the length of the individual fields
+            .map(|(a, b): R<I>| {
+                a.slice_len()
                     + match b {
-                        Some((b, c)) => b.len() + c.len(),
+                        Some((b, c)) => b.slice_len() + c.slice_len(),
                         None => 0,
                     }
             })
-            .map(|l| &src[..l])
+            // and then getting a slice of the input of the specified length
+            .map(|l| src.next_slice(l))
             .map(Value::Number)
             .parse_next(input)
     }
 
     /// Tries to parse a [Value::Boolean].
-    pub fn boolean<'src>(input: &mut &'src str) -> PResult<Value<'src>> {
+    pub fn boolean<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>> {
         alt(("true", "false")).map(Value::Boolean).parse_next(input)
     }
 
     /// Tries to parse a [Value::Boolean].
-    pub fn color<'src>(input: &mut &'src str) -> PResult<Value<'src>> {
+    pub fn color<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Value<I::Slice>>
+    where
+        I::Token: AsChar + Clone,
+    {
         preceded(
-            '#',
+            "#",
             alt((
                 take_while(8, AsChar::is_hex_digit),
                 take_while(6, AsChar::is_hex_digit),
@@ -202,7 +300,15 @@ pub mod value {
     }
 
     /// Tries to parse any [Value].
-    pub fn value<'src>(input: &mut &'src str) -> PResult<Value<'src>> {
+    pub fn value<
+        I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str> + Copy,
+    >(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>>
+    where
+        I::Token: AsChar + Clone,
+        I::Slice: SliceLen,
+    {
         alt((string, regex, number, boolean, color)).parse_next(input)
     }
 }
