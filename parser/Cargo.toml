@@ -10,3 +10,4 @@ repository = "https://github.com/FloezeTv/NAViz"
 version = "0.0.0"
 
 [dependencies]
+winnow = "0.6.18"
