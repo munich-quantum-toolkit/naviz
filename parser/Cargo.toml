@@ -10,4 +10,6 @@ repository = "https://github.com/FloezeTv/NAViz"
 version = "0.0.0"
 
 [dependencies]
+fraction = "0.15.3"
+regex = "1.10.6"
 winnow = "0.6.18"

@@ -13,7 +13,7 @@ use winnow::{
 };
 
 /// A value with a type
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Value<T> {
     /// A string
     String(T),
@@ -28,7 +28,7 @@ pub enum Value<T> {
 }
 
 /// A token of the config format
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Token<T> {
     /// Opening-symbol for a block
     BlockOpen,
