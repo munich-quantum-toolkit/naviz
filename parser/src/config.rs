@@ -6,3 +6,4 @@ pub mod machine;
 pub mod parser;
 pub mod percentage;
 pub mod position;
+pub mod visual;
