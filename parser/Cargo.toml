@@ -11,5 +11,6 @@ version = "0.0.0"
 
 [dependencies]
 fraction = "0.15.3"
+itertools = "0.13.0"
 regex = "1.10.6"
 winnow = "0.6.18"

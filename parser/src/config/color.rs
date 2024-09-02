@@ -1,7 +1,7 @@
 use std::{error::Error, fmt::Display, num::ParseIntError, str::FromStr};
 
 /// A 32-bit color with `red`, `green`, `blue`, and `alpha` components
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
