@@ -1,10 +1,14 @@
+use super::percentage::Percentage;
 use super::{color::Color, lexer::Token};
 use fraction::Fraction;
 use regex::Regex;
 use std::fmt::Debug;
-use token::{block_close, block_open, identifier, ignore_comments, separator, value_or_identifier};
+use token::{
+    block_close, block_open, element_separator, identifier, ignore_comments, separator,
+    tuple_close, tuple_open, value_or_identifier,
+};
 use try_into_value::TryIntoValue;
-use winnow::combinator::{alt, preceded, repeat, terminated};
+use winnow::combinator::{alt, preceded, repeat, separated, terminated};
 use winnow::prelude::*;
 
 pub mod try_into_value;
@@ -18,12 +22,16 @@ pub enum Value {
     Regex(Regex),
     /// A number
     Number(Fraction),
+    /// A percentage
+    Percentage(Percentage),
     /// A boolean
     Boolean(bool),
     /// A color
     Color(Color),
     /// An identifier
     Identifier(String),
+    /// A tuple
+    Tuple(Vec<Value>),
 }
 
 /// For tests, allow comparing [Value]s.
@@ -89,9 +97,9 @@ pub fn property<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
 ) -> PResult<ConfigItem> {
     (
-        terminated(value_or_identifier, ignore_comments),
+        terminated(value_or_identifier_or_tuple, ignore_comments),
         terminated(separator, ignore_comments),
-        value_or_identifier,
+        value_or_identifier_or_tuple,
     )
         .map(|(k, _, v)| ConfigItem::Property(k, v))
         .parse_next(input)
@@ -117,13 +125,37 @@ pub fn named_block<S: TryIntoValue + Clone + Debug + PartialEq>(
 ) -> PResult<ConfigItem> {
     (
         terminated(identifier, ignore_comments),
-        terminated(value_or_identifier, ignore_comments),
+        terminated(value_or_identifier_or_tuple, ignore_comments),
         terminated(block_open, ignore_comments),
         terminated(config, ignore_comments),
         block_close,
     )
         .map(|(i, n, _, c, _)| ConfigItem::NamedBlock(i, n, c))
         .parse_next(input)
+}
+
+/// Try to parse a [Value::Tuple] from a stream of [Token]s.
+pub fn tuple<S: TryIntoValue + Clone + Debug + PartialEq>(
+    input: &mut &[Token<S>],
+) -> PResult<Value> {
+    (
+        terminated(tuple_open, ignore_comments),
+        terminated(
+            separated(0.., value_or_identifier_or_tuple, element_separator),
+            ignore_comments,
+        ),
+        tuple_close,
+    )
+        .map(|(_, t, _)| Value::Tuple(t))
+        .parse_next(input)
+}
+
+/// Try to parse a single [Token::Identifier], [Token::Value], or [Value::Tuple]
+/// using [value_or_identifier] and [tuple] respectively.
+pub fn value_or_identifier_or_tuple<S: Clone + Debug + PartialEq + TryIntoValue>(
+    input: &mut &[Token<S>],
+) -> PResult<Value> {
+    alt((value_or_identifier, tuple)).parse_next(input)
 }
 
 /// Parse single [Token]s into their abstract config counterparts.
@@ -196,6 +228,21 @@ pub mod token {
         repeat::<_, _, (), _, _>(0.., comment)
             .void()
             .parse_next(input)
+    }
+
+    /// Try to parse a single [Token::TupleOpen].
+    pub fn tuple_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+        one_of([Token::TupleOpen]).void().parse_next(input)
+    }
+
+    /// Try to parse a single [Token::TupleClose].
+    pub fn tuple_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+        one_of([Token::TupleClose]).void().parse_next(input)
+    }
+
+    /// Try to parse a single [Token::ElementSeparator].
+    pub fn element_separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+        one_of([Token::ElementSeparator]).void().parse_next(input)
     }
 }
 

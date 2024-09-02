@@ -13,7 +13,7 @@ use winnow::{
 };
 
 /// A value with a type
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Value<T> {
     /// A string
     String(T),
@@ -21,6 +21,8 @@ pub enum Value<T> {
     Regex(T),
     /// A number
     Number(T),
+    /// A number
+    Percentage(T),
     /// A boolean
     Boolean(T),
     /// A color
@@ -28,7 +30,7 @@ pub enum Value<T> {
 }
 
 /// A token of the config format
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token<T> {
     /// Opening-symbol for a block
     BlockOpen,
@@ -42,6 +44,12 @@ pub enum Token<T> {
     Value(Value<T>),
     /// A comment, either single- or multiline
     Comment(T),
+    /// Opening-symbol for a tuple
+    TupleOpen,
+    /// Closing-symbol for a tuple
+    TupleClose,
+    /// A separator between elements (e.g., in tuples)
+    ElementSeparator,
 }
 
 /// Lexes a [str] into a [Vec] of [Token]s,
@@ -184,6 +192,27 @@ pub mod token {
         alt((comment_single, comment_multi)).parse_next(input)
     }
 
+    /// Tries to parse a [Token::TupleOpen].
+    pub fn tuple_open<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
+        "(".map(|_| Token::TupleOpen).parse_next(input)
+    }
+
+    /// Tries to parse a [Token::TupleClose].
+    pub fn tuple_close<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
+        ")".map(|_| Token::TupleClose).parse_next(input)
+    }
+
+    /// Tries to parse a [Token::ElementSeparator].
+    pub fn element_separator<I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Token<<I as Stream>::Slice>> {
+        ",".map(|_| Token::ElementSeparator).parse_next(input)
+    }
+
     /// Tries to parse any [Token].
     pub fn token<
         I: Stream
@@ -203,6 +232,9 @@ pub mod token {
             block_open,
             block_close,
             separator,
+            tuple_open,
+            tuple_close,
+            element_separator,
             comment,
             value,
             identifier,
@@ -220,9 +252,9 @@ pub mod value {
     use super::*;
     use winnow::{
         ascii::{digit0, digit1},
-        combinator::{alt, opt, preceded},
+        combinator::{alt, opt, preceded, terminated},
         stream::{AsChar, SliceLen, Stream, StreamIsPartial},
-        token::take_while,
+        token::{one_of, take_while},
     };
 
     /// Tries to parse a [Value::String].
@@ -245,10 +277,11 @@ pub mod value {
         delimited_by("^", "$").map(Value::Regex).parse_next(input)
     }
 
-    /// Tries to parse a [Value::Number].
-    pub fn number<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
+    /// Tries to parse a number.
+    /// Returns the raw slice.
+    pub fn number_raw<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>>
+    ) -> PResult<<I as Stream>::Slice>
     where
         I::Token: AsChar,
         I::Slice: SliceLen,
@@ -270,7 +303,30 @@ pub mod value {
             })
             // and then getting a slice of the input of the specified length
             .map(|l| src.next_slice(l))
-            .map(Value::Number)
+            .parse_next(input)
+    }
+
+    /// Tries to parse a [Value::Number].
+    pub fn number<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>>
+    where
+        I::Token: AsChar,
+        I::Slice: SliceLen,
+    {
+        number_raw.map(Value::Number).parse_next(input)
+    }
+
+    /// Tries to parse a [Value::Percentage].
+    pub fn percentage<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
+        input: &mut I,
+    ) -> PResult<Value<<I as Stream>::Slice>>
+    where
+        I::Token: AsChar + Clone,
+        I::Slice: SliceLen,
+    {
+        terminated(number_raw, one_of(['%']))
+            .map(Value::Percentage)
             .parse_next(input)
     }
 
@@ -309,7 +365,7 @@ pub mod value {
         I::Token: AsChar + Clone,
         I::Slice: SliceLen,
     {
-        alt((string, regex, number, boolean, color)).parse_next(input)
+        alt((string, regex, percentage, number, boolean, color)).parse_next(input)
     }
 }
 
