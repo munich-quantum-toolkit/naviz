@@ -92,7 +92,7 @@ A static trap can be defined with the `trap`-block.
 It should be given a position.
 
 ```
-trap {
+trap <id> {
 	position: <position> // Position of the trap
 }
 ```
@@ -136,18 +136,16 @@ The `zone`-block allows specifying settings regarding the appearance of zones.
 
 ```
 zone {
-	config {
-		<regex> { // The settings below will be applied to all zones matching this regex
-			color: <color> // The color of the zone
-			line {
-				thickness: <number> // The line thickness of the zone
-				dash {
-					length: <number> // The length of dash-segments of the line
-					duty: <percentage> // How much of the dash-segment will be filled
-				}
+	config <regex> { // The settings below will be applied to all zones matching this regex
+		color: <color> // The color of the zone
+		line {
+			thickness: <number> // The line thickness of the zone
+			dash {
+				length: <number> // The length of dash-segments of the line
+				duty: <percentage> // How much of the dash-segment will be filled
 			}
-			name: <string> // What to display the zone as
 		}
+		name: <string> // What to display the zone as
 	}
 	legend {
 		display: <boolean> // Whether to display the zone-names in the sidebar legend
