@@ -1,0 +1,43 @@
+// Example-Config for tests
+
+name: "Name" // Name of the machine
+
+movement {
+	speed: 23 // Maximum speed
+	acceleration {
+		up: 11 // Maximum acceleration
+		down: 8 // Maximum deceleration
+	}
+}
+
+time {
+	load: 4.2 // Time to load an atom
+	store: 12 // Time to store an atom
+	ry: 0.1 // Time for ry-operation
+	rz: 3 // Time for rz-operation
+	cz: 1 // Time for cz-operation
+	unit: "us" // Displayed time-unit
+}
+
+distance {
+	interaction: 12 // Interaction-radius for all operations that operate on nearby atoms
+	unit: "um" // Displayed distance-unit
+}
+
+zone zone0 {
+	from: (0, 0) // First coordinate of rectangle
+	to: (10, 10) // Second coordinate of rectangle
+}
+
+zone zone1 {
+	from: (12.2, 8) // First coordinate of rectangle
+	to: (23, 4) // Second coordinate of rectangle
+}
+
+trap trap0 {
+	position: (0, 0) // Position of the trap
+}
+
+trap trap1 {
+	position: (1, 1) // Position of the trap
+}
