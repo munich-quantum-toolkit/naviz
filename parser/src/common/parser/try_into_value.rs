@@ -1,5 +1,5 @@
 use super::Value;
-use crate::config::{
+use crate::common::{
     color::{Color, ParseColorError},
     lexer,
     percentage::Percentage,

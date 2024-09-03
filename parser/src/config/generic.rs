@@ -2,11 +2,10 @@
 //! and allow parsing to concrete configuration using the provided helper-functions.
 
 use super::{
-    color::Color,
     error::{Error, ErrorKind, TagError},
     parser::{self, Value},
-    percentage::Percentage,
 };
+use crate::common::{color::Color, percentage::Percentage};
 use fraction::Fraction;
 use itertools::{Either, Itertools};
 use regex::Regex;

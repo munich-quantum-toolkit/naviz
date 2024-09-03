@@ -1,7 +1,7 @@
-use super::{
+use super::parser::Value;
+use crate::config::{
     error::{Error, ErrorKind},
     generic::ConfigItem,
-    parser::Value,
 };
 use fraction::Fraction;
 

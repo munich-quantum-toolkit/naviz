@@ -1,12 +1,12 @@
 //! The [VisualConfig] and sub-types.
 //! See documentation of file-format.
 
+use crate::common::{color::Color, percentage::Percentage};
+
 use super::{
-    color::Color,
     error::{Error, ErrorKind},
     generic::{get_item, get_item_map, get_item_named_struct, get_item_struct, Config, ConfigItem},
     parser::Value,
-    percentage::Percentage,
 };
 use fraction::Fraction;
 use regex::Regex;

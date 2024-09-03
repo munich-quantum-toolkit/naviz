@@ -1,56 +1,13 @@
-use super::percentage::Percentage;
-use super::{color::Color, lexer::Token};
-use fraction::Fraction;
-use regex::Regex;
+use super::lexer::Token;
+use crate::common;
 use std::fmt::Debug;
-use token::{
-    block_close, block_open, element_separator, identifier, ignore_comments, separator,
-    tuple_close, tuple_open, value_or_identifier,
-};
+use token::{block_close, block_open, identifier, ignore_comments, separator};
 use try_into_value::TryIntoValue;
-use winnow::combinator::{alt, preceded, repeat, separated, terminated};
+use winnow::combinator::{alt, preceded, repeat, terminated};
 use winnow::prelude::*;
 
-pub mod try_into_value;
-
-/// A parsed value.
-#[derive(Debug, Clone)]
-pub enum Value {
-    /// A string
-    String(String),
-    /// A regex
-    Regex(Regex),
-    /// A number
-    Number(Fraction),
-    /// A percentage
-    Percentage(Percentage),
-    /// A boolean
-    Boolean(bool),
-    /// A color
-    Color(Color),
-    /// An identifier
-    Identifier(String),
-    /// A tuple
-    Tuple(Vec<Value>),
-}
-
-/// For tests, allow comparing [Value]s.
-/// In particular, check if [Value::Regex]s were compiled from the same source string
-/// (and use [PartialEq] for all other variants).
-#[cfg(test)]
-impl PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Value::String(a), Value::String(b)) => a == b,
-            (Value::Regex(a), Value::Regex(b)) => a.as_str() == b.as_str(),
-            (Value::Number(a), Value::Number(b)) => a == b,
-            (Value::Boolean(a), Value::Boolean(b)) => a == b,
-            (Value::Color(a), Value::Color(b)) => a == b,
-            (Value::Identifier(a), Value::Identifier(b)) => a == b,
-            _ => false,
-        }
-    }
-}
+// Re-export the common parser
+pub use common::parser::*;
 
 /// A [ConfigItem] represents a single item of the config.
 #[cfg_attr(test, derive(PartialEq))]
@@ -134,34 +91,13 @@ pub fn named_block<S: TryIntoValue + Clone + Debug + PartialEq>(
         .parse_next(input)
 }
 
-/// Try to parse a [Value::Tuple] from a stream of [Token]s.
-pub fn tuple<S: TryIntoValue + Clone + Debug + PartialEq>(
-    input: &mut &[Token<S>],
-) -> PResult<Value> {
-    (
-        terminated(tuple_open, ignore_comments),
-        terminated(
-            separated(0.., value_or_identifier_or_tuple, element_separator),
-            ignore_comments,
-        ),
-        tuple_close,
-    )
-        .map(|(_, t, _)| Value::Tuple(t))
-        .parse_next(input)
-}
-
-/// Try to parse a single [Token::Identifier], [Token::Value], or [Value::Tuple]
-/// using [value_or_identifier] and [tuple] respectively.
-pub fn value_or_identifier_or_tuple<S: Clone + Debug + PartialEq + TryIntoValue>(
-    input: &mut &[Token<S>],
-) -> PResult<Value> {
-    alt((value_or_identifier, tuple)).parse_next(input)
-}
-
 /// Parse single [Token]s into their abstract config counterparts.
 pub mod token {
     use super::*;
     use winnow::token::one_of;
+
+    // Re-export the common token-parsers
+    pub use common::parser::token::*;
 
     /// Try to parse a single [Token::BlockOpen].
     pub fn block_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
@@ -173,76 +109,9 @@ pub mod token {
         one_of([Token::BlockClose]).void().parse_next(input)
     }
 
-    /// Try to parse a single [Token::Identifier],
-    /// mapping the value to a [String] using [TryIntoValue::identifier].
-    pub fn identifier<S: Clone + Debug + PartialEq + TryIntoValue>(
-        input: &mut &[Token<S>],
-    ) -> PResult<String> {
-        one_of(|t| matches!(t, Token::Identifier(_)))
-            .try_map(|t: Token<S>| match t {
-                Token::Identifier(i) => i.identifier(),
-                _ => unreachable!(), // Parser only matches identifier
-            })
-            .parse_next(input)
-    }
-
     /// Try to parse a single [Token::Separator].
     pub fn separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
         one_of([Token::Separator]).void().parse_next(input)
-    }
-
-    /// Try to parse a single [Token::Value],
-    /// mapping the value to a [Value] using [TryIntoValue].
-    pub fn value<S: Clone + Debug + PartialEq + TryIntoValue>(
-        input: &mut &[Token<S>],
-    ) -> PResult<Value> {
-        one_of(|t| matches!(t, Token::Value(_)))
-            .try_map(|t| match t {
-                Token::Value(v) => v.try_into(),
-                _ => unreachable!(), // Parser only matches value
-            })
-            .parse_next(input)
-    }
-
-    /// Try to parse a single [Token::Identifier] or [Token::Value]
-    /// using [identifier] and [value] respectively,
-    /// mapping it to a [Value].
-    pub fn value_or_identifier<S: Clone + Debug + PartialEq + TryIntoValue>(
-        input: &mut &[Token<S>],
-    ) -> PResult<Value> {
-        alt((value, identifier.map(Value::Identifier))).parse_next(input)
-    }
-
-    /// Try to parse a single [Token::Comment].
-    pub fn comment<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<S> {
-        one_of(|t| matches!(t, Token::Comment(_)))
-            .map(|t: Token<S>| match t {
-                Token::Comment(c) => c,
-                _ => unreachable!(), // Parser only matches comment
-            })
-            .parse_next(input)
-    }
-
-    /// Ignore all comments until the next non-comment token.
-    pub fn ignore_comments<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        repeat::<_, _, (), _, _>(0.., comment)
-            .void()
-            .parse_next(input)
-    }
-
-    /// Try to parse a single [Token::TupleOpen].
-    pub fn tuple_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        one_of([Token::TupleOpen]).void().parse_next(input)
-    }
-
-    /// Try to parse a single [Token::TupleClose].
-    pub fn tuple_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        one_of([Token::TupleClose]).void().parse_next(input)
-    }
-
-    /// Try to parse a single [Token::ElementSeparator].
-    pub fn element_separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        one_of([Token::ElementSeparator]).void().parse_next(input)
     }
 }
 
@@ -280,8 +149,11 @@ impl<T: PartialEq, const LEN: usize> winnow::stream::ContainsToken<Token<T>> for
 
 #[cfg(test)]
 mod test {
+    use fraction::Fraction;
+    use regex::Regex;
+
     use super::*;
-    use crate::config::lexer;
+    use crate::common::{color::Color, lexer};
 
     #[test]
     pub fn simple_example() {
