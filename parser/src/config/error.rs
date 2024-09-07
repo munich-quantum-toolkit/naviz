@@ -22,7 +22,7 @@ impl Display for ErrorKind {
 }
 
 /// An error, which has a [ErrorKind] and collects the tagged path.
-/// Not constructed directly, but though [ErrorKind::into].
+/// Not constructed directly, but though [ErrorKind::into][Into<Error>::into].
 ///
 /// See [TagError] to tag errors.
 #[derive(Debug)]

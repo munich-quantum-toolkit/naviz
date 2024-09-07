@@ -89,7 +89,7 @@ pub fn tuple<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue
 }
 
 /// Try to parse a single [GenericToken::Identifier], [GenericToken::Value], or [Value::Tuple]
-/// using [value_or_identifier] and [tuple] respectively.
+/// using [value_or_identifier] and [tuple()] respectively.
 pub fn value_or_identifier_or_tuple<
     Tok: Into<Option<GenericToken<S>>> + Clone + Debug,
     S: TryIntoValue,

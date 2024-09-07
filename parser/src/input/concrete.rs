@@ -340,7 +340,7 @@ fn id(args: Vec<Value>, name: &'static str) -> Result<String, ParseInstructionsE
 /// Returns a slice of length `N` if the passed vector has length `N`,
 /// or an error containing the original vector.
 ///
-/// Typed wrapper around [Vec::try_into].
+/// Typed wrapper around [Vec::try_into][TryInto<slice<T, N>>::try_into].
 pub fn maybe_get_n<T, const N: usize>(vec: Vec<T>) -> Result<[T; N], Vec<T>> {
     vec.try_into()
 }

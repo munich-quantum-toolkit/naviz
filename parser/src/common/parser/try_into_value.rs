@@ -119,7 +119,7 @@ pub trait TryIntoValue {
     fn identifier(self) -> Result<String, Self::IdentifierError>;
 }
 
-/// Allow converting a [lexer::Value<T>] into a [Value] when `T` implements [TryIntoValue].
+/// Allow converting a [`lexer::Value<T>`] into a [Value] when `T` implements [TryIntoValue].
 impl<T: TryIntoValue> TryFrom<lexer::Value<T>> for Value {
     type Error = TryIntoValueError<
         T::StringError,
