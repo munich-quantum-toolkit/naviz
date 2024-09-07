@@ -197,7 +197,7 @@ mod test {
                 (
                     "zone1".to_string(),
                     ZoneConfig {
-                        from: (Fraction::new(61u64, 5u64), Fraction::new(8u64, 1u64)),
+                        from: (-Fraction::new(61u64, 5u64), Fraction::new(8u64, 1u64)),
                         to: (Fraction::new(23u64, 1u64), Fraction::new(4u64, 1u64)),
                     },
                 ),

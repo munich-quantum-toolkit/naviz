@@ -30,7 +30,7 @@ zone zone0 {
 }
 
 zone zone1 {
-	from: (12.2, 8) // First coordinate of rectangle
+	from: (-12.2, 8) // First coordinate of rectangle
 	to: (23, 4) // Second coordinate of rectangle
 }
 

@@ -82,18 +82,17 @@ pub mod value {
     {
         let mut src = *input;
         type R<I> = (
+            Option<<I as Stream>::Slice>,
             <I as Stream>::Slice,
             Option<(<I as Stream>::Slice, <I as Stream>::Slice)>,
         );
-        (digit1, opt((".", digit0)))
+        (opt("-"), digit1, opt((".", digit0)))
             // get the parsed slice of the input
             // by summing the length of the individual fields
-            .map(|(a, b): R<I>| {
-                a.slice_len()
-                    + match b {
-                        Some((b, c)) => b.slice_len() + c.slice_len(),
-                        None => 0,
-                    }
+            .map(|(n, a, b): R<I>| {
+                n.map(|n| n.slice_len()).unwrap_or(0)
+                    + a.slice_len()
+                    + b.map(|(b, c)| b.slice_len() + c.slice_len()).unwrap_or(0)
             })
             // and then getting a slice of the input of the specified length
             .map(|l| src.next_slice(l))
