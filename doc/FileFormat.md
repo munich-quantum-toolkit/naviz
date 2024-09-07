@@ -403,6 +403,8 @@ The time may be specified relative to the start or the end of the previous opera
 - `@=+n`: Execute `n` time-steps after start of preceding instruction
 - `@=-n`: Execute `n` time-steps before start of preceding instruction
 
+<!-- Not yet implemented
+
 #### Grouping
 
 Instructions and times may be grouped by specifying the time/instruction and all group-members in brackets (`[`/`]`).
@@ -436,6 +438,8 @@ Instructions and times may be grouped by specifying the time/instruction and all
 	]
 ]
 ```
+
+-->
 
 ## Comments
 
