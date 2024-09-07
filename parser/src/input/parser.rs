@@ -3,7 +3,7 @@
 
 use super::lexer::{TimeSpec, Token};
 use crate::common::{self, parser::try_into_value::TryIntoValue};
-use fraction::Fraction;
+use fraction::{Fraction, Zero};
 use std::fmt::Debug;
 use token::{identifier, ignore_comments, number, separator, time_symbol};
 use winnow::{
@@ -90,7 +90,11 @@ pub fn directive<S: TryIntoValue + Clone + Debug + PartialEq>(
 pub fn time<S: TryIntoValue + Clone + Debug>(
     input: &mut &[Token<S>],
 ) -> PResult<(TimeSpec, Fraction)> {
-    (time_symbol, number).parse_next(input)
+    (
+        time_symbol,
+        opt(number).map(|n| n.unwrap_or_else(Fraction::zero)),
+    )
+        .parse_next(input)
 }
 
 pub mod token {
