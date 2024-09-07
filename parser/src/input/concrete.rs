@@ -362,6 +362,118 @@ pub fn n_args<T, const N: usize>(
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::input::{lexer, parser};
+
+    #[test]
+    pub fn example() {
+        let input = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/rsc/test/example.naviz"
+        ));
+
+        let expected = Instructions {
+            directives: Directives {
+                targets: vec!["example".to_string()],
+            },
+            setup: vec![
+                SetupInstruction::Atom {
+                    position: (Fraction::new(0u64, 1u64), Fraction::new(0u64, 1u64)),
+                    id: "atom0".to_string(),
+                },
+                SetupInstruction::Atom {
+                    position: (Fraction::new(16u64, 1u64), Fraction::new(0u64, 1u64)),
+                    id: "atom1".to_string(),
+                },
+                SetupInstruction::Atom {
+                    position: (Fraction::new(32u64, 1u64), Fraction::new(0u64, 1u64)),
+                    id: "atom2".to_string(),
+                },
+            ],
+            instructions: vec![(
+                Fraction::new(0u64, 1u64),
+                vec![
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Load {
+                            position: None,
+                            id: "atom0".to_string(),
+                        },
+                    ),
+                    (
+                        true,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Load {
+                            position: Some((Fraction::new(16u64, 1u64), Fraction::new(2u64, 1u64))),
+                            id: "atom1".to_string(),
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Move {
+                            position: (Fraction::new(8u64, 1u64), Fraction::new(8u64, 1u64)),
+                            id: "atom0".to_string(),
+                        },
+                    ),
+                    (
+                        true,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Move {
+                            position: (Fraction::new(16u64, 1u64), Fraction::new(16u64, 1u64)),
+                            id: "atom1".to_string(),
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Store {
+                            position: None,
+                            id: "atom0".to_string(),
+                        },
+                    ),
+                    (
+                        true,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Store {
+                            position: None,
+                            id: "atom1".to_string(),
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Rz {
+                            value: Fraction::new(3141u64, 1000u64),
+                            id: "atom0".to_string(),
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Ry {
+                            value: Fraction::new(3141u64, 1000u64),
+                            id: "atom1".to_string(),
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        TimedInstruction::Cz {
+                            id: "zone0".to_string(),
+                        },
+                    ),
+                ],
+            )],
+        };
+
+        let lexed = lexer::lex(input).expect("Failed to lex");
+        let parsed = parser::parse(&lexed).expect("Failed to parse");
+        let concrete =
+            Instructions::new(parsed).expect("Failed to parse into concrete instructions");
+
+        assert_eq!(concrete, expected);
+    }
 
     #[test]
     pub fn simple_example() {
