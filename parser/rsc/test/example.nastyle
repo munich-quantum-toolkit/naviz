@@ -1,0 +1,165 @@
+// Example-Config for tests
+
+atom {
+	trapped {
+		color: #000000 // Color of a trapped atom
+	}
+	shuttling {
+		color: #ffffff // Color of a shuttling atom
+	}
+	legend {
+		name {
+			^.*$: "$0" // Display a text over all atoms whose ID matches the key-regex; the displayed text is the replacement from the value
+			// Example to display all ids: `^.*$: "$0"`
+		}
+		font {
+			family: "Nice Font" // Font-Family of the text on the atoms
+			size: 14 // Size of the text on the atoms
+			color: #ff00ff // Color of the text on the atoms
+		}
+	}
+	radius: 32 // Radius of atoms
+	margin: 8 // Visual separation of atoms that are too close (i.e., all atoms will appear to be at least this far away, even if they are closer).
+}
+
+zone {
+	config ^zone.*$ { // The settings below will be applied to all zones matching this regex
+		color: #0000ff // The color of the zone
+		line {
+			thickness: 2 // The line thickness of the zone
+			dash {
+				length: 10 // The length of dash-segments of the line
+				duty: 50% // How much of the dash-segment will be filled
+			}
+		}
+		name: "Cool zone" // What to display the zone as
+	}
+	config ^.*$ { // The settings below will be applied to all zones matching this regex
+		color: #000034 // The color of the zone
+		line {
+			thickness: 1 // The line thickness of the zone
+			dash {
+				length: 5 // The length of dash-segments of the line
+				duty: 20% // How much of the dash-segment will be filled
+			}
+		}
+		name: "Normal zone" // What to display the zone as
+	}
+	legend {
+		display: true // Whether to display the zone-names in the sidebar legend
+		title: "Zones" // The heading over the zones in the sidebar
+	}
+}
+
+operation {
+	config {
+		ry {
+			color: #f295ed // Color of ry-operations
+			name: "ry" // Name to display in the sidebar legend
+			radius: 32 // How big the atoms should be during ry-operations; either absolute or relative
+		}
+		rz {
+			color: #123456 // Color of rz-operations
+			name: "rz" // Name to display in the sidebar legend
+			radius: 48% // How big the atoms should be during rz-operations; either absolute or relative
+		}
+		cz {
+			color: #c0ffee // Color of cz-operations
+			name: "cz" // Name to display in the sidebar legend
+			radius: 13 // How big the atoms should be during cz-operations; either absolute or relative
+		}
+	}
+	legend {
+		display: true // Whether to display the operation-names in the sidebar legend
+		title: "Operations" // The heading over the operations in the sidebar
+	}
+}
+
+machine {
+	trap {
+		color: #000000aa // Color of the traps
+		radius: 18 // Radius of the traps
+		name: "Trap" // Name to display in the sidebar legend
+	}
+	shuttle {
+		color: #000000cc // Color of the shuttle
+		line {
+			thickness: 1 // The line thickness of the shuttle
+			dash {
+				length: 10 // The length of dash-segments of the line
+				duty: 50% // How much of the dash-segment will be filled
+			}
+		}
+		name: "Shuttle" // Name to display in the sidebar legend
+	}
+	legend {
+		display: true // Whether to display the trap and shuttle names in the sidebar legend
+		title: "" // The heading over the names in the sidebar
+	}
+}
+
+coordinate {
+	tick {
+		x: 10 // Distance of ticks in the x-direction
+		y: 20 // Distance of ticks in the y-direction
+		color: #0000008f // Color of the grid
+		line {
+			thickness: 1 // The line thickness of the grid
+			dash {
+				length: 10 // The length of dash-segments of the line
+				duty: 50% // How much of the dash-segment will be filled
+			}
+		}
+	}
+	number {
+		x {
+			distance: 30 // Distance between coordinate numbers in x-direction
+			position: bottom // Display numbers on top or bottom
+		}
+		y {
+			distance: 20 // Distance between coordinate numbers in y-direction
+			position: left // Display numbers on left or right side
+		}
+		display: true // Whether to display the numbers
+		font {
+			family: "Font" // Font-Family of the numbers
+			size: 8 // Size of the numbers
+			color: #000000 // Color of the numbers
+		}
+	}
+	axis {
+		x: "x" // Name of the x-axis
+		y: "y" // Name of the y-axis
+		display: true // Whether to display the axis-names
+		font {
+			family: "New Font" // Font-Family of the axis names
+			size: 18 // Size of the axis names
+			color: #000000 // Color of the axis names
+		}
+	}
+	margin: 12 // Margins around the coordinate system; The content is automatically fitted to the smallest bounding rectangle which contains all zones and atoms at all times.
+}
+
+sidebar {
+	font {
+		family: "Yet another font" // Font-Family of the sidebar legend
+		size: 10 // Size of the sidebar legend
+		color: #000000 // Color of the sidebar legend
+	}
+	margin: 8 // Margin around the sidebar legend
+}
+
+time {
+	display: true // Whether to display the current time
+	prefix: "Time: " // Text to display before the time
+	font {
+		family: "Last Font" // Font-Family of the time
+		size: 12 // Size of the time
+		color: #000000 // Color of the time
+	}
+}
+
+viewport {
+	margin: 4 // Margin around the viewport
+	color: #ffffff // Background-color of the viewport
+}

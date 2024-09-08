@@ -1,0 +1,20 @@
+#target example
+
+atom (0, 0) atom0
+atom (16, 0) atom1
+atom (32, 0) atom2
+
+@+ load atom0
+@= load (16, 2) atom1
+
+@+ move (8, 8) atom0
+@= move (16, 16) atom1
+
+@+ store atom0
+@= store atom1
+
+@+ rz 3.141 atom0
+
+@+ ry 3.141 atom1
+
+@+ cz zone0

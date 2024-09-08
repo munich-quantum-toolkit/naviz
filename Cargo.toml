@@ -1,3 +1,5 @@
 [workspace]
-members = []
+members = [
+    "parser",
+]
 resolver = "2"
