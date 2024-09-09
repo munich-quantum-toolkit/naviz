@@ -1,5 +1,6 @@
 [workspace]
 members = [
-    "parser",
+  "parser",
+  "gui",
 ]
 resolver = "2"
