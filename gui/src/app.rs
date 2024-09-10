@@ -1,4 +1,4 @@
-use crate::{canvas::GlCanvas, future_helper::FutureHelper, menu::MenuBar};
+use crate::{canvas::WgpuCanvas, future_helper::FutureHelper, menu::MenuBar};
 
 /// The main App to draw using [egui]/[eframe]
 pub struct App {
@@ -42,12 +42,7 @@ impl eframe::App for App {
                 }
             ));
 
-            GlCanvas::new(|gl: &eframe::glow::Context| unsafe {
-                use eframe::glow::HasContext;
-                gl.clear_color(0.8, 0.3, 0., 1.);
-                gl.clear(eframe::glow::COLOR_BUFFER_BIT);
-            })
-            .draw(ctx, ui);
+            WgpuCanvas::new(crate::canvas::EmptyCanvas::new()).draw(ctx, ui);
         });
     }
 }

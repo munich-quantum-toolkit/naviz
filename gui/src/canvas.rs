@@ -1,18 +1,13 @@
-use std::sync::Arc;
-
-use eframe::{
-    egui_glow::CallbackFn,
-    glow::{self, HasContext, SCISSOR_TEST, VIEWPORT},
-};
-use egui::{Context, PaintCallback, Ui};
+use eframe::egui_wgpu::{Callback, CallbackTrait};
+use egui::{Context, Ui};
 
 /// A canvas that allows drawing using OpenGL.
 /// The content to draw must implement [GlDrawable] and be set in [GlCanvas::new].
-pub struct GlCanvas<C: GlDrawable + 'static> {
+pub struct WgpuCanvas<C: CallbackTrait + 'static> {
     content: C,
 }
 
-impl<C: GlDrawable + 'static> GlCanvas<C> {
+impl<C: CallbackTrait + Clone + 'static> WgpuCanvas<C> {
     /// Create a new [GlCanvas] that renders the specified content.
     pub fn new(content: C) -> Self {
         Self { content }
@@ -24,41 +19,32 @@ impl<C: GlDrawable + 'static> GlCanvas<C> {
     pub fn draw(&self, ctx: &Context, ui: &mut Ui) {
         egui::Frame::canvas(ui.style()).show(ui, |ui| {
             let (_, rect) = ui.allocate_space(ui.available_size());
-            let content = self.content;
-
-            ui.painter().add(PaintCallback {
-                rect,
-                callback: Arc::new(CallbackFn::new(move |_info, painter| {
-                    let gl = painter.gl().as_ref();
-                    unsafe {
-                        let mut vp = [0, 0, 0, 0];
-                        gl.get_parameter_i32_slice(VIEWPORT, &mut vp);
-                        gl.enable(SCISSOR_TEST);
-                        gl.scissor(vp[0], vp[1], vp[2], vp[3]);
-                    }
-
-                    content.draw(gl);
-
-                    unsafe {
-                        gl.disable(SCISSOR_TEST);
-                    }
-                })),
-            });
+            ui.painter()
+                .add(Callback::new_paint_callback(rect, self.content.clone()));
 
             ctx.request_repaint();
         });
     }
 }
 
-/// A [GlDrawable] is something that can be drawn using OpenGL.
-/// It has a [draw][GlDrawable::draw]-function to do that.
-pub trait GlDrawable: Send + Sync + Copy {
-    fn draw(&self, gl: &glow::Context);
+/// An empty canvas.
+///
+/// Draws nothing
+#[derive(Clone, Copy)]
+pub struct EmptyCanvas {}
+
+impl EmptyCanvas {
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
-/// A closure can be a [GlDrawable].
-impl<F: Fn(&glow::Context) + Send + Sync + Copy> GlDrawable for F {
-    fn draw(&self, gl: &glow::Context) {
-        self(gl)
+impl CallbackTrait for EmptyCanvas {
+    fn paint<'a>(
+        &'a self,
+        _info: egui::PaintCallbackInfo,
+        _render_pass: &mut eframe::wgpu::RenderPass<'a>,
+        _callback_resources: &'a eframe::egui_wgpu::CallbackResources,
+    ) {
     }
 }
