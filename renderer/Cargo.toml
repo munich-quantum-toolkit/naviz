@@ -1,0 +1,12 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = ["visualization", "rendering"]
+description = "Renderer for NAViz"
+edition = "2021"
+keywords = ["naviz", "renderer"]
+license = "LGPL-3.0-or-later"
+name = "naviz-renderer"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]

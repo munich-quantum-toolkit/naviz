@@ -2,5 +2,6 @@
 members = [
   "parser",
   "gui",
+  "renderer",
 ]
 resolver = "2"
