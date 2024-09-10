@@ -1,7 +1,7 @@
 [package]
 authors = ["FloezeTv <floeze@floeze.tv>"]
 categories = ["visualization"]
-description = "Parser for the NAViz input files"
+description = "GUI for NAViz"
 edition = "2021"
 keywords = ["naviz", "gui"]
 license = "AGPL-3.0-or-later"
