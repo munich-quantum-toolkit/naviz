@@ -33,6 +33,7 @@ impl<C: CallbackTrait + Clone + 'static> WgpuCanvas<C> {
 #[derive(Clone, Copy)]
 pub struct EmptyCanvas {}
 
+#[allow(dead_code)]
 impl EmptyCanvas {
     pub fn new() -> Self {
         Self {}

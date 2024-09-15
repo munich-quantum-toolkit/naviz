@@ -10,3 +10,4 @@ repository = "https://github.com/FloezeTv/NAViz"
 version = "0.0.0"
 
 [dependencies]
+wgpu = {version = "0.20.0", default-features = false, features = ["wgsl"]}
