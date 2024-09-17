@@ -11,4 +11,5 @@ version = "0.0.0"
 
 [dependencies]
 bytemuck = "1.18.0"
+glam = {version = "0.29.0", features = ["bytemuck"]}
 wgpu = {version = "0.20.0", default-features = false, features = ["wgsl"]}
