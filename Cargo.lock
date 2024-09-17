@@ -1915,6 +1915,7 @@ dependencies = [
  "futures",
  "git-version",
  "log",
+ "naviz-renderer",
  "rfd",
  "wasm-bindgen-futures",
  "web-sys",
@@ -1934,6 +1935,10 @@ dependencies = [
 [[package]]
 name = "naviz-renderer"
 version = "0.0.0"
+dependencies = [
+ "bytemuck",
+ "wgpu",
+]
 
 [[package]]
 name = "ndk"
