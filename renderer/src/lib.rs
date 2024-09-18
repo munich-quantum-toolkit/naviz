@@ -1,3 +1,4 @@
+pub mod component;
 pub mod globals;
 pub mod renderer;
 pub mod shaders;
