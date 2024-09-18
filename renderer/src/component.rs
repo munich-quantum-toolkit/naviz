@@ -11,6 +11,8 @@ use wgpu::{
 
 use crate::{globals::Globals, shaders::compile_shader, viewport::Viewport};
 
+pub mod primitive;
+
 /// The spec of a [Component].
 pub struct ComponentSpec<'a, Spec: bytemuck::NoUninit> {
     /// The specifications for the instances
