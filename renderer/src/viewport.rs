@@ -11,6 +11,7 @@ use wgpu::{
 /// Will map coordinates from `source` into `target`
 ///
 /// Can be converted into a projection-matrix using [`Into<Mat4>`].
+#[derive(Clone, Copy)]
 pub struct ViewportProjection {
     pub source: ViewportSource,
     pub target: ViewportTarget,
@@ -18,6 +19,7 @@ pub struct ViewportProjection {
 
 /// The source-coordinates of the viewport.
 /// Will be from `(0, 0)` in the top-left to `(width, height)` in the bottom-right.
+#[derive(Clone, Copy)]
 pub struct ViewportSource {
     pub width: f32,
     pub height: f32,
@@ -25,6 +27,7 @@ pub struct ViewportSource {
 
 /// The target coordinates of the viewport.
 /// Coordinates are in [wgpu] coordinate-space.
+#[derive(Clone, Copy)]
 pub struct ViewportTarget {
     pub x: f32,
     pub y: f32,
@@ -117,7 +120,7 @@ impl Viewport {
     }
 
     /// Binds this [Viewport] to group `1`
-    pub fn bind<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    pub fn bind(&self, render_pass: &mut RenderPass<'_>) {
         render_pass.set_bind_group(1, &self.bind_group, &[]);
     }
 

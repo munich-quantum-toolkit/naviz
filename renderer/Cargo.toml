@@ -12,5 +12,9 @@ version = "0.0.0"
 [dependencies]
 bytemuck = "1.18.0"
 glam = {version = "0.29.0", features = ["bytemuck"]}
+glyphon = "0.6.0"
 naga_oil = "0.15.0"
 wgpu = {version = "22.1.0", default-features = false, features = ["wgsl", "naga-ir"]}
+
+[build-dependencies]
+ureq = "2.10.1"

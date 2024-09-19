@@ -31,7 +31,7 @@ impl Globals {
     }
 
     /// Binds these [Globals] to group `1`
-    pub fn bind<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+    pub fn bind(&self, render_pass: &mut RenderPass<'_>) {
         render_pass.set_bind_group(0, &self.bind_group, &[]);
     }
 
