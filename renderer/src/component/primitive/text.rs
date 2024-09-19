@@ -1,3 +1,4 @@
+use glam::{Mat4, Vec3};
 use glyphon::{
     Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, SwashCache,
     TextArea, TextAtlas, TextBounds, TextRenderer,
@@ -185,11 +186,26 @@ fn to_text_area(
         || text_buffer.layout_runs().map(|r| r.line_height).sum(),
     );
 
+    // Average width and height scale:
+    // Get average of width and height and divide by 100% (width/height of 2)
+    let scale = ((viewport.target.width + viewport.target.height) / 2.) / 2.;
+
+    // Transform the coordinates:
+    let mat: Mat4 = viewport.into();
+    // Into wgsl view-space
+    let (x, y, _) = mat.transform_point3(Vec3::new(x, y, 0.)).into();
+    fn map(val: f32, in_start: f32, in_end: f32, out_start: f32, out_end: f32) -> f32 {
+        out_start + ((out_end - out_start) / (in_end - in_start)) * (val - in_start)
+    }
+    // Then map back into glyphon viewport-space
+    let x = map(x, -1., 1., 0., viewport.source.width);
+    let y = map(y, -1., 1., viewport.source.height, 0.);
+
     TextArea {
         buffer: text_buffer,
         left: x,
         top: y,
-        scale: 1.,
+        scale,
         bounds,
         default_color: color,
         custom_glyphs: &[],
