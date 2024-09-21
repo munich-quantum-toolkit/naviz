@@ -12,6 +12,7 @@ use wgpu::{
 use crate::{globals::Globals, shaders::compile_shader, viewport::Viewport};
 
 pub mod atoms;
+pub mod legend;
 pub mod machine;
 pub mod primitive;
 
