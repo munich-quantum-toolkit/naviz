@@ -11,6 +11,7 @@ use wgpu::{
 
 use crate::{globals::Globals, shaders::compile_shader, viewport::Viewport};
 
+pub mod machine;
 pub mod primitive;
 
 /// The spec of a [Component].
