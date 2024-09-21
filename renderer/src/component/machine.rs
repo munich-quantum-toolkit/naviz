@@ -88,6 +88,9 @@ pub struct MachineSpec<'a> {
     /// Will be the target of the grid.
     /// Labels will be drawn outside of the viewport
     pub viewport: ViewportProjection,
+    /// The resolution of the screen.
+    /// Will render text at this resolution.
+    pub screen_resolution: (u32, u32),
     /// The step to draw grid-lines in
     pub grid_step: (f32, f32),
     /// The color of the grid lines
@@ -146,6 +149,7 @@ impl Machine {
         shader_composer: &mut Composer,
         MachineSpec {
             viewport,
+            screen_resolution,
             grid_step,
             grid_color,
             grid_line_width,
@@ -270,6 +274,7 @@ impl Machine {
                     font_family: legend_font,
                     texts: &texts,
                     color: legend_color,
+                    screen_resolution,
                 },
             ),
             zones: Rectangles::new(device, format, globals, &viewport, shader_composer, zones),

@@ -31,6 +31,9 @@ pub struct TextSpec<'a> {
     /// Does not use viewport (or globals) directly,
     /// but renders using [glyphon].
     pub viewport_projection: ViewportProjection,
+    /// The resolution of the screen.
+    /// Will render text at this resolution.
+    pub screen_resolution: (u32, u32),
     /// The size of the font
     pub font_size: f32,
     /// The font to use
@@ -55,12 +58,19 @@ impl Text {
         format: TextureFormat,
         TextSpec {
             viewport_projection,
+            screen_resolution,
             font_size,
             font_family,
             texts,
             color,
         }: TextSpec,
     ) -> Self {
+        // Scale font-size by average scale from viewport to screen resolution
+        let font_size = font_size
+            * ((screen_resolution.0 as f32 / viewport_projection.source.width)
+                + (screen_resolution.1 as f32 / viewport_projection.source.height))
+            / 2.;
+
         let color = Color::rgba(color[0], color[1], color[2], color[3]);
 
         let mut font_system = FontSystem::new();
@@ -76,8 +86,8 @@ impl Text {
         glyphon_viewport.update(
             queue,
             Resolution {
-                width: viewport_projection.source.width as u32,
-                height: viewport_projection.source.height as u32,
+                width: screen_resolution.0,
+                height: screen_resolution.1,
             },
         );
         let mut atlas = TextAtlas::new(device, queue, &cache, format);
@@ -97,7 +107,14 @@ impl Text {
             .collect();
         // and then to text areas
         let text_areas = text_buffers.iter().map(|(buf, pos, alignment)| {
-            to_text_area(buf, **pos, **alignment, color, viewport_projection)
+            to_text_area(
+                buf,
+                **pos,
+                **alignment,
+                color,
+                viewport_projection,
+                screen_resolution,
+            )
         });
 
         // bake the text to display
@@ -162,33 +179,18 @@ fn to_text_buffer(
 /// Will handle alignment.
 fn to_text_area(
     text_buffer: &Buffer,
-    pos: (f32, f32),
+    (x, y): (f32, f32),
     alignment: Alignment,
     color: Color,
     viewport: ViewportProjection,
+    screen_resolution: (u32, u32),
 ) -> TextArea {
     let bounds = TextBounds {
         left: 0,
         top: 0,
-        right: viewport.source.width as i32,
-        bottom: viewport.source.height as i32,
+        right: screen_resolution.0 as i32,
+        bottom: screen_resolution.1 as i32,
     };
-
-    let (x, y) = get_aligned_position(
-        alignment,
-        pos,
-        || {
-            text_buffer
-                .layout_runs()
-                .map(|r| r.line_w)
-                .fold(0., f32::max)
-        },
-        || text_buffer.layout_runs().map(|r| r.line_height).sum(),
-    );
-
-    // Average width and height scale:
-    // Get average of width and height and divide by 100% (width/height of 2)
-    let scale = ((viewport.target.width + viewport.target.height) / 2.) / 2.;
 
     // Transform the coordinates:
     let mat: Mat4 = viewport.into();
@@ -198,8 +200,32 @@ fn to_text_area(
         out_start + ((out_end - out_start) / (in_end - in_start)) * (val - in_start)
     }
     // Then map back into glyphon viewport-space
-    let x = map(x, -1., 1., 0., viewport.source.width);
-    let y = map(y, -1., 1., viewport.source.height, 0.);
+    let x = map(x, -1., 1., 0., screen_resolution.0 as f32);
+    let y = map(y, -1., 1., screen_resolution.1 as f32, 0.);
+
+    // Average width and height scale:
+    // Get average of width and height and divide by 100% (width/height of 2)
+    let scale = ((viewport.target.width + viewport.target.height) / 2.) / 2.;
+
+    // Align in glyphon viewport-space
+    let (x, y) = get_aligned_position(
+        alignment,
+        (x, y),
+        || {
+            text_buffer
+                .layout_runs()
+                .map(|r| r.line_w)
+                .fold(0., f32::max)
+                * scale
+        },
+        || {
+            text_buffer
+                .layout_runs()
+                .map(|r| r.line_height)
+                .sum::<f32>()
+                * scale
+        },
+    );
 
     TextArea {
         buffer: text_buffer,

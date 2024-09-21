@@ -14,6 +14,11 @@ use super::primitive::{
 
 /// The parameters for [Atoms]
 pub struct AtomsSpec<'a> {
+    /// The viewport to render in
+    pub viewport: ViewportProjection,
+    /// The resolution of the screen.
+    /// Will render text at this resolution.
+    pub screen_resolution: (u32, u32),
     /// The atoms
     pub atoms: &'a [AtomSpec<'a>],
     /// The color of the shuttle lines
@@ -64,9 +69,10 @@ impl Atoms {
         queue: &Queue,
         format: TextureFormat,
         globals: &Globals,
-        viewport: ViewportProjection,
         shader_composer: &mut Composer,
         AtomsSpec {
+            viewport,
+            screen_resolution,
             atoms,
             shuttle_color,
             shuttle_line_width,
@@ -180,6 +186,7 @@ impl Atoms {
                     font_family: label_font,
                     texts: &labels,
                     color: label_color,
+                    screen_resolution,
                 },
             ),
             viewport,
