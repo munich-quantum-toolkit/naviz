@@ -3,6 +3,7 @@ use glyphon::{
     Attrs, Buffer, Cache, Color, Family, FontSystem, Metrics, Resolution, Shaping, SwashCache,
     TextArea, TextAtlas, TextBounds, TextRenderer,
 };
+use log::warn;
 use wgpu::{Device, MultisampleState, Queue, RenderPass, TextureFormat};
 
 use crate::viewport::ViewportProjection;
@@ -65,12 +66,6 @@ impl Text {
             color,
         }: TextSpec<'a, TextIterator>,
     ) -> Self {
-        // Scale font-size by average scale from viewport to screen resolution
-        let font_size = font_size
-            * ((screen_resolution.0 as f32 / viewport_projection.source.width)
-                + (screen_resolution.1 as f32 / viewport_projection.source.height))
-            / 2.;
-
         let color = Color::rgba(color[0], color[1], color[2], color[3]);
 
         let mut font_system = FontSystem::new();
@@ -204,8 +199,7 @@ fn to_text_area(
     let y = map(y, -1., 1., screen_resolution.1 as f32, 0.);
 
     // Average width and height scale:
-    // Get average of width and height and divide by 100% (width/height of 2)
-    let scale = ((viewport.target.width + viewport.target.height) / 2.) / 2.;
+    let scale = get_scale(mat, screen_resolution);
 
     // Align in glyphon viewport-space
     let (x, y) = get_aligned_position(
@@ -257,4 +251,27 @@ fn get_aligned_position(
         VAlignment::Bottom => y - h(),
     };
     (x, y)
+}
+
+/// Gets the scaling-factor to use.
+/// Will average scale in x and y direction.
+///
+/// When debugging, will warn if the two scales are off.
+fn get_scale(projection_matrix: Mat4, screen_resolution: (u32, u32)) -> f32 {
+    // Get scale:
+    // transform a unit from input space into canvas space,
+    // then into screen space
+
+    let canvas_unit_x = projection_matrix.transform_vector3(Vec3::new(1., 0., 0.)).x / 2.0;
+    let scale_x = canvas_unit_x * screen_resolution.0 as f32;
+    let canvas_unit_y = projection_matrix.transform_vector3(Vec3::new(0., 1., 0.)).y / 2.0;
+    let scale_y = -canvas_unit_y * screen_resolution.1 as f32;
+
+    const MAX_DIFF: f32 = 0.001;
+    if cfg!(debug_assertions) && (scale_x - scale_y).abs() > MAX_DIFF {
+        warn!("Different scale: {scale_x} != {scale_y}");
+    }
+
+    // Average directions
+    (scale_x + scale_y) / 2.
 }

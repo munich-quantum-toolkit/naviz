@@ -2071,6 +2071,7 @@ dependencies = [
  "bytemuck",
  "glam",
  "glyphon",
+ "log",
  "naga_oil",
  "ureq",
  "wgpu",

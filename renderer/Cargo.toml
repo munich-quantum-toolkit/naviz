@@ -13,6 +13,7 @@ version = "0.0.0"
 bytemuck = "1.18.0"
 glam = {version = "0.29.0", features = ["bytemuck"]}
 glyphon = "0.6.0"
+log = "0.4.22"
 naga_oil = "0.15.0"
 wgpu = {version = "22.1.0", default-features = false, features = ["wgsl", "naga-ir"]}
 
