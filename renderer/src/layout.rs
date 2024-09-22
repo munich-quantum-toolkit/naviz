@@ -3,6 +3,7 @@ use crate::viewport::{ViewportProjection, ViewportSource, ViewportTarget};
 pub struct Layout {
     pub content: ViewportProjection,
     pub legend: ViewportProjection,
+    pub time: ViewportProjection,
 }
 
 impl Layout {
@@ -20,9 +21,15 @@ impl Layout {
     /// Target area for the legend
     const LEGEND_TARGET: ViewportTarget = ViewportTarget {
         x: 0.8 * 2. - 1. + Self::PADDING + Self::PADDING_BETWEEN,
+        y: -0.9 + Self::PADDING,
+        width: 0.2 * 2. - 2. * Self::PADDING,
+        height: 1.9 - 2. * Self::PADDING,
+    };
+    const TIME_TARGET: ViewportTarget = ViewportTarget {
+        x: 0.8 * 2. - 1. + Self::PADDING + Self::PADDING_BETWEEN,
         y: -1. + Self::PADDING,
         width: 0.2 * 2. - 2. * Self::PADDING,
-        height: 2.0 - 2. * Self::PADDING,
+        height: 0.1 - 2. * Self::PADDING,
     };
 
     /// Creates a new layout based on the passed `screen_size`, `content` size, and `legend_height`.
@@ -35,6 +42,7 @@ impl Layout {
         content: ViewportSource,
         content_padding_y: f32,
         legend_height: f32,
+        time_height: f32,
     ) -> Self {
         // layout content
         let content_size = get_size_keep_aspect(
@@ -53,24 +61,46 @@ impl Layout {
             gobble_space_left_until(Self::LEGEND_TARGET, content.target, 0. + Self::PADDING, 0.4);
 
         // calculate appropriate legend width
-        let legend_height_ratio = legend_height / (0.8 * 2. * screen_size.1 as f32);
-        let legend_width = legend_target.width * legend_height_ratio * screen_size.0 as f32;
-
-        // layout legend
-        let legend_size = get_size_keep_aspect(
+        let legend_width = calculate_width(
+            legend_height,
             screen_size,
             (legend_target.width, legend_target.height),
-            (legend_width, legend_height),
         );
+
+        // layout legend
         let legend = ViewportProjection {
             source: ViewportSource {
                 width: legend_width,
                 height: legend_height,
             },
-            target: center_in(legend_target, legend_size),
+            target: legend_target,
         };
 
-        Self { content, legend }
+        // grow time target by gobbling free space on the left
+        let time_target =
+            gobble_space_left_until(Self::TIME_TARGET, content.target, 0. + Self::PADDING, 0.4);
+
+        // calculate appropriate time width
+        let time_width = calculate_width(
+            time_height,
+            screen_size,
+            (time_target.width, time_target.height),
+        );
+
+        // layout time
+        let time = ViewportProjection {
+            source: ViewportSource {
+                width: time_width,
+                height: time_height,
+            },
+            target: time_target,
+        };
+
+        Self {
+            content,
+            legend,
+            time,
+        }
     }
 }
 
@@ -160,4 +190,13 @@ fn gobble_space_left_until(
     } else {
         target
     }
+}
+
+/// Calculates the source width based on the passed source `height`, `screen_size` and viewport `target` size
+fn calculate_width(
+    height: f32,
+    screen_size: (u32, u32),
+    (target_width, target_height): (f32, f32),
+) -> f32 {
+    height / screen_size.1 as f32 / target_height * target_width * screen_size.0 as f32
 }

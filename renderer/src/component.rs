@@ -15,6 +15,7 @@ pub mod atoms;
 pub mod legend;
 pub mod machine;
 pub mod primitive;
+pub mod time;
 
 /// The spec of a [Component].
 pub struct ComponentSpec<'a, Spec: bytemuck::NoUninit> {

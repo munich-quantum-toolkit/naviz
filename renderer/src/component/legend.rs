@@ -94,7 +94,7 @@ impl Legend {
             .sum::<usize>();
         let mut colors = Vec::with_capacity(num_colors);
         let mut texts = Vec::with_capacity(num_texts);
-        let mut y = 0.;
+        let mut y = heading_skip; // Start with margin from top
         for (heading, elements) in entries.into_iter() {
             // heading
             texts.push((
