@@ -1,5 +1,6 @@
 use crate::viewport::{ViewportProjection, ViewportSource, ViewportTarget};
 
+#[derive(Clone, Copy, Debug)]
 pub struct Layout {
     pub content: ViewportProjection,
     pub legend: ViewportProjection,

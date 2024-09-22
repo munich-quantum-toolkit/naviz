@@ -18,6 +18,7 @@ pub mod primitive;
 pub mod time;
 
 /// The spec of a [Component].
+#[derive(Clone, Copy, Debug)]
 pub struct ComponentSpec<'a, Spec: bytemuck::NoUninit> {
     /// The specifications for the instances
     specs: &'a [Spec],

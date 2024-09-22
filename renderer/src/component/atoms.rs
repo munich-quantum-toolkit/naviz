@@ -13,6 +13,7 @@ use super::primitive::{
 };
 
 /// The parameters for [Atoms]
+#[derive(Clone, Copy, Debug)]
 pub struct AtomsSpec<'a, AtomIterator>
 where
     for<'r> &'r AtomIterator: IntoIterator<Item = &'r AtomSpec<'a>>,
@@ -41,6 +42,7 @@ where
 }
 
 /// The parameters of a single atom
+#[derive(Clone, Copy, Debug)]
 pub struct AtomSpec<'a> {
     /// The position of this atom
     pub pos: [f32; 2],

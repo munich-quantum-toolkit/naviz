@@ -11,6 +11,7 @@ use super::primitive::{
     text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
 };
 
+#[derive(Clone, Copy, Debug)]
 pub struct LegendEntrySpec<'a> {
     /// The text to display
     pub text: &'a str,
@@ -19,6 +20,7 @@ pub struct LegendEntrySpec<'a> {
     pub color: Option<[u8; 4]>,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct LegendSpec<'a, EntryIterator>
 where
     for<'r> &'r EntryIterator: IntoIterator<Item = &'r (&'a str, &'a [LegendEntrySpec<'a>])>,

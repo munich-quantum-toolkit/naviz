@@ -14,6 +14,7 @@ use super::primitive::{
 };
 
 /// A vertical position ([Top][VPosition::Top] or [Bottom][VPosition::Bottom])
+#[derive(Clone, Copy, Debug)]
 pub enum VPosition {
     Top,
     Bottom,
@@ -49,6 +50,7 @@ impl VPosition {
 }
 
 /// A horizontal position ([Left][HPosition::Left] or [Right][HPosition::Right])
+#[derive(Clone, Copy, Debug)]
 pub enum HPosition {
     Left,
     Right,
@@ -83,6 +85,7 @@ impl HPosition {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct MachineSpec<
     'a,
     TrapIterator: IntoIterator<Item = (f32, f32)>,

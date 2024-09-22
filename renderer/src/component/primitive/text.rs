@@ -8,7 +8,7 @@ use wgpu::{Device, MultisampleState, Queue, RenderPass, TextureFormat};
 
 use crate::viewport::ViewportProjection;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum HAlignment {
     Left,
     #[default]
@@ -16,7 +16,7 @@ pub enum HAlignment {
     Right,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub enum VAlignment {
     Top,
     #[default]
@@ -24,9 +24,10 @@ pub enum VAlignment {
     Bottom,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Alignment(pub HAlignment, pub VAlignment);
 
+#[derive(Clone, Copy, Debug)]
 pub struct TextSpec<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), Alignment)>> {
     /// The viewport projection to render in.
     /// Does not use viewport (or globals) directly,

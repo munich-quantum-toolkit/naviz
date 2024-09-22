@@ -7,6 +7,7 @@ use crate::{component::Component, globals::Globals, viewport::Viewport};
 
 use super::lines::{LineSpec, Lines};
 
+#[derive(Clone, Copy, Debug)]
 pub struct RectangleSpec {
     // Position of the rectangle
     pub start: [f32; 2],

@@ -4,6 +4,7 @@ use crate::viewport::ViewportProjection;
 
 use super::primitive::text::{Alignment, HAlignment, Text, TextSpec, VAlignment};
 
+#[derive(Clone, Copy, Debug)]
 pub struct TimeSpec<'a> {
     /// The viewport to render in
     pub viewport: ViewportProjection,
