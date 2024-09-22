@@ -13,14 +13,17 @@ use super::primitive::{
 };
 
 /// The parameters for [Atoms]
-pub struct AtomsSpec<'a> {
+pub struct AtomsSpec<'a, AtomIterator>
+where
+    for<'r> &'r AtomIterator: IntoIterator<Item = &'r AtomSpec<'a>>,
+{
     /// The viewport to render in
     pub viewport: ViewportProjection,
     /// The resolution of the screen.
     /// Will render text at this resolution.
     pub screen_resolution: (u32, u32),
     /// The atoms
-    pub atoms: &'a [AtomSpec<'a>],
+    pub atoms: AtomIterator,
     /// The color of the shuttle lines
     pub shuttle_color: [u8; 4],
     /// The width of the shuttle lines
@@ -64,7 +67,7 @@ pub struct Atoms {
 }
 
 impl Atoms {
-    pub fn new(
+    pub fn new<'a, AtomIterator>(
         device: &Device,
         queue: &Queue,
         format: TextureFormat,
@@ -81,11 +84,14 @@ impl Atoms {
             label_font_size,
             label_font,
             label_color,
-        }: AtomsSpec,
-    ) -> Self {
+        }: AtomsSpec<'a, AtomIterator>,
+    ) -> Self
+    where
+        for<'r> &'r AtomIterator: IntoIterator<Item = &'r AtomSpec<'a>>,
+    {
         // The circles for the atoms
         let atom_circles: Vec<_> = atoms
-            .iter()
+            .into_iter()
             .map(
                 |AtomSpec {
                      pos,
@@ -104,7 +110,7 @@ impl Atoms {
 
         // The shuttle lines
         let shuttles: Vec<_> = atoms
-            .iter()
+            .into_iter()
             .filter(|s| s.shuttle)
             .flat_map(
                 |AtomSpec {
@@ -138,7 +144,7 @@ impl Atoms {
 
         // The labels
         let labels: Vec<_> = atoms
-            .iter()
+            .into_iter()
             .map(
                 |AtomSpec {
                      pos: [x, y],
@@ -184,7 +190,7 @@ impl Atoms {
                     viewport_projection,
                     font_size: label_font_size,
                     font_family: label_font,
-                    texts: &labels,
+                    texts: labels,
                     color: label_color,
                     screen_resolution,
                 },

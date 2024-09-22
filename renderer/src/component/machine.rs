@@ -83,7 +83,11 @@ impl HPosition {
     }
 }
 
-pub struct MachineSpec<'a> {
+pub struct MachineSpec<
+    'a,
+    TrapIterator: IntoIterator<Item = (f32, f32)>,
+    ZoneIterator: IntoIterator<Item = RectangleSpec>,
+> {
     /// The viewport to fill.
     /// Will be the target of the grid.
     /// Labels will be drawn outside of the viewport
@@ -114,7 +118,7 @@ pub struct MachineSpec<'a> {
     /// Where to draw the numbers and labels
     pub legend_position: (VPosition, HPosition),
     /// The positions of the static traps
-    pub traps: &'a [(f32, f32)],
+    pub traps: TrapIterator,
     /// The radius of all static traps
     pub trap_radius: f32,
     /// The line width of the static traps
@@ -122,7 +126,7 @@ pub struct MachineSpec<'a> {
     /// The color of the static traps
     pub trap_color: [u8; 4],
     /// The specifications for the zones. See [RectangleSpec]
-    pub zones: &'a [RectangleSpec],
+    pub zones: ZoneIterator,
 }
 
 /// A component to draw the machine background:
@@ -141,7 +145,10 @@ pub struct Machine {
 const LABEL_PADDING: f32 = 12.;
 
 impl Machine {
-    pub fn new(
+    pub fn new<
+        TrapIterator: IntoIterator<Item = (f32, f32)>,
+        ZoneIterator: IntoIterator<Item = RectangleSpec>,
+    >(
         device: &Device,
         queue: &Queue,
         format: TextureFormat,
@@ -166,7 +173,7 @@ impl Machine {
             trap_line_width,
             trap_color,
             zones,
-        }: MachineSpec,
+        }: MachineSpec<TrapIterator, ZoneIterator>,
     ) -> Self {
         // Create the LineSpecs for the grid; first x, then y
         let lines: Vec<_> = range_f32(0., viewport.source.width, grid_step.0)
@@ -192,9 +199,9 @@ impl Machine {
 
         // Create the CircleSpecs for the static traps
         let traps: Vec<_> = traps
-            .iter()
+            .into_iter()
             .map(|(x, y)| CircleSpec {
-                center: [*x, *y],
+                center: [x, y],
                 radius: trap_radius,
                 radius_inner: trap_radius - trap_line_width,
                 color: trap_color,
@@ -228,28 +235,30 @@ impl Machine {
                 }),
             )
             .collect();
-        let mut texts: Vec<_> = texts.iter().map(|(t, p, a)| (t.as_str(), *p, *a)).collect();
+        let texts = texts.iter().map(|(t, p, a)| (t.as_str(), *p, *a));
         // Add axis labels
-        texts.push((
-            legend_labels.0,
+        let texts = texts.chain([
             (
-                legend_pos_y
-                    .inverse()
-                    .get_x(-LABEL_PADDING, viewport.source.width + LABEL_PADDING),
-                legend_pos_x.get_y(0., viewport.source.height),
+                legend_labels.0,
+                (
+                    legend_pos_y
+                        .inverse()
+                        .get_x(-LABEL_PADDING, viewport.source.width + LABEL_PADDING),
+                    legend_pos_x.get_y(0., viewport.source.height),
+                ),
+                Alignment(legend_pos_y.inverse().get_alignment(), VAlignment::Center),
             ),
-            Alignment(legend_pos_y.inverse().get_alignment(), VAlignment::Center),
-        ));
-        texts.push((
-            legend_labels.1,
             (
-                legend_pos_y.get_x(0., viewport.source.width),
-                legend_pos_x
-                    .inverse()
-                    .get_y(-LABEL_PADDING, viewport.source.height + LABEL_PADDING),
+                legend_labels.1,
+                (
+                    legend_pos_y.get_x(0., viewport.source.width),
+                    legend_pos_x
+                        .inverse()
+                        .get_y(-LABEL_PADDING, viewport.source.height + LABEL_PADDING),
+                ),
+                Alignment(HAlignment::Center, legend_pos_x.inverse().get_alignment()),
             ),
-            Alignment(HAlignment::Center, legend_pos_x.inverse().get_alignment()),
-        ));
+        ]);
 
         let viewport_projection = viewport;
         let viewport = Viewport::new(viewport, device);
@@ -272,7 +281,7 @@ impl Machine {
                     viewport_projection,
                     font_size: legend_font_size,
                     font_family: legend_font,
-                    texts: &texts,
+                    texts,
                     color: legend_color,
                     screen_resolution,
                 },

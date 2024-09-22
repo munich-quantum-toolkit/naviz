@@ -32,7 +32,7 @@ impl Rectangles {
         globals: &Globals,
         viewport: &Viewport,
         shader_composer: &mut Composer,
-        rectangles: &[RectangleSpec],
+        rectangles: impl IntoIterator<Item = RectangleSpec>,
     ) -> Self {
         Self(Lines::new(
             device,
@@ -46,9 +46,9 @@ impl Rectangles {
 }
 
 /// Converts a slice of [RectangleSpec]s to a [Vec] of [LineSpec]s
-fn rectangles_to_lines(rectangles: &[RectangleSpec]) -> Vec<LineSpec> {
+fn rectangles_to_lines(rectangles: impl IntoIterator<Item = RectangleSpec>) -> Vec<LineSpec> {
     rectangles
-        .iter()
+        .into_iter()
         .flat_map(
             |RectangleSpec {
                  start: [x, y],
@@ -66,36 +66,36 @@ fn rectangles_to_lines(rectangles: &[RectangleSpec]) -> Vec<LineSpec> {
                 //  <-----+
                 [
                     LineSpec {
-                        start: [*x - delta, *y],
-                        end: [*x + *w + delta, *y],
-                        color: *color,
-                        width: *width,
-                        segment_length: *segment_length,
-                        duty: *duty,
+                        start: [x - delta, y],
+                        end: [x + w + delta, y],
+                        color,
+                        width,
+                        segment_length,
+                        duty,
                     },
                     LineSpec {
-                        end: [*x + *w, *y - delta],
-                        start: [*x + *w, *y + *h + delta],
-                        color: *color,
-                        width: *width,
-                        segment_length: *segment_length,
-                        duty: *duty,
+                        end: [x + w, y - delta],
+                        start: [x + w, y + h + delta],
+                        color,
+                        width,
+                        segment_length,
+                        duty,
                     },
                     LineSpec {
-                        start: [*x + *w + delta, *y + *h],
-                        end: [*x - delta, *y + *h],
-                        color: *color,
-                        width: *width,
-                        segment_length: *segment_length,
-                        duty: *duty,
+                        start: [x + w + delta, y + h],
+                        end: [x - delta, y + h],
+                        color,
+                        width,
+                        segment_length,
+                        duty,
                     },
                     LineSpec {
-                        end: [*x, *y + *h + delta],
-                        start: [*x, *y - delta],
-                        color: *color,
-                        width: *width,
-                        segment_length: *segment_length,
-                        duty: *duty,
+                        end: [x, y + h + delta],
+                        start: [x, y - delta],
+                        color,
+                        width,
+                        segment_length,
+                        duty,
                     },
                 ]
             },

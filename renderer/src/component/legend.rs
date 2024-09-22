@@ -19,7 +19,10 @@ pub struct LegendEntrySpec<'a> {
     pub color: Option<[u8; 4]>,
 }
 
-pub struct LegendSpec<'a> {
+pub struct LegendSpec<'a, EntryIterator>
+where
+    for<'r> &'r EntryIterator: IntoIterator<Item = &'r (&'a str, &'a [LegendEntrySpec<'a>])>,
+{
     /// The viewport to render in
     pub viewport: ViewportProjection,
     /// The resolution of the screen.
@@ -44,7 +47,7 @@ pub struct LegendSpec<'a> {
     /// The padding between a circle and the text
     pub color_padding: f32,
     /// The legend entries
-    pub entries: &'a [(&'a str, &'a [LegendEntrySpec<'a>])],
+    pub entries: EntryIterator,
 }
 
 /// A component to draw the legend:
@@ -57,7 +60,7 @@ pub struct Legend {
 }
 
 impl Legend {
-    pub fn new(
+    pub fn new<'a, EntryIterator>(
         device: &Device,
         queue: &Queue,
         format: TextureFormat,
@@ -74,21 +77,25 @@ impl Legend {
             color_circle_radius,
             color_padding,
             entries,
-        }: LegendSpec,
-    ) -> Self {
+        }: LegendSpec<'a, EntryIterator>,
+    ) -> Self
+    where
+        for<'r> &'r EntryIterator: IntoIterator<Item = &'r (&'a str, &'a [LegendEntrySpec<'a>])>,
+    {
         // Layout the texts.
         // Will always lay out heading, then all entries, each separated by `entry_skip`.
         // After the block, additional space will be skipped so that the distance to the next
         // heading will be `heading_skip`.
-        let num_texts = entries.iter().map(|e| e.1.len()).sum::<usize>() + entries.len();
+        let num_texts =
+            entries.into_iter().map(|e| e.1.len()).sum::<usize>() + entries.into_iter().count();
         let num_colors = entries
-            .iter()
+            .into_iter()
             .map(|e| e.1.iter().filter(|e| e.color.is_some()).count())
             .sum::<usize>();
         let mut colors = Vec::with_capacity(num_colors);
         let mut texts = Vec::with_capacity(num_texts);
         let mut y = 0.;
-        for (heading, elements) in entries.iter() {
+        for (heading, elements) in entries.into_iter() {
             // heading
             texts.push((
                 *heading,
@@ -134,7 +141,7 @@ impl Legend {
                     viewport_projection,
                     font_size,
                     font_family: font,
-                    texts: &texts,
+                    texts,
                     color: text_color,
                     screen_resolution,
                 },

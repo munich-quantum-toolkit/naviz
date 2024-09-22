@@ -26,7 +26,7 @@ pub enum VAlignment {
 #[derive(Clone, Copy, Default)]
 pub struct Alignment(pub HAlignment, pub VAlignment);
 
-pub struct TextSpec<'a> {
+pub struct TextSpec<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), Alignment)>> {
     /// The viewport projection to render in.
     /// Does not use viewport (or globals) directly,
     /// but renders using [glyphon].
@@ -39,7 +39,7 @@ pub struct TextSpec<'a> {
     /// The font to use
     pub font_family: &'a str,
     /// The texts to render: (`text`, `position`, `alignment`)
-    pub texts: &'a [(&'a str, (f32, f32), Alignment)],
+    pub texts: TextIterator,
     /// The color of the texts to render
     pub color: [u8; 4],
 }
@@ -52,7 +52,7 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn new(
+    pub fn new<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), Alignment)>>(
         device: &Device,
         queue: &Queue,
         format: TextureFormat,
@@ -63,7 +63,7 @@ impl Text {
             font_family,
             texts,
             color,
-        }: TextSpec,
+        }: TextSpec<'a, TextIterator>,
     ) -> Self {
         // Scale font-size by average scale from viewport to screen resolution
         let font_size = font_size
@@ -96,7 +96,7 @@ impl Text {
 
         // Convert the passed texts to text buffers
         let text_buffers: Vec<_> = texts
-            .iter()
+            .into_iter()
             .map(|(text, pos, alignment)| {
                 (
                     to_text_buffer(text, &mut font_system, font_size, font_family),
@@ -109,8 +109,8 @@ impl Text {
         let text_areas = text_buffers.iter().map(|(buf, pos, alignment)| {
             to_text_area(
                 buf,
-                **pos,
-                **alignment,
+                *pos,
+                *alignment,
                 color,
                 viewport_projection,
                 screen_resolution,
