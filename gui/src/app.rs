@@ -1,6 +1,6 @@
 use eframe::egui_wgpu::CallbackTrait;
 use log::error;
-use naviz_renderer::renderer::Renderer;
+use naviz_renderer::renderer::{Renderer, RendererSpec};
 
 use crate::{canvas::WgpuCanvas, future_helper::FutureHelper, menu::MenuBar};
 
@@ -79,7 +79,9 @@ impl RendererAdapter {
             .callback_resources
             .insert(Renderer::new(
                 &wgpu_render_state.device,
+                &wgpu_render_state.queue,
                 wgpu_render_state.target_format,
+                RendererSpec::example((1920, 1080)), // Use some default resolution to create renderer, as the canvas-resolution is not yet known
             ));
     }
 }
