@@ -48,7 +48,7 @@ impl eframe::App for App {
                 }
             ));
 
-            WgpuCanvas::new(RendererAdapter()).draw(ctx, ui);
+            WgpuCanvas::new(RendererAdapter(), 16. / 9.).draw(ctx, ui);
         });
     }
 }
