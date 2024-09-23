@@ -2,14 +2,14 @@ use eframe::egui_wgpu::{Callback, CallbackTrait};
 use egui::{Color32, Context, Ui, Vec2};
 
 /// A canvas that allows drawing using OpenGL.
-/// The content to draw must implement [GlDrawable] and be set in [GlCanvas::new].
+/// The content to draw must implement [CanvasContent] and be set in [WgpuCanvas::new].
 pub struct WgpuCanvas<C: CanvasContent + 'static> {
     content: C,
     aspect: f32,
 }
 
 impl<C: CanvasContent + 'static> WgpuCanvas<C> {
-    /// Create a new [GlCanvas] that renders the specified content.
+    /// Create a new [WgpuCanvas] that renders the specified content.
     pub fn new(content: C, aspect: f32) -> Self {
         Self { content, aspect }
     }
