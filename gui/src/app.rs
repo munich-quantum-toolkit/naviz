@@ -2,7 +2,11 @@ use eframe::egui_wgpu::CallbackTrait;
 use log::error;
 use naviz_renderer::renderer::{Renderer, RendererSpec};
 
-use crate::{canvas::WgpuCanvas, future_helper::FutureHelper, menu::MenuBar};
+use crate::{
+    canvas::{CanvasContent, WgpuCanvas},
+    future_helper::FutureHelper,
+    menu::MenuBar,
+};
 
 /// The main App to draw using [egui]/[eframe]
 pub struct App {
@@ -98,5 +102,11 @@ impl CallbackTrait for RendererAdapter {
         } else {
             error!("Failed to get renderer");
         }
+    }
+}
+
+impl CanvasContent for RendererAdapter {
+    fn background_color(&self) -> egui::Color32 {
+        egui::Color32::WHITE
     }
 }

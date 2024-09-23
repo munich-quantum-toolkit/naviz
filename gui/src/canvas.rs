@@ -1,14 +1,14 @@
 use eframe::egui_wgpu::{Callback, CallbackTrait};
-use egui::{Context, Ui, Vec2};
+use egui::{Color32, Context, Ui, Vec2};
 
 /// A canvas that allows drawing using OpenGL.
 /// The content to draw must implement [GlDrawable] and be set in [GlCanvas::new].
-pub struct WgpuCanvas<C: CallbackTrait + 'static> {
+pub struct WgpuCanvas<C: CanvasContent + 'static> {
     content: C,
     aspect: f32,
 }
 
-impl<C: CallbackTrait + Clone + 'static> WgpuCanvas<C> {
+impl<C: CanvasContent + 'static> WgpuCanvas<C> {
     /// Create a new [GlCanvas] that renders the specified content.
     pub fn new(content: C, aspect: f32) -> Self {
         Self { content, aspect }
@@ -19,6 +19,7 @@ impl<C: CallbackTrait + Clone + 'static> WgpuCanvas<C> {
     /// Also requests a repaint immediately.
     pub fn draw(&self, ctx: &Context, ui: &mut Ui) {
         egui::Frame::canvas(ui.style())
+            .fill(self.content.background_color())
             .show(ui, |ui| {
                 let available = ui.available_size();
                 let desired = constrain_to_aspect(available, self.aspect);
@@ -48,6 +49,10 @@ fn constrain_to_aspect(Vec2 { x: mut w, y: mut h }: Vec2, aspect: f32) -> Vec2 {
         (false, false) => { /* Infinite in both directions => always correct aspect ratio */ }
     }
     Vec2 { x: w, y: h }
+}
+
+pub trait CanvasContent: CallbackTrait + Clone {
+    fn background_color(&self) -> Color32;
 }
 
 /// An empty canvas.
