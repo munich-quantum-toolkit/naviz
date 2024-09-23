@@ -153,7 +153,7 @@ impl Legend {
         }
     }
 
-    /// Draws this [Machine].
+    /// Draws this [Legend].
     ///
     /// May overwrite bind groups.
     /// If `REBIND` is `true`, will call the passed `rebind`-function to rebind groups.
