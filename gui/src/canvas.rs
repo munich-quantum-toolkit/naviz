@@ -1,64 +1,79 @@
-use std::sync::Arc;
-
-use eframe::{
-    egui_glow::CallbackFn,
-    glow::{self, HasContext, SCISSOR_TEST, VIEWPORT},
-};
-use egui::{Context, PaintCallback, Ui};
+use eframe::egui_wgpu::{Callback, CallbackTrait};
+use egui::{Color32, Context, Ui, Vec2};
 
 /// A canvas that allows drawing using OpenGL.
-/// The content to draw must implement [GlDrawable] and be set in [GlCanvas::new].
-pub struct GlCanvas<C: GlDrawable + 'static> {
+/// The content to draw must implement [CanvasContent] and be set in [WgpuCanvas::new].
+pub struct WgpuCanvas<C: CanvasContent + 'static> {
     content: C,
+    aspect: f32,
 }
 
-impl<C: GlDrawable + 'static> GlCanvas<C> {
-    /// Create a new [GlCanvas] that renders the specified content.
-    pub fn new(content: C) -> Self {
-        Self { content }
+impl<C: CanvasContent + 'static> WgpuCanvas<C> {
+    /// Create a new [WgpuCanvas] that renders the specified content.
+    pub fn new(content: C, aspect: f32) -> Self {
+        Self { content, aspect }
     }
 
     /// Draws this canvas.
     /// Takes remaining space of parent.
     /// Also requests a repaint immediately.
     pub fn draw(&self, ctx: &Context, ui: &mut Ui) {
-        egui::Frame::canvas(ui.style()).show(ui, |ui| {
-            let (_, rect) = ui.allocate_space(ui.available_size());
-            let content = self.content;
+        egui::Frame::canvas(ui.style())
+            .fill(self.content.background_color())
+            .show(ui, |ui| {
+                let available = ui.available_size();
+                let desired = constrain_to_aspect(available, self.aspect);
+                let (_, rect) = ui.allocate_space(desired);
+                ui.painter()
+                    .add(Callback::new_paint_callback(rect, self.content.clone()));
 
-            ui.painter().add(PaintCallback {
-                rect,
-                callback: Arc::new(CallbackFn::new(move |_info, painter| {
-                    let gl = painter.gl().as_ref();
-                    unsafe {
-                        let mut vp = [0, 0, 0, 0];
-                        gl.get_parameter_i32_slice(VIEWPORT, &mut vp);
-                        gl.enable(SCISSOR_TEST);
-                        gl.scissor(vp[0], vp[1], vp[2], vp[3]);
-                    }
-
-                    content.draw(gl);
-
-                    unsafe {
-                        gl.disable(SCISSOR_TEST);
-                    }
-                })),
+                ctx.request_repaint();
             });
-
-            ctx.request_repaint();
-        });
     }
 }
 
-/// A [GlDrawable] is something that can be drawn using OpenGL.
-/// It has a [draw][GlDrawable::draw]-function to do that.
-pub trait GlDrawable: Send + Sync + Copy {
-    fn draw(&self, gl: &glow::Context);
+/// constrains the passed size (in the [Vec2]) to be the passed `aspect`.
+/// Will shrink one of the dimensions if needed.
+fn constrain_to_aspect(Vec2 { x: mut w, y: mut h }: Vec2, aspect: f32) -> Vec2 {
+    match (w.is_finite(), h.is_finite()) {
+        (true, true) => {
+            if w / aspect < h {
+                h = w / aspect;
+            }
+            if h * aspect < w {
+                w = h * aspect;
+            }
+        }
+        (false, true) => w = h * aspect,
+        (true, false) => h = w / aspect,
+        (false, false) => { /* Infinite in both directions => always correct aspect ratio */ }
+    }
+    Vec2 { x: w, y: h }
 }
 
-/// A closure can be a [GlDrawable].
-impl<F: Fn(&glow::Context) + Send + Sync + Copy> GlDrawable for F {
-    fn draw(&self, gl: &glow::Context) {
-        self(gl)
+pub trait CanvasContent: CallbackTrait + Clone {
+    fn background_color(&self) -> Color32;
+}
+
+/// An empty canvas.
+///
+/// Draws nothing
+#[derive(Clone, Copy)]
+pub struct EmptyCanvas {}
+
+#[allow(dead_code)]
+impl EmptyCanvas {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl CallbackTrait for EmptyCanvas {
+    fn paint<'a>(
+        &'a self,
+        _info: egui::PaintCallbackInfo,
+        _render_pass: &mut eframe::wgpu::RenderPass<'a>,
+        _callback_resources: &'a eframe::egui_wgpu::CallbackResources,
+    ) {
     }
 }

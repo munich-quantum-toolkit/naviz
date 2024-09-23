@@ -1,4 +1,12 @@
-use crate::{canvas::GlCanvas, future_helper::FutureHelper, menu::MenuBar};
+use eframe::egui_wgpu::CallbackTrait;
+use log::error;
+use naviz_renderer::renderer::{Renderer, RendererSpec};
+
+use crate::{
+    canvas::{CanvasContent, WgpuCanvas},
+    future_helper::FutureHelper,
+    menu::MenuBar,
+};
 
 /// The main App to draw using [egui]/[eframe]
 pub struct App {
@@ -10,7 +18,9 @@ pub struct App {
 
 impl App {
     /// Create a new instance of the [App]
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        RendererAdapter::setup(cc);
+
         Self {
             future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
             menu_bar: MenuBar::new(),
@@ -42,12 +52,61 @@ impl eframe::App for App {
                 }
             ));
 
-            GlCanvas::new(|gl: &eframe::glow::Context| unsafe {
-                use eframe::glow::HasContext;
-                gl.clear_color(0.8, 0.3, 0., 1.);
-                gl.clear(eframe::glow::COLOR_BUFFER_BIT);
-            })
-            .draw(ctx, ui);
+            WgpuCanvas::new(RendererAdapter(), 16. / 9.).draw(ctx, ui);
         });
+    }
+}
+
+/// An adapter from [naviz_renderer] to [CallbackTrait].
+///
+/// Setup the renderer using [RendererAdapter::setup]
+/// before drawing the renderer using the callback implementation.
+#[derive(Clone)]
+struct RendererAdapter();
+
+impl RendererAdapter {
+    /// Creates a [Renderer] and stores it in the egui [RenderState][eframe::egui_wgpu::RenderState].
+    /// This created renderer will later be rendered from [RendererAdapter::paint].
+    ///
+    /// The renderer is stored in the renderer state
+    /// in order for the graphics pipeline to have the same lifetime as the egui render pass.
+    /// See [this section from the egui demo][https://github.com/emilk/egui/blob/0.28.1/crates/egui_demo_app/src/apps/custom3d_wgpu.rs#L83-L85]
+    pub fn setup(cc: &eframe::CreationContext<'_>) {
+        let wgpu_render_state = cc
+            .wgpu_render_state
+            .as_ref()
+            .expect("No wgpu render state found");
+
+        wgpu_render_state
+            .renderer
+            .write()
+            .callback_resources
+            .insert(Renderer::new(
+                &wgpu_render_state.device,
+                &wgpu_render_state.queue,
+                wgpu_render_state.target_format,
+                RendererSpec::example((1920, 1080)), // Use some default resolution to create renderer, as the canvas-resolution is not yet known
+            ));
+    }
+}
+
+impl CallbackTrait for RendererAdapter {
+    fn paint<'a>(
+        &'a self,
+        _info: egui::PaintCallbackInfo,
+        render_pass: &mut wgpu::RenderPass<'a>,
+        callback_resources: &'a eframe::egui_wgpu::CallbackResources,
+    ) {
+        if let Some(r) = callback_resources.get::<Renderer>() {
+            r.draw(render_pass);
+        } else {
+            error!("Failed to get renderer");
+        }
+    }
+}
+
+impl CanvasContent for RendererAdapter {
+    fn background_color(&self) -> egui::Color32 {
+        egui::Color32::WHITE
     }
 }

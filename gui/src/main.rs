@@ -32,9 +32,17 @@ fn main() {
     let web_options = eframe::WebOptions::default();
 
     wasm_bindgen_futures::spawn_local(async {
+        use eframe::wasm_bindgen::JsCast;
+
+        let canvas = web_sys::window()
+            .and_then(|w| w.document())
+            .and_then(|d| d.get_element_by_id("naviz"))
+            .and_then(|e| e.dyn_into().ok())
+            .expect("Failed to get canvas");
+
         let start_result = eframe::WebRunner::new()
             .start(
-                "naviz",
+                canvas,
                 web_options,
                 Box::new(|cc| Ok(Box::new(App::new(cc)))),
             )

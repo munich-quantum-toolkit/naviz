@@ -1,0 +1,21 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = ["visualization", "rendering"]
+description = "Renderer for NAViz"
+edition = "2021"
+keywords = ["naviz", "renderer"]
+license = "LGPL-3.0-or-later"
+name = "naviz-renderer"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]
+bytemuck = "1.18.0"
+glam = {version = "0.29.0", features = ["bytemuck"]}
+glyphon = "0.6.0"
+log = "0.4.22"
+naga_oil = "0.15.0"
+wgpu = {version = "22.1.0", default-features = false, features = ["wgsl", "naga-ir"]}
+
+[build-dependencies]
+ureq = "2.10.1"
