@@ -91,7 +91,7 @@ impl MenuBar {
 
                     ui.label("Build");
                     ui.label(git_version!(
-                        args = ["--always", "--dirty=+dev"],
+                        args = ["--always", "--dirty=+dev", "--match=naviz-gui@*"],
                         fallback = "unknown"
                     ));
                     ui.end_row();
