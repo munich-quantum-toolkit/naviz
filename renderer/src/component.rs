@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use naga_oil::compose::Composer;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -9,7 +11,9 @@ use wgpu::{
     VertexStepMode,
 };
 
-use crate::{globals::Globals, shaders::compile_shader, viewport::Viewport};
+use crate::{
+    buffer_updater::BufferUpdater, globals::Globals, shaders::compile_shader, viewport::Viewport,
+};
 
 pub mod atoms;
 pub mod legend;
@@ -42,16 +46,17 @@ pub struct ComponentSpec<'a, Spec: bytemuck::NoUninit> {
 ///
 /// Binds [Globals] and [Viewport] to group `0` and `1`.
 /// Allows binding a local uniform to group `2`.
-pub struct Component {
+pub struct Component<Spec: bytemuck::NoUninit> {
     render_pipeline: RenderPipeline,
     instance_buffer: Buffer,
     instance_count: u32,
     bind_group: BindGroup,
+    phantom: PhantomData<Spec>,
 }
 
-impl Component {
+impl<Spec: bytemuck::NoUninit> Component<Spec> {
     /// Creates a new [Component]
-    pub fn new<Spec: bytemuck::NoUninit>(
+    pub fn new(
         device: &Device,
         format: TextureFormat,
         globals: &Globals,
@@ -68,7 +73,7 @@ impl Component {
         let instance_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("instance buffer"),
             contents: bytemuck::cast_slice(specs),
-            usage: BufferUsages::VERTEX,
+            usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
         });
 
         let instance_buffer_layout = VertexBufferLayout {
@@ -151,7 +156,19 @@ impl Component {
             instance_buffer,
             instance_count: specs.len() as u32,
             bind_group,
+            phantom: PhantomData,
         }
+    }
+
+    /// Update this component to have the new `spec`
+    pub fn update<U: BufferUpdater>(&mut self, updater: &mut U, spec: &[Spec]) {
+        updater.update(
+            &mut self.instance_buffer,
+            spec,
+            Some("instance buffer"),
+            BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        );
+        self.instance_count = spec.len() as u32;
     }
 
     /// Draws this component

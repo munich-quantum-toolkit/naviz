@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use naga_oil::compose::Composer;
 use wgpu::{BufferAddress, Device, TextureFormat, VertexAttribute, VertexFormat};
@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// A [Component] which draws one or multiple lines to the screen
-pub struct Lines(Component);
+pub struct Lines(Component<LineSpec>);
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
@@ -96,8 +96,14 @@ impl Lines {
 }
 
 impl Deref for Lines {
-    type Target = Component;
+    type Target = Component<LineSpec>;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for Lines {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }

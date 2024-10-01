@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use naga_oil::compose::Composer;
 use wgpu::{BufferAddress, Device, TextureFormat, VertexAttribute, VertexFormat};
@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// A [Component] which draws one or multiple circles to the screen
-pub struct Circles(Component);
+pub struct Circles(Component<CircleSpec>);
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
@@ -75,8 +75,14 @@ impl Circles {
 }
 
 impl Deref for Circles {
-    type Target = Component;
+    type Target = Component<CircleSpec>;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for Circles {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
