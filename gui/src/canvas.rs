@@ -17,13 +17,14 @@ impl<C: CanvasContent + 'static> WgpuCanvas<C> {
     /// Draws this canvas.
     /// Takes remaining space of parent.
     /// Also requests a repaint immediately.
-    pub fn draw(&self, ctx: &Context, ui: &mut Ui) {
+    pub fn draw(&mut self, ctx: &Context, ui: &mut Ui) {
         egui::Frame::canvas(ui.style())
             .fill(self.content.background_color())
             .show(ui, |ui| {
                 let available = ui.available_size();
                 let desired = constrain_to_aspect(available, self.aspect);
                 let (_, rect) = ui.allocate_space(desired);
+                self.content.target_size(rect.size().into());
                 ui.painter()
                     .add(Callback::new_paint_callback(rect, self.content.clone()));
 
@@ -53,6 +54,7 @@ fn constrain_to_aspect(Vec2 { x: mut w, y: mut h }: Vec2, aspect: f32) -> Vec2 {
 
 pub trait CanvasContent: CallbackTrait + Clone {
     fn background_color(&self) -> Color32;
+    fn target_size(&mut self, size: (f32, f32));
 }
 
 /// An empty canvas.

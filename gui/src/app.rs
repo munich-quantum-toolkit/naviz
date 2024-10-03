@@ -52,7 +52,7 @@ impl eframe::App for App {
                 }
             ));
 
-            WgpuCanvas::new(RendererAdapter(), 16. / 9.).draw(ctx, ui);
+            WgpuCanvas::new(RendererAdapter::default(), 16. / 9.).draw(ctx, ui);
         });
     }
 }
@@ -61,8 +61,10 @@ impl eframe::App for App {
 ///
 /// Setup the renderer using [RendererAdapter::setup]
 /// before drawing the renderer using the callback implementation.
-#[derive(Clone)]
-struct RendererAdapter();
+#[derive(Clone, Default)]
+struct RendererAdapter {
+    size: (u32, u32),
+}
 
 impl RendererAdapter {
     /// Creates a [Renderer] and stores it in the egui [RenderState][eframe::egui_wgpu::RenderState].
@@ -91,6 +93,22 @@ impl RendererAdapter {
 }
 
 impl CallbackTrait for RendererAdapter {
+    fn prepare(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        _screen_descriptor: &eframe::egui_wgpu::ScreenDescriptor,
+        _egui_encoder: &mut wgpu::CommandEncoder,
+        callback_resources: &mut eframe::egui_wgpu::CallbackResources,
+    ) -> Vec<wgpu::CommandBuffer> {
+        if let Some(r) = callback_resources.get_mut::<Renderer>() {
+            r.update_viewport(device, queue, self.size);
+        } else {
+            error!("Failed to get renderer");
+        }
+        Vec::new()
+    }
+
     fn paint<'a>(
         &'a self,
         _info: egui::PaintCallbackInfo,
@@ -108,5 +126,9 @@ impl CallbackTrait for RendererAdapter {
 impl CanvasContent for RendererAdapter {
     fn background_color(&self) -> egui::Color32 {
         egui::Color32::WHITE
+    }
+
+    fn target_size(&mut self, size: (f32, f32)) {
+        self.size = (size.0 as u32, size.1 as u32);
     }
 }
