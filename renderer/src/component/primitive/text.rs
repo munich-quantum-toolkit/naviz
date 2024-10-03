@@ -46,11 +46,29 @@ pub struct TextSpec<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), 
     pub color: [u8; 4],
 }
 
+/// The cache containing the pre-baked data to bake.
+///
+/// Create using [BakeCache::create],
+/// fully bake using [Text::bake].
+struct BakeCache {
+    /// The text-buffers
+    text_buffers: Vec<(Buffer, (f32, f32), Alignment)>,
+    /// The text color
+    color: Color,
+    /// The viewport projection to render in
+    viewport_projection: ViewportProjection,
+    /// The last screen resolution
+    screen_resolution: (u32, u32),
+}
+
 /// A component that renders text
 pub struct Text {
     atlas: TextAtlas,
     glyphon_viewport: glyphon::Viewport,
     text_renderer: TextRenderer,
+    font_system: FontSystem,
+    swash_cache: SwashCache,
+    bake_cache: BakeCache,
 }
 
 impl Text {
@@ -58,17 +76,8 @@ impl Text {
         device: &Device,
         queue: &Queue,
         format: TextureFormat,
-        TextSpec {
-            viewport_projection,
-            screen_resolution,
-            font_size,
-            font_family,
-            texts,
-            color,
-        }: TextSpec<'a, TextIterator>,
+        spec: TextSpec<'a, TextIterator>,
     ) -> Self {
-        let color = Color::rgba(color[0], color[1], color[2], color[3]);
-
         let mut font_system = FontSystem::new();
         // Load a default font
         // Used when system-fonts cannot be loaded (e.g., on web)
@@ -76,61 +85,89 @@ impl Text {
             .db_mut()
             .load_font_data(include_bytes!(env!("DEFAULT_FONT_PATH")).to_vec());
 
-        let mut swash_cache = SwashCache::new();
+        let swash_cache = SwashCache::new();
         let cache = Cache::new(device);
-        let mut glyphon_viewport = glyphon::Viewport::new(device, &cache);
-        glyphon_viewport.update(
+        let glyphon_viewport = glyphon::Viewport::new(device, &cache);
+        let mut atlas = TextAtlas::new(device, queue, &cache, format);
+        let text_renderer =
+            TextRenderer::new(&mut atlas, device, MultisampleState::default(), None);
+
+        let mut text = Self {
+            atlas,
+            glyphon_viewport,
+            text_renderer,
+
+            bake_cache: BakeCache::create(spec, &mut font_system),
+
+            font_system,
+            swash_cache,
+        };
+        text.bake(device, queue);
+        text
+    }
+
+    /// Updates this [Text] with the new [TextSpec].
+    pub fn update<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), Alignment)>>(
+        &mut self,
+        (device, queue): (&Device, &Queue),
+        spec: TextSpec<'a, TextIterator>,
+    ) {
+        self.bake_cache = BakeCache::create(spec, &mut self.font_system);
+        self.bake(device, queue);
+    }
+
+    /// Updates the viewport resolution of this [Text]
+    pub fn update_viewport(
+        &mut self,
+        (device, queue): (&Device, &Queue),
+        screen_resolution: (u32, u32),
+    ) {
+        self.bake_cache.screen_resolution = screen_resolution;
+        self.bake(device, queue);
+    }
+
+    /// Bakes the [BakeCache] of this [Text] to the [Text::text_renderer]
+    fn bake(&mut self, device: &Device, queue: &Queue) {
+        let BakeCache {
+            text_buffers,
+            color,
+            viewport_projection,
+            screen_resolution,
+        } = &self.bake_cache;
+
+        // update the viewport to the set resolution
+        self.glyphon_viewport.update(
             queue,
             Resolution {
                 width: screen_resolution.0,
                 height: screen_resolution.1,
             },
         );
-        let mut atlas = TextAtlas::new(device, queue, &cache, format);
-        let mut text_renderer =
-            TextRenderer::new(&mut atlas, device, MultisampleState::default(), None);
 
-        // Convert the passed texts to text buffers
-        let text_buffers: Vec<_> = texts
-            .into_iter()
-            .map(|(text, pos, alignment)| {
-                (
-                    to_text_buffer(text, &mut font_system, font_size, font_family),
-                    pos,
-                    alignment,
-                )
-            })
-            .collect();
-        // and then to text areas
+        // create the TextAreas
         let text_areas = text_buffers.iter().map(|(buf, pos, alignment)| {
             to_text_area(
                 buf,
                 *pos,
                 *alignment,
-                color,
-                viewport_projection,
-                screen_resolution,
+                *color,
+                *viewport_projection,
+                *screen_resolution,
             )
         });
 
         // bake the text to display
-        text_renderer
+        self.text_renderer
             .prepare(
                 device,
                 queue,
-                &mut font_system,
-                &mut atlas,
-                &glyphon_viewport,
+                &mut self.font_system,
+                &mut self.atlas,
+                &self.glyphon_viewport,
                 text_areas,
-                &mut swash_cache,
+                &mut self.swash_cache,
             )
             .unwrap();
-
-        Self {
-            atlas,
-            glyphon_viewport,
-            text_renderer,
-        }
     }
 
     /// Draws this [Text].
@@ -148,6 +185,40 @@ impl Text {
 
         if REBIND {
             rebind(render_pass);
+        }
+    }
+}
+
+impl BakeCache {
+    /// Creates a new [BakeCache] from the passed [TextSpec]
+    fn create<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), Alignment)>>(
+        TextSpec {
+            viewport_projection,
+            screen_resolution,
+            font_size,
+            font_family,
+            texts,
+            color,
+        }: TextSpec<'a, TextIterator>,
+        font_system: &mut FontSystem,
+    ) -> Self {
+        // create the text buffers
+        let text_buffers: Vec<_> = texts
+            .into_iter()
+            .map(|(text, pos, alignment)| {
+                (
+                    to_text_buffer(text, font_system, font_size, font_family),
+                    pos,
+                    alignment,
+                )
+            })
+            .collect();
+
+        Self {
+            text_buffers,
+            color: Color::rgba(color[0], color[1], color[2], color[3]),
+            viewport_projection,
+            screen_resolution,
         }
     }
 }
