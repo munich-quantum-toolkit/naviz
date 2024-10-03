@@ -33,9 +33,6 @@ pub struct TextSpec<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), 
     /// Does not use viewport (or globals) directly,
     /// but renders using [glyphon].
     pub viewport_projection: ViewportProjection,
-    /// The resolution of the screen.
-    /// Will render text at this resolution.
-    pub screen_resolution: (u32, u32),
     /// The size of the font
     pub font_size: f32,
     /// The font to use
@@ -77,6 +74,7 @@ impl Text {
         queue: &Queue,
         format: TextureFormat,
         spec: TextSpec<'a, TextIterator>,
+        screen_resolution: (u32, u32),
     ) -> Self {
         let mut font_system = FontSystem::new();
         // Load a default font
@@ -97,7 +95,7 @@ impl Text {
             glyphon_viewport,
             text_renderer,
 
-            bake_cache: BakeCache::create(spec, &mut font_system),
+            bake_cache: BakeCache::create(spec, screen_resolution, &mut font_system),
 
             font_system,
             swash_cache,
@@ -112,7 +110,11 @@ impl Text {
         (device, queue): (&Device, &Queue),
         spec: TextSpec<'a, TextIterator>,
     ) {
-        self.bake_cache = BakeCache::create(spec, &mut self.font_system);
+        self.bake_cache = BakeCache::create(
+            spec,
+            self.bake_cache.screen_resolution,
+            &mut self.font_system,
+        );
         self.bake(device, queue);
     }
 
@@ -194,12 +196,12 @@ impl BakeCache {
     fn create<'a, TextIterator: IntoIterator<Item = (&'a str, (f32, f32), Alignment)>>(
         TextSpec {
             viewport_projection,
-            screen_resolution,
             font_size,
             font_family,
             texts,
             color,
         }: TextSpec<'a, TextIterator>,
+        screen_resolution: (u32, u32),
         font_system: &mut FontSystem,
     ) -> Self {
         // create the text buffers

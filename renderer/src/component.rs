@@ -1,18 +1,22 @@
 use std::marker::PhantomData;
 
 use naga_oil::compose::Composer;
+use naviz_state::{config::Config, state::State};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
     BindGroupLayoutEntry, BlendComponent, BlendFactor, BlendState, Buffer, BufferAddress,
     BufferUsages, ColorTargetState, ColorWrites, Device, FragmentState, MultisampleState,
-    PipelineLayoutDescriptor, PrimitiveState, PrimitiveTopology, RenderPass, RenderPipeline,
+    PipelineLayoutDescriptor, PrimitiveState, PrimitiveTopology, Queue, RenderPass, RenderPipeline,
     RenderPipelineDescriptor, TextureFormat, VertexAttribute, VertexBufferLayout, VertexState,
     VertexStepMode,
 };
 
 use crate::{
-    buffer_updater::BufferUpdater, globals::Globals, shaders::compile_shader, viewport::Viewport,
+    buffer_updater::BufferUpdater,
+    globals::Globals,
+    shaders::compile_shader,
+    viewport::{Viewport, ViewportProjection},
 };
 
 pub mod atoms;
@@ -20,6 +24,19 @@ pub mod legend;
 pub mod machine;
 pub mod primitive;
 pub mod time;
+
+/// Data used to initialize a component
+pub struct ComponentInit<'a> {
+    pub device: &'a Device,
+    pub queue: &'a Queue,
+    pub format: TextureFormat,
+    pub globals: &'a Globals,
+    pub shader_composer: &'a mut Composer,
+    pub config: &'a Config,
+    pub state: &'a State,
+    pub viewport_projection: ViewportProjection,
+    pub screen_resolution: (u32, u32),
+}
 
 /// The spec of a [Component].
 #[derive(Clone, Copy, Debug)]

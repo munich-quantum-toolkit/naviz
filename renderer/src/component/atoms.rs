@@ -1,61 +1,22 @@
-use naga_oil::compose::Composer;
-use wgpu::{Device, Queue, RenderPass, TextureFormat};
+use naviz_state::{
+    config::{AtomsConfig, Config},
+    state::{AtomState, State},
+};
+use wgpu::{Device, Queue, RenderPass};
 
 use crate::{
-    globals::Globals,
+    buffer_updater::BufferUpdater,
     viewport::{Viewport, ViewportProjection},
 };
 
-use super::primitive::{
-    circles::{CircleSpec, Circles},
-    lines::{LineSpec, Lines},
-    text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
+use super::{
+    primitive::{
+        circles::{CircleSpec, Circles},
+        lines::{LineSpec, Lines},
+        text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
+    },
+    ComponentInit,
 };
-
-/// The parameters for [Atoms]
-#[derive(Clone, Copy, Debug)]
-pub struct AtomsSpec<'a, AtomIterator>
-where
-    for<'r> &'r AtomIterator: IntoIterator<Item = &'r AtomSpec<'a>>,
-{
-    /// The viewport to render in
-    pub viewport: ViewportProjection,
-    /// The resolution of the screen.
-    /// Will render text at this resolution.
-    pub screen_resolution: (u32, u32),
-    /// The atoms
-    pub atoms: AtomIterator,
-    /// The color of the shuttle lines
-    pub shuttle_color: [u8; 4],
-    /// The width of the shuttle lines
-    pub shuttle_line_width: f32,
-    /// The segment length of the shuttle lines
-    pub shuttle_segment_length: f32,
-    /// The duty-cycle of the shuttle lines
-    pub shuttle_duty: f32,
-    /// The font size of the labels
-    pub label_font_size: f32,
-    /// The font of the labels
-    pub label_font: &'a str,
-    /// The color of the labels
-    pub label_color: [u8; 4],
-}
-
-/// The parameters of a single atom
-#[derive(Clone, Copy, Debug)]
-pub struct AtomSpec<'a> {
-    /// The position of this atom
-    pub pos: [f32; 2],
-    /// The size of this atom
-    pub size: f32,
-    /// The color of this atom
-    pub color: [u8; 4],
-    /// Whether this atom is currently shuttling
-    /// (i.e., whether to draw shuttle lines)
-    pub shuttle: bool,
-    /// The label of this atom
-    pub label: &'a str,
-}
 
 /// A component to draw atoms:
 /// - Circle representing atom
@@ -66,106 +27,25 @@ pub struct Atoms {
     atoms: Circles,
     shuttles: Lines,
     labels: Text,
+    viewport_projection: ViewportProjection,
 }
 
 impl Atoms {
-    pub fn new<'a, AtomIterator>(
-        device: &Device,
-        queue: &Queue,
-        format: TextureFormat,
-        globals: &Globals,
-        shader_composer: &mut Composer,
-        AtomsSpec {
-            viewport,
+    pub fn new(
+        ComponentInit {
+            device,
+            queue,
+            format,
+            globals,
+            shader_composer,
+            config,
+            state,
+            viewport_projection,
             screen_resolution,
-            atoms,
-            shuttle_color,
-            shuttle_line_width,
-            shuttle_segment_length,
-            shuttle_duty,
-            label_font_size,
-            label_font,
-            label_color,
-        }: AtomsSpec<'a, AtomIterator>,
-    ) -> Self
-    where
-        for<'r> &'r AtomIterator: IntoIterator<Item = &'r AtomSpec<'a>>,
-    {
-        // The circles for the atoms
-        let atom_circles: Vec<_> = atoms
-            .into_iter()
-            .map(
-                |AtomSpec {
-                     pos,
-                     size,
-                     color,
-                     shuttle: _,
-                     label: _,
-                 }| CircleSpec {
-                    center: *pos,
-                    radius: *size,
-                    color: *color,
-                    radius_inner: 0.,
-                },
-            )
-            .collect();
-
-        // The shuttle lines
-        let shuttles: Vec<_> = atoms
-            .into_iter()
-            .filter(|s| s.shuttle)
-            .flat_map(
-                |AtomSpec {
-                     pos: [x, y],
-                     size: _,
-                     color: _,
-                     shuttle: _,
-                     label: _,
-                 }| {
-                    [
-                        LineSpec {
-                            start: [*x, 0.],
-                            end: [*x, viewport.source.height],
-                            color: shuttle_color,
-                            width: shuttle_line_width,
-                            segment_length: shuttle_segment_length,
-                            duty: shuttle_duty,
-                        },
-                        LineSpec {
-                            start: [0., *y],
-                            end: [viewport.source.width, *y],
-                            color: shuttle_color,
-                            width: shuttle_line_width,
-                            segment_length: shuttle_segment_length,
-                            duty: shuttle_duty,
-                        },
-                    ]
-                },
-            )
-            .collect();
-
-        // The labels
-        let labels: Vec<_> = atoms
-            .into_iter()
-            .map(
-                |AtomSpec {
-                     pos: [x, y],
-                     size: _,
-                     color: _,
-                     shuttle: _,
-                     label,
-                 }| {
-                    (
-                        *label,
-                        (*x, *y),
-                        Alignment(HAlignment::Center, VAlignment::Center),
-                    )
-                },
-            )
-            .collect();
-
-        let viewport_projection = viewport;
-        let viewport = Viewport::new(viewport, device);
+        }: ComponentInit,
+    ) -> Self {
+        let (atom_circles, shuttles, labels) = get_specs(config, state, viewport_projection);
+        let viewport = Viewport::new(viewport_projection, device);
 
         Self {
             atoms: Circles::new(
@@ -184,21 +64,28 @@ impl Atoms {
                 shader_composer,
                 &shuttles,
             ),
-            labels: Text::new(
-                device,
-                queue,
-                format,
-                TextSpec {
-                    viewport_projection,
-                    font_size: label_font_size,
-                    font_family: label_font,
-                    texts: labels,
-                    color: label_color,
-                    screen_resolution,
-                },
-            ),
+            labels: Text::new(device, queue, format, labels, screen_resolution),
             viewport,
+            viewport_projection,
         }
+    }
+
+    /// Updates these [Atoms] to resemble the new [State].
+    /// If `FULL` is `true`, also update these [Atoms] to resemble the new [Config].
+    /// Not that all elements which depend on [State] will always update to resemble the new [State],
+    /// regardless of the value of `FULL`.
+    pub fn update<const FULL: bool>(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+    ) {
+        let (atom_circles, shuttles, labels) = get_specs(config, state, self.viewport_projection);
+        self.atoms.update(updater, &atom_circles);
+        self.shuttles.update(updater, &shuttles);
+        self.labels.update((device, queue), labels);
     }
 
     /// Updates the viewport resolution of these [Atoms]
@@ -226,4 +113,103 @@ impl Atoms {
         self.atoms.draw(render_pass);
         self.labels.draw::<REBIND>(render_pass, rebind);
     }
+}
+
+/// Gets the specs for [Atoms] from the passed [State] and [Config].
+fn get_specs<'a>(
+    config: &'a Config,
+    state: &'a State,
+    viewport_projection: ViewportProjection,
+) -> (
+    Vec<CircleSpec>,
+    Vec<LineSpec>,
+    TextSpec<'a, impl IntoIterator<Item = (&'a str, (f32, f32), Alignment)>>,
+) {
+    let atoms = &state.atoms;
+    let AtomsConfig { shuttle, label } = &config.atoms;
+
+    // The circles for the atoms
+    let atom_circles: Vec<_> = atoms
+        .iter()
+        .map(
+            |AtomState {
+                 position,
+                 size,
+                 color,
+                 shuttle: _,
+                 label: _,
+             }| CircleSpec {
+                center: (*position).into(),
+                radius: *size,
+                color: *color,
+                radius_inner: 0.,
+            },
+        )
+        .collect();
+
+    // The shuttle lines
+    let shuttles: Vec<_> = atoms
+        .iter()
+        .filter(|s| s.shuttle)
+        .flat_map(
+            |AtomState {
+                 position: (x, y),
+                 size: _,
+                 color: _,
+                 shuttle: _,
+                 label: _,
+             }| {
+                [
+                    LineSpec {
+                        start: [*x, 0.],
+                        end: [*x, viewport_projection.source.height],
+                        color: shuttle.color,
+                        width: shuttle.width,
+                        segment_length: shuttle.segment_length,
+                        duty: shuttle.duty,
+                    },
+                    LineSpec {
+                        start: [0., *y],
+                        end: [viewport_projection.source.width, *y],
+                        color: shuttle.color,
+                        width: shuttle.width,
+                        segment_length: shuttle.segment_length,
+                        duty: shuttle.duty,
+                    },
+                ]
+            },
+        )
+        .collect();
+
+    // The labels
+    let labels: Vec<_> = atoms
+        .iter()
+        .map(
+            |AtomState {
+                 position: (x, y),
+                 size: _,
+                 color: _,
+                 shuttle: _,
+                 label,
+             }| {
+                (
+                    label.as_str(),
+                    (*x, *y),
+                    Alignment(HAlignment::Center, VAlignment::Center),
+                )
+            },
+        )
+        .collect();
+
+    (
+        atom_circles,
+        shuttles,
+        TextSpec {
+            viewport_projection,
+            font_size: label.size,
+            font_family: &label.family,
+            texts: labels,
+            color: label.color,
+        },
+    )
 }

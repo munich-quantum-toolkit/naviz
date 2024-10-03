@@ -145,3 +145,12 @@ impl Viewport {
         &self.bind_group_layout
     }
 }
+
+impl From<(f32, f32)> for ViewportSource {
+    fn from(value: (f32, f32)) -> Self {
+        Self {
+            width: value.0,
+            height: value.1,
+        }
+    }
+}
