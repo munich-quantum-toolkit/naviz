@@ -1,64 +1,72 @@
-use wgpu::{Device, Queue, RenderPass, TextureFormat};
+use naviz_state::{config::Config, state::State};
+use wgpu::{Device, Queue, RenderPass};
 
-use crate::viewport::ViewportProjection;
+use crate::{buffer_updater::BufferUpdater, viewport::ViewportProjection};
 
-use super::primitive::text::{Alignment, HAlignment, Text, TextSpec, VAlignment};
-
-#[derive(Clone, Copy, Debug)]
-pub struct TimeSpec<'a> {
-    /// The viewport to render in
-    pub viewport: ViewportProjection,
-    /// The resolution of the screen.
-    /// Will render text at this resolution.
-    pub screen_resolution: (u32, u32),
-    /// The font size
-    pub font_size: f32,
-    /// The color of the text
-    pub text_color: [u8; 4],
-    /// The font
-    pub font: &'a str,
-    /// The full text to render
-    pub text: &'a str,
-}
+use super::{
+    primitive::text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
+    ComponentInit,
+};
 
 /// A component to display the time on the screen
 pub struct Time {
     text: Text,
+    viewport_projection: ViewportProjection,
 }
 
 impl Time {
     pub fn new(
-        device: &Device,
-        queue: &Queue,
-        format: TextureFormat,
-        TimeSpec {
-            viewport,
+        ComponentInit {
+            device,
+            queue,
+            format,
+            globals: _,
+            shader_composer: _,
+            config,
+            state,
+            viewport_projection,
             screen_resolution,
-            font_size,
-            text_color,
-            font,
-            text,
-        }: TimeSpec,
+        }: ComponentInit,
     ) -> Self {
         Self {
             text: Text::new(
                 device,
                 queue,
                 format,
-                TextSpec {
-                    viewport_projection: viewport,
-                    font_size,
-                    font_family: font,
-                    texts: [(
-                        text,
-                        (0., viewport.source.height / 2.),
-                        Alignment(HAlignment::Left, VAlignment::Center),
-                    )],
-                    color: text_color,
-                    screen_resolution,
-                },
+                get_specs(config, state, viewport_projection),
+                screen_resolution,
             ),
+            viewport_projection,
         }
+    }
+
+    /// Updates this [Time] to resemble the new [State].
+    /// If `FULL` is `true`, also update this [Time] to resemble the new [Config].
+    /// Not that all elements which depend on [State] will always update to resemble the new [State],
+    /// regardless of the value of `FULL`.
+    pub fn update<const FULL: bool>(
+        &mut self,
+        _updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+    ) {
+        self.text.update(
+            (device, queue),
+            get_specs(config, state, self.viewport_projection),
+        );
+    }
+
+    /// Updates the viewport resolution of this [Time]
+    pub fn update_viewport(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        screen_resolution: (u32, u32),
+    ) {
+        self.text
+            .update_viewport((device, queue), screen_resolution);
     }
 
     /// Draws this [Time].
@@ -72,5 +80,24 @@ impl Time {
         rebind: impl Fn(&mut RenderPass),
     ) {
         self.text.draw::<REBIND>(render_pass, rebind);
+    }
+}
+
+/// Gets the specs for [Time] from the passed [State] and [Config].
+fn get_specs<'a>(
+    config: &'a Config,
+    state: &'a State,
+    viewport_projection: ViewportProjection,
+) -> TextSpec<'a, impl IntoIterator<Item = (&'a str, (f32, f32), Alignment)>> {
+    TextSpec {
+        viewport_projection,
+        font_size: config.time.font.size,
+        font_family: &config.time.font.family,
+        texts: [(
+            state.time.as_str(),
+            (0., viewport_projection.source.height / 2.),
+            Alignment(HAlignment::Left, VAlignment::Center),
+        )],
+        color: config.time.font.color,
     }
 }

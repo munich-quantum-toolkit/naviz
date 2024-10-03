@@ -1,3 +1,4 @@
+pub mod buffer_updater;
 pub mod component;
 pub mod globals;
 pub mod layout;

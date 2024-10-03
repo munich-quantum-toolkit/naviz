@@ -1,9 +1,7 @@
-use std::ops::Deref;
-
 use naga_oil::compose::Composer;
-use wgpu::{Device, TextureFormat};
+use wgpu::{Device, RenderPass, TextureFormat};
 
-use crate::{component::Component, globals::Globals, viewport::Viewport};
+use crate::{buffer_updater::BufferUpdater, globals::Globals, viewport::Viewport};
 
 use super::lines::{LineSpec, Lines};
 
@@ -43,6 +41,21 @@ impl Rectangles {
             shader_composer,
             &rectangles_to_lines(rectangles),
         ))
+    }
+
+    /// Update this component to have the new `spec`
+    pub fn update<U: BufferUpdater>(
+        &mut self,
+        updater: &mut U,
+        spec: impl IntoIterator<Item = RectangleSpec>,
+    ) {
+        self.0.update(updater, &rectangles_to_lines(spec));
+    }
+
+    /// Draws this component
+    #[inline]
+    pub fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
+        self.0.draw(render_pass);
     }
 }
 
@@ -102,11 +115,4 @@ fn rectangles_to_lines(rectangles: impl IntoIterator<Item = RectangleSpec>) -> V
             },
         )
         .collect()
-}
-
-impl Deref for Rectangles {
-    type Target = Component;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
 }

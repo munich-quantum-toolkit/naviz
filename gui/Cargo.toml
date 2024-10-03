@@ -25,6 +25,7 @@ egui = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141fab
 git-version = "0.3.9"
 log = "0.4"
 naviz-renderer = {path = "../renderer"}
+naviz-state = {path = "../state"}
 rfd = "0.15.0"
 wgpu = {version = "*", features = ["webgl"]}# Enable webgl-support in wgpu
 

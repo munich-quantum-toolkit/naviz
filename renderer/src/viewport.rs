@@ -2,9 +2,11 @@ use glam::Mat4;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BindingType, BufferBindingType, BufferUsages, Device, RenderPass,
+    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device, RenderPass,
     ShaderStages,
 };
+
+use crate::buffer_updater::BufferUpdater;
 
 /// The specs/data of a viewport
 ///
@@ -76,6 +78,7 @@ impl Default for ViewportTarget {
 pub struct Viewport {
     bind_group: BindGroup,
     bind_group_layout: BindGroupLayout,
+    projection_matrix: Buffer,
 }
 
 impl Viewport {
@@ -116,7 +119,20 @@ impl Viewport {
         Self {
             bind_group,
             bind_group_layout,
+            projection_matrix,
         }
+    }
+
+    /// Updates this [Viewport]
+    pub fn update(&mut self, updater: &mut impl BufferUpdater, projection: ViewportProjection) {
+        let matrix: Mat4 = projection.into();
+
+        updater.update(
+            &mut self.projection_matrix,
+            &[matrix],
+            None,
+            BufferUsages::VERTEX | BufferUsages::COPY_DST,
+        );
     }
 
     /// Binds this [Viewport] to group `1`
@@ -127,5 +143,14 @@ impl Viewport {
     /// The bind group layout for this [Viewport]
     pub fn bind_group_layout(&self) -> &BindGroupLayout {
         &self.bind_group_layout
+    }
+}
+
+impl From<(f32, f32)> for ViewportSource {
+    fn from(value: (f32, f32)) -> Self {
+        Self {
+            width: value.0,
+            height: value.1,
+        }
     }
 }

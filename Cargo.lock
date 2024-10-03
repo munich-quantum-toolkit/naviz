@@ -2048,6 +2048,7 @@ dependencies = [
  "git-version",
  "log",
  "naviz-renderer",
+ "naviz-state",
  "rfd",
  "wasm-bindgen-futures",
  "web-sys",
@@ -2073,9 +2074,14 @@ dependencies = [
  "glyphon",
  "log",
  "naga_oil",
+ "naviz-state",
  "ureq",
  "wgpu",
 ]
+
+[[package]]
+name = "naviz-state"
+version = "0.0.0"
 
 [[package]]
 name = "ndk"
