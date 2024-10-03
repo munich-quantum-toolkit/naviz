@@ -74,6 +74,21 @@ impl Renderer {
         }
     }
 
+    /// Updates the viewport resolution of this [Renderer]
+    pub fn update_viewport(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        screen_resolution: (u32, u32),
+    ) {
+        self.legend
+            .update_viewport(device, queue, screen_resolution);
+        self.machine
+            .update_viewport(device, queue, screen_resolution);
+        self.atoms.update_viewport(device, queue, screen_resolution);
+        self.time.update_viewport(device, queue, screen_resolution);
+    }
+
     /// Draws the contents of this [Renderer] to the passed [RenderPass]
     pub fn draw<'a>(&'a self, render_pass: &mut RenderPass<'a>) {
         self.rebind(render_pass);

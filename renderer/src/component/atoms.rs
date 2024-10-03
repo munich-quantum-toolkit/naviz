@@ -201,6 +201,17 @@ impl Atoms {
         }
     }
 
+    /// Updates the viewport resolution of these [Atoms]
+    pub fn update_viewport(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        screen_resolution: (u32, u32),
+    ) {
+        self.labels
+            .update_viewport((device, queue), screen_resolution);
+    }
+
     /// Draws these [Atoms].
     ///
     /// May overwrite bind groups.

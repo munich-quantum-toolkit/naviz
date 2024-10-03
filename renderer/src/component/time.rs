@@ -61,6 +61,17 @@ impl Time {
         }
     }
 
+    /// Updates the viewport resolution of this [Time]
+    pub fn update_viewport(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        screen_resolution: (u32, u32),
+    ) {
+        self.text
+            .update_viewport((device, queue), screen_resolution);
+    }
+
     /// Draws this [Time].
     ///
     /// May overwrite bind groups.

@@ -294,6 +294,17 @@ impl Machine {
         }
     }
 
+    /// Updates the viewport resolution of this [Machine]
+    pub fn update_viewport(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        screen_resolution: (u32, u32),
+    ) {
+        self.coordinate_legend
+            .update_viewport((device, queue), screen_resolution);
+    }
+
     /// Draws this [Machine].
     ///
     /// May overwrite bind groups.
