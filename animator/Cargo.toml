@@ -1,0 +1,12 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = []
+description = "Animator for NAViz"
+edition = "2021"
+keywords = ["naviz", "animation"]
+license = "AGPL-3.0-or-later"
+name = "naviz-animator"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]

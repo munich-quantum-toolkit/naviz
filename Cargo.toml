@@ -4,5 +4,6 @@ members = [
   "gui",
   "renderer",
   "state",
+  "animator",
 ]
 resolver = "2"
