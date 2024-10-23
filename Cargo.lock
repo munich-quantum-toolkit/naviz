@@ -2039,7 +2039,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-gui"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui",
@@ -2067,7 +2067,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-renderer"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bytemuck",
  "glam",
@@ -2081,7 +2081,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-state"
-version = "0.0.0"
+version = "0.2.0"
 
 [[package]]
 name = "ndk"
