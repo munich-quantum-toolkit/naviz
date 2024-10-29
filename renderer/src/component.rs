@@ -24,6 +24,7 @@ pub mod legend;
 pub mod machine;
 pub mod primitive;
 pub mod time;
+pub mod updatable;
 
 /// Data used to initialize a component
 pub struct ComponentInit<'a> {

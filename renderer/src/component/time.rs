@@ -5,6 +5,7 @@ use crate::{buffer_updater::BufferUpdater, viewport::ViewportProjection};
 
 use super::{
     primitive::text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
+    updatable::Updatable,
     ComponentInit,
 };
 
@@ -40,24 +41,6 @@ impl Time {
         }
     }
 
-    /// Updates this [Time] to resemble the new [State].
-    /// If `FULL` is `true`, also update this [Time] to resemble the new [Config].
-    /// Not that all elements which depend on [State] will always update to resemble the new [State],
-    /// regardless of the value of `FULL`.
-    pub fn update<const FULL: bool>(
-        &mut self,
-        _updater: &mut impl BufferUpdater,
-        device: &Device,
-        queue: &Queue,
-        config: &Config,
-        state: &State,
-    ) {
-        self.text.update(
-            (device, queue),
-            get_specs(config, state, self.viewport_projection),
-        );
-    }
-
     /// Updates the viewport resolution of this [Time]
     pub fn update_viewport(
         &mut self,
@@ -80,6 +63,35 @@ impl Time {
         rebind: impl Fn(&mut RenderPass),
     ) {
         self.text.draw::<REBIND>(render_pass, rebind);
+    }
+}
+
+impl Updatable for Time {
+    fn update(
+        &mut self,
+        _updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+    ) {
+        self.text.update(
+            (device, queue),
+            get_specs(config, state, self.viewport_projection),
+        );
+    }
+
+    fn update_full(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+        viewport_projection: ViewportProjection,
+    ) {
+        self.viewport_projection = viewport_projection;
+        self.update(updater, device, queue, config, state);
     }
 }
 

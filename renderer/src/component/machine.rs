@@ -16,6 +16,7 @@ use super::{
         rectangles::{RectangleSpec, Rectangles},
         text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
     },
+    updatable::Updatable,
     ComponentInit,
 };
 
@@ -29,7 +30,6 @@ pub struct Machine {
     static_traps: Circles,
     coordinate_legend: Text,
     zones: Rectangles,
-    viewport_projection: ViewportProjection,
 }
 
 /// Padding between the grid and the legend (numbers and labels)
@@ -67,30 +67,6 @@ impl Machine {
             coordinate_legend: Text::new(device, queue, format, labels, screen_resolution),
             zones: Rectangles::new(device, format, globals, &viewport, shader_composer, zones),
             viewport,
-            viewport_projection,
-        }
-    }
-
-    /// Updates this [Machine] to resemble the new [State].
-    /// If `FULL` is `true`, also update this [Machine] to resemble the new [Config].
-    /// Not that all elements which depend on [State] will always update to resemble the new [State],
-    /// regardless of the value of `FULL`.
-    pub fn update<const FULL: bool>(
-        &mut self,
-        updater: &mut impl BufferUpdater,
-        device: &Device,
-        queue: &Queue,
-        config: &Config,
-        _state: &State,
-    ) {
-        if FULL {
-            let mut text_buffer = Vec::new();
-            let (lines, traps, labels, zones) =
-                get_specs(config, self.viewport_projection, &mut text_buffer);
-            self.background_grid.update(updater, &lines);
-            self.static_traps.update(updater, &traps);
-            self.coordinate_legend.update((device, queue), labels);
-            self.zones.update(updater, zones);
         }
     }
 
@@ -119,6 +95,38 @@ impl Machine {
         self.static_traps.draw(render_pass);
         self.zones.draw(render_pass);
         self.coordinate_legend.draw::<REBIND>(render_pass, rebind);
+    }
+}
+
+impl Updatable for Machine {
+    fn update(
+        &mut self,
+        _updater: &mut impl BufferUpdater,
+        _device: &Device,
+        _queue: &Queue,
+        _config: &Config,
+        _state: &State,
+    ) {
+        // Nothing depends on state
+    }
+
+    fn update_full(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        _state: &State,
+        viewport_projection: ViewportProjection,
+    ) {
+        self.viewport.update(updater, viewport_projection);
+        let mut text_buffer = Vec::new();
+        let (lines, traps, labels, zones) =
+            get_specs(config, viewport_projection, &mut text_buffer);
+        self.background_grid.update(updater, &lines);
+        self.static_traps.update(updater, &traps);
+        self.coordinate_legend.update((device, queue), labels);
+        self.zones.update(updater, zones);
     }
 }
 
