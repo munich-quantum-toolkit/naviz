@@ -2041,7 +2041,11 @@ dependencies = [
 name = "naviz-animator"
 version = "0.0.0"
 dependencies = [
+ "fraction",
+ "naviz-parser",
+ "naviz-state",
  "ordered-float",
+ "regex",
 ]
 
 [[package]]

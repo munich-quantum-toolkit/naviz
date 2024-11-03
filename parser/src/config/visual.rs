@@ -299,10 +299,21 @@ impl TryFrom<Config> for OperationConfigConfigConfig {
 }
 
 #[cfg_attr(test, derive(PartialEq))]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum NumberOrPercentage {
     Number(Fraction),
     Percentage(Percentage),
+}
+
+impl NumberOrPercentage {
+    /// Returns the contained number if `self` is a [Number][NumberOrPercentage::Number]
+    /// or the scaled `reference` if `self` is a [Percentage][NumberOrPercentage::Percentage].
+    pub fn get(self, reference: Fraction) -> Fraction {
+        match self {
+            Self::Number(n) => n,
+            Self::Percentage(p) => Fraction::from(p) * reference,
+        }
+    }
 }
 
 impl TryFrom<ConfigItem> for NumberOrPercentage {
