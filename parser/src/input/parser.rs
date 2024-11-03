@@ -5,7 +5,7 @@ use super::lexer::{TimeSpec, Token};
 use crate::common::{self, parser::try_into_value::TryIntoValue};
 use fraction::{Fraction, Zero};
 use std::fmt::Debug;
-use token::{identifier, ignore_comments, number, separator, time_symbol};
+use token::{comment, identifier, ignore_comments, number, separator, time_symbol};
 use winnow::{
     combinator::{alt, opt, preceded, repeat, terminated},
     PResult, Parser,
@@ -44,10 +44,13 @@ pub fn instruction_or_directives<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
 ) -> PResult<Vec<InstructionOrDirective>> {
     preceded(
-        ignore_comments,
+        ignore_comments_and_separators,
         repeat(
             0..,
-            terminated(alt((instruction, directive)), ignore_comments),
+            terminated(
+                alt((instruction, directive)),
+                ignore_comments_and_separators,
+            ),
         ),
     )
     .parse_next(input)
@@ -95,6 +98,13 @@ pub fn time<S: TryIntoValue + Clone + Debug>(
         opt(number).map(|n| n.unwrap_or_else(Fraction::zero)),
     )
         .parse_next(input)
+}
+
+/// Ignores all [Comment][Token::Comment]s and [Separator][Token::Separator]s
+pub fn ignore_comments_and_separators<S: Clone + Debug + PartialEq + TryIntoValue>(
+    input: &mut &[Token<S>],
+) -> PResult<()> {
+    repeat(0.., alt((comment.void(), separator))).parse_next(input)
 }
 
 pub mod token {
@@ -263,6 +273,61 @@ mod test {
                 )),
                 name: "positive_start_timed_instruction".to_string(),
                 args: vec![Value::Identifier("arg".to_string())],
+            },
+        ];
+
+        let actual = parse(&input).expect("Failed to parse");
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    pub fn comments_and_whitespace() {
+        // Example file:
+        //
+        // // Comment 1
+        // // Comment 2
+
+        // // Comment 3
+
+        // #directive value // Comment 4
+
+        // /* Comment 5 */ /* Comment 6 */
+        // // Comment 6
+
+        // #directive2 value2
+        // // Comment 7
+
+        let input = vec![
+            Token::Comment(" Comment 1"),
+            Token::Comment(" Comment 2"),
+            Token::Separator,
+            Token::Comment(" Comment 3"),
+            Token::Separator,
+            Token::Directive("directive"),
+            Token::Identifier("value"),
+            Token::Comment(" Comment 4"),
+            Token::Separator,
+            Token::Comment(" Comment 5 "),
+            Token::Comment(" Comment 6 "),
+            Token::Separator,
+            Token::Comment(" Comment 6"),
+            Token::Separator,
+            Token::Directive("directive2"),
+            Token::Identifier("value2"),
+            Token::Separator,
+            Token::Comment(" Comment 7"),
+            Token::Separator,
+        ];
+
+        let expected = vec![
+            InstructionOrDirective::Directive {
+                name: "directive".to_string(),
+                args: vec![Value::Identifier("value".to_string())],
+            },
+            InstructionOrDirective::Directive {
+                name: "directive2".to_string(),
+                args: vec![Value::Identifier("value2".to_string())],
             },
         ];
 
