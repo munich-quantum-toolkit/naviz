@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::VecDeque};
+use std::{borrow::Cow, collections::VecDeque, sync::Arc};
 
 use fraction::{ConstZero, Fraction};
 use naviz_parser::{
@@ -75,7 +75,7 @@ struct Atom {
 /// and [Animator::config] to get the [Config].
 pub struct Animator {
     atoms: Vec<Atom>,
-    config: Config,
+    config: Arc<Config>,
 
     machine: MachineConfig,
     visual: VisualConfig,
@@ -341,15 +341,15 @@ impl Animator {
 
         Self {
             atoms,
-            config,
+            config: Arc::new(config),
             machine,
             visual,
         }
     }
 
     /// The calculated [Config]
-    pub fn config(&self) -> &Config {
-        &self.config
+    pub fn config(&self) -> Arc<Config> {
+        self.config.clone()
     }
 
     /// Gets the [State] at the passed [Time]

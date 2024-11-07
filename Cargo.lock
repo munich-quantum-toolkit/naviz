@@ -2058,6 +2058,8 @@ dependencies = [
  "futures",
  "git-version",
  "log",
+ "naviz-animator",
+ "naviz-parser",
  "naviz-renderer",
  "naviz-state",
  "rfd",
