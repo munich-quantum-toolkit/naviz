@@ -2097,6 +2097,10 @@ name = "naviz-state"
 version = "0.3.0"
 
 [[package]]
+name = "naviz-video"
+version = "0.0.0"
+
+[[package]]
 name = "ndk"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
