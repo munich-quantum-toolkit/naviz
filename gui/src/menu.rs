@@ -7,11 +7,36 @@ use git_version::git_version;
 
 use crate::{future_helper::FutureHelper, util::WEB};
 
+type SendReceivePair<T> = (Sender<T>, Receiver<T>);
+
 /// The menu bar struct which contains the state of the menu
 pub struct MenuBar {
-    file_open_channel: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
+    file_open_channel: SendReceivePair<(FileType, Vec<u8>)>,
     /// Whether to draw the about-window
     about_open: bool,
+}
+
+pub enum FileType {
+    Instructions,
+    Machine,
+    Style,
+}
+
+impl FileType {
+    pub fn name(&self) -> &'static str {
+        match self {
+            FileType::Instructions => "NAViz instructions",
+            FileType::Machine => "NAViz machine",
+            FileType::Style => "NAViz style",
+        }
+    }
+    pub fn extensions(&self) -> &'static [&'static str] {
+        match self {
+            FileType::Instructions => &["naviz"],
+            FileType::Machine => &["namachine"],
+            FileType::Style => &["nastyle"],
+        }
+    }
 }
 
 impl MenuBar {
@@ -27,7 +52,7 @@ impl MenuBar {
     ///
     /// Whenever a new file is opened,
     /// its content will be sent over this channel.
-    pub fn file_open_channel(&self) -> &Receiver<Vec<u8>> {
+    pub fn file_open_channel(&self) -> &Receiver<(FileType, Vec<u8>)> {
         &self.file_open_channel.1
     }
 
@@ -35,8 +60,14 @@ impl MenuBar {
     pub fn draw(&mut self, future_helper: &FutureHelper, ctx: &egui::Context, ui: &mut egui::Ui) {
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
-                if ui.button("Open").clicked() {
-                    self.choose_file(future_helper);
+                if ui.button("Open Instructions").clicked() {
+                    self.choose_file(FileType::Instructions, future_helper);
+                }
+                if ui.button("Open Machine").clicked() {
+                    self.choose_file(FileType::Machine, future_helper);
+                }
+                if ui.button("Open Style").clicked() {
+                    self.choose_file(FileType::Style, future_helper);
                 }
 
                 if !WEB {
@@ -59,15 +90,15 @@ impl MenuBar {
     }
 
     /// Show the file-choosing dialog and read the file if a new file was selected
-    fn choose_file(&self, future_helper: &FutureHelper) {
+    fn choose_file(&self, file_type: FileType, future_helper: &FutureHelper) {
         future_helper.execute_maybe_to(
             async move {
                 if let Some(path) = rfd::AsyncFileDialog::new()
-                    .add_filter("NAViz Input File", &["naviz"])
+                    .add_filter(file_type.name(), file_type.extensions())
                     .pick_file()
                     .await
                 {
-                    Some(path.read().await)
+                    Some((file_type, path.read().await))
                 } else {
                     None
                 }

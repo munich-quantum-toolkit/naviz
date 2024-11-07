@@ -3,7 +3,10 @@ use wgpu::{Device, Queue, RenderPass, TextureFormat};
 
 use crate::{
     buffer_updater::BufferUpdater,
-    component::{atoms::Atoms, legend::Legend, machine::Machine, time::Time, ComponentInit},
+    component::{
+        atoms::Atoms, legend::Legend, machine::Machine, time::Time, updatable::Updatable,
+        ComponentInit,
+    },
     globals::Globals,
     layout::Layout,
     shaders::{create_composer, load_default_shaders},
@@ -17,6 +20,7 @@ pub struct Renderer {
     atoms: Atoms,
     legend: Legend,
     time: Time,
+    screen_resolution: (u32, u32),
 }
 
 impl Renderer {
@@ -92,14 +96,13 @@ impl Renderer {
                 screen_resolution,
             }),
             globals,
+            screen_resolution,
         }
     }
 
     /// Updates this [Renderer] to resemble the new [State].
-    /// If `FULL` is `true`, also update this [Renderer] to resemble the new [Config].
-    /// Not that all elements which depend on [State] will always update to resemble the new [State],
-    /// regardless of the value of `FULL`.
-    pub fn update<const FULL: bool>(
+    /// See [Updatable::update].
+    pub fn update(
         &mut self,
         updater: &mut impl BufferUpdater,
         device: &Device,
@@ -107,14 +110,42 @@ impl Renderer {
         config: &Config,
         state: &State,
     ) {
+        self.machine.update(updater, device, queue, config, state);
+        self.atoms.update(updater, device, queue, config, state);
+        self.legend.update(updater, device, queue, config, state);
+        self.time.update(updater, device, queue, config, state);
+    }
+
+    /// Updates this [Renderer] to resemble the new [State] and [Config].
+    /// See [Updatable::update_full].
+    pub fn update_full(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+    ) {
+        let Layout {
+            content,
+            legend,
+            time,
+        } = Layout::new(
+            self.screen_resolution,
+            config.content_size.into(),
+            36.,
+            1024.,
+            config.time.font.size * 1.2,
+        );
+
         self.machine
-            .update::<FULL>(updater, device, queue, config, state);
+            .update_full(updater, device, queue, config, state, content);
         self.atoms
-            .update::<FULL>(updater, device, queue, config, state);
+            .update_full(updater, device, queue, config, state, content);
         self.legend
-            .update::<FULL>(updater, device, queue, config, state);
+            .update_full(updater, device, queue, config, state, legend);
         self.time
-            .update::<FULL>(updater, device, queue, config, state);
+            .update_full(updater, device, queue, config, state, time);
     }
 
     /// Updates the viewport resolution of this [Renderer]
@@ -124,6 +155,7 @@ impl Renderer {
         queue: &Queue,
         screen_resolution: (u32, u32),
     ) {
+        self.screen_resolution = screen_resolution;
         self.legend
             .update_viewport(device, queue, screen_resolution);
         self.machine

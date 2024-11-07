@@ -20,14 +20,14 @@ pub type RelativeTimeline = Vec<(bool, Fraction, TimedInstruction)>;
 
 /// A single instruction which does not require a time.
 /// See documentation of file format.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum SetupInstruction {
     Atom { position: Position, id: String },
 }
 
 /// A single instruction which requires a time.
 /// See documentation of file format.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TimedInstruction {
     Load {
         position: Option<Position>,
@@ -56,13 +56,13 @@ pub enum TimedInstruction {
 
 /// The parsed directives.
 /// See documentation of file format.
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct Directives {
     pub targets: Vec<String>,
 }
 
 /// The parsed instructions, split into [Directives], [SetupInstruction]s, and [TimedInstruction]s.
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct Instructions {
     pub directives: Directives,
     pub setup: Vec<SetupInstruction>,

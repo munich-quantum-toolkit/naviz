@@ -15,6 +15,7 @@ use super::{
         lines::{LineSpec, Lines},
         text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
     },
+    updatable::Updatable,
     ComponentInit,
 };
 
@@ -70,24 +71,6 @@ impl Atoms {
         }
     }
 
-    /// Updates these [Atoms] to resemble the new [State].
-    /// If `FULL` is `true`, also update these [Atoms] to resemble the new [Config].
-    /// Not that all elements which depend on [State] will always update to resemble the new [State],
-    /// regardless of the value of `FULL`.
-    pub fn update<const FULL: bool>(
-        &mut self,
-        updater: &mut impl BufferUpdater,
-        device: &Device,
-        queue: &Queue,
-        config: &Config,
-        state: &State,
-    ) {
-        let (atom_circles, shuttles, labels) = get_specs(config, state, self.viewport_projection);
-        self.atoms.update(updater, &atom_circles);
-        self.shuttles.update(updater, &shuttles);
-        self.labels.update((device, queue), labels);
-    }
-
     /// Updates the viewport resolution of these [Atoms]
     pub fn update_viewport(
         &mut self,
@@ -112,6 +95,36 @@ impl Atoms {
         self.shuttles.draw(render_pass);
         self.atoms.draw(render_pass);
         self.labels.draw::<REBIND>(render_pass, rebind);
+    }
+}
+
+impl Updatable for Atoms {
+    fn update(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+    ) {
+        let (atom_circles, shuttles, labels) = get_specs(config, state, self.viewport_projection);
+        self.atoms.update(updater, &atom_circles);
+        self.shuttles.update(updater, &shuttles);
+        self.labels.update((device, queue), labels);
+    }
+
+    fn update_full(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+        viewport_projection: ViewportProjection,
+    ) {
+        self.viewport_projection = viewport_projection;
+        self.viewport.update(updater, viewport_projection);
+        self.update(updater, device, queue, config, state);
     }
 }
 

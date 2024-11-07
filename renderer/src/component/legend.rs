@@ -14,6 +14,7 @@ use super::{
         circles::{CircleSpec, Circles},
         text::{Alignment, HAlignment, Text, TextSpec, VAlignment},
     },
+    updatable::Updatable,
     ComponentInit,
 };
 
@@ -24,7 +25,6 @@ pub struct Legend {
     viewport: Viewport,
     text: Text,
     colors: Circles,
-    viewport_projection: ViewportProjection,
 }
 
 impl Legend {
@@ -48,26 +48,6 @@ impl Legend {
             text: Text::new(device, queue, format, text, screen_resolution),
             colors: Circles::new(device, format, globals, &viewport, shader_composer, &colors),
             viewport,
-            viewport_projection,
-        }
-    }
-
-    /// Updates this [Legend] to resemble the new [State].
-    /// If `FULL` is `true`, also update this [Legend] to resemble the new [Config].
-    /// Not that all elements which depend on [State] will always update to resemble the new [State],
-    /// regardless of the value of `FULL`.
-    pub fn update<const FULL: bool>(
-        &mut self,
-        updater: &mut impl BufferUpdater,
-        device: &Device,
-        queue: &Queue,
-        config: &Config,
-        _state: &State,
-    ) {
-        if FULL {
-            let (text, colors) = get_specs(config, self.viewport_projection);
-            self.text.update((device, queue), text);
-            self.colors.update(updater, &colors);
         }
     }
 
@@ -94,6 +74,34 @@ impl Legend {
         self.viewport.bind(render_pass);
         self.colors.draw(render_pass);
         self.text.draw::<REBIND>(render_pass, rebind);
+    }
+}
+
+impl Updatable for Legend {
+    fn update(
+        &mut self,
+        _updater: &mut impl BufferUpdater,
+        _device: &Device,
+        _queue: &Queue,
+        _config: &Config,
+        _state: &State,
+    ) {
+        // Nothing depends on state
+    }
+
+    fn update_full(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        _state: &State,
+        viewport_projection: ViewportProjection,
+    ) {
+        self.viewport.update(updater, viewport_projection);
+        let (text, colors) = get_specs(config, viewport_projection);
+        self.text.update((device, queue), text);
+        self.colors.update(updater, &colors);
     }
 }
 

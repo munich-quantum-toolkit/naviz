@@ -1,20 +1,23 @@
+use core::str;
+
 use eframe::egui_wgpu::CallbackTrait;
 use log::error;
+use naviz_parser::config::{machine::MachineConfig, visual::VisualConfig};
 use naviz_renderer::renderer::Renderer;
 use naviz_state::{config::Config, state::State};
 
 use crate::{
-    canvas::{CanvasContent, WgpuCanvas},
+    animator_adapter::{AnimatorAdapter, AnimatorState},
+    canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     future_helper::FutureHelper,
-    menu::MenuBar,
+    menu::{FileType, MenuBar},
 };
 
 /// The main App to draw using [egui]/[eframe]
 pub struct App {
     future_helper: FutureHelper,
     menu_bar: MenuBar,
-    /// The contents of the currently opened file
-    file_contents: Vec<u8>,
+    animator_adapter: AnimatorAdapter,
 }
 
 impl App {
@@ -25,16 +28,53 @@ impl App {
         Self {
             future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
             menu_bar: MenuBar::new(),
-            file_contents: Vec::new(),
+            animator_adapter: AnimatorAdapter::default(),
         }
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        let time = ctx.input(|i| i.time);
+        self.animator_adapter.set_time(time);
+
         // Check if a new file was read
-        if let Ok(c) = self.menu_bar.file_open_channel().try_recv() {
-            self.file_contents = c;
+        if let Ok((file_type, content)) = self.menu_bar.file_open_channel().try_recv() {
+            match file_type {
+                FileType::Instructions => {
+                    let input = naviz_parser::input::lexer::lex(str::from_utf8(&content).unwrap())
+                        .expect("Failed to lex");
+                    let input =
+                        naviz_parser::input::parser::parse(&input).expect("Failed to parse");
+                    let input = naviz_parser::input::concrete::Instructions::new(input)
+                        .expect("Failed to convert to instructions");
+                    self.animator_adapter.set_instructions(input);
+                }
+                FileType::Machine => {
+                    let machine =
+                        naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())
+                            .expect("Failed to lex");
+                    let machine =
+                        naviz_parser::config::parser::parse(&machine).expect("Failed to parse");
+                    let machine: naviz_parser::config::generic::Config = machine.into();
+                    let machine: MachineConfig = machine
+                        .try_into()
+                        .expect("Failed to convert to machine-config");
+                    self.animator_adapter.set_machine_config(machine);
+                }
+                FileType::Style => {
+                    let visual =
+                        naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())
+                            .expect("Failed to lex");
+                    let visual =
+                        naviz_parser::config::parser::parse(&visual).expect("Failed to parse");
+                    let visual: naviz_parser::config::generic::Config = visual.into();
+                    let visual: VisualConfig = visual
+                        .try_into()
+                        .expect("Failed to convert to visual-config");
+                    self.animator_adapter.set_visual_config(visual);
+                }
+            }
         }
 
         // Menu
@@ -43,17 +83,12 @@ impl eframe::App for App {
 
         // Main content
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label(format!(
-                "File: {:?}{}",
-                &self.file_contents[..32.min(self.file_contents.len())],
-                if self.file_contents.len() > 32 {
-                    " (truncated)"
-                } else {
-                    ""
-                }
-            ));
-
-            WgpuCanvas::new(RendererAdapter::default(), 16. / 9.).draw(ctx, ui);
+            if let Some(animator_state) = self.animator_adapter.get() {
+                WgpuCanvas::new(RendererAdapter::new(animator_state), 16. / 9.).draw(ctx, ui);
+            } else {
+                // Animator is not ready (something missing) => empty canvas
+                WgpuCanvas::new(EmptyCanvas::new(), 16. / 9.).draw(ctx, ui);
+            }
         });
     }
 }
@@ -62,9 +97,11 @@ impl eframe::App for App {
 ///
 /// Setup the renderer using [RendererAdapter::setup]
 /// before drawing the renderer using the callback implementation.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 struct RendererAdapter {
     size: (u32, u32),
+    /// The animator_state to render
+    animator_state: AnimatorState,
 }
 
 impl RendererAdapter {
@@ -93,6 +130,14 @@ impl RendererAdapter {
                 (1920, 1080), // Use some default resolution to create renderer, as the canvas-resolution is not yet known
             ));
     }
+
+    /// Creates a new [RendererAdapter] from the passed [AnimatorState]
+    pub fn new(animator_state: AnimatorState) -> Self {
+        Self {
+            animator_state,
+            size: Default::default(),
+        }
+    }
 }
 
 impl CallbackTrait for RendererAdapter {
@@ -106,6 +151,8 @@ impl CallbackTrait for RendererAdapter {
     ) -> Vec<wgpu::CommandBuffer> {
         if let Some(r) = callback_resources.get_mut::<Renderer>() {
             r.update_viewport(device, queue, self.size);
+            self.animator_state
+                .update(r, &mut (device, queue), device, queue);
         } else {
             error!("Failed to get renderer");
         }
@@ -128,7 +175,8 @@ impl CallbackTrait for RendererAdapter {
 
 impl CanvasContent for RendererAdapter {
     fn background_color(&self) -> egui::Color32 {
-        egui::Color32::WHITE
+        let [r, g, b, a] = self.animator_state.background();
+        egui::Color32::from_rgba_unmultiplied(r, g, b, a)
     }
 
     fn target_size(&mut self, size: (f32, f32)) {

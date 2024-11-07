@@ -61,3 +61,15 @@ impl FromStr for Color {
         }
     }
 }
+
+impl Color {
+    /// Gets this color in `RGBA`-format
+    pub fn rgba(&self) -> [u8; 4] {
+        [self.r, self.g, self.b, self.a]
+    }
+
+    /// Gets this color in `ARGB`-format
+    pub fn argb(&self) -> [u8; 4] {
+        [self.a, self.r, self.g, self.b]
+    }
+}

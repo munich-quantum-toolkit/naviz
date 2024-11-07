@@ -79,3 +79,13 @@ impl CallbackTrait for EmptyCanvas {
     ) {
     }
 }
+
+impl CanvasContent for EmptyCanvas {
+    fn background_color(&self) -> Color32 {
+        Default::default()
+    }
+
+    fn target_size(&mut self, _size: (f32, f32)) {
+        // Does not need target size
+    }
+}

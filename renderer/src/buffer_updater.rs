@@ -40,9 +40,9 @@ impl BufferUpdater for (&Device, &Queue) {
                 contents: bytemuck::cast_slice(data),
                 usage,
             });
-        } else {
+        } else if let Some(data_size) = NonZeroU64::new(data_size) {
             queue
-                .write_buffer_with(buffer, 0, NonZeroU64::new(data_size).unwrap())
+                .write_buffer_with(buffer, 0, data_size)
                 .unwrap()
                 .copy_from_slice(bytemuck::cast_slice(data));
         }

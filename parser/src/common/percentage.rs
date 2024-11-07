@@ -6,7 +6,7 @@ use crate::config::{
 use fraction::Fraction;
 
 /// A newtype representing a percentage
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Percentage(pub Fraction);
 
 impl TryFrom<ConfigItem> for Percentage {
@@ -16,5 +16,11 @@ impl TryFrom<ConfigItem> for Percentage {
             ConfigItem::Value(Value::Percentage(p)) => Ok(p),
             _ => Err(ErrorKind::WrongType("percentage").into()),
         }
+    }
+}
+
+impl From<Percentage> for Fraction {
+    fn from(value: Percentage) -> Self {
+        value.0 / 100
     }
 }
