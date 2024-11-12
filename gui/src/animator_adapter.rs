@@ -110,4 +110,29 @@ impl AnimatorAdapter {
             background: animator.background(),
         })
     }
+
+    /// Creates an [Animator] from this [AnimatorAdapter],
+    /// or [None] if not enough inputs were set.
+    pub fn animator(&self) -> Option<Animator> {
+        if let (Some(machine), Some(visual), Some(instructions)) =
+            (&self.machine, &self.visual, &self.instructions)
+        {
+            Some(Animator::new(
+                machine.clone(),
+                visual.clone(),
+                instructions.clone(),
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// Checks if all three inputs
+    /// ([machine][AnimatorAdapter::set_machine_config],
+    /// [visual][AnimatorAdapter::set_visual_config],
+    /// [instructions][AnimatorAdapter::set_instructions])
+    /// are set
+    pub fn all_inputs_set(&self) -> bool {
+        self.machine.is_some() && self.visual.is_some() && self.instructions.is_some()
+    }
 }

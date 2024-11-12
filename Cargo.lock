@@ -2062,6 +2062,7 @@ dependencies = [
  "naviz-parser",
  "naviz-renderer",
  "naviz-state",
+ "naviz-video",
  "rfd",
  "wasm-bindgen-futures",
  "web-sys",
