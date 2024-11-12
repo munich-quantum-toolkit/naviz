@@ -10,3 +10,6 @@ repository = "https://github.com/FloezeTv/NAViz"
 version = "0.0.0"
 
 [dependencies]
+naviz-animator = {path = "../animator"}
+naviz-renderer = {path = "../renderer"}
+wgpu = {version = "22.1.0", default-features = false}
