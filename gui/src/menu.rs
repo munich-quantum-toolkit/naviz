@@ -8,7 +8,7 @@ use std::{
 use egui::{Align2, Button, Grid, Window};
 use git_version::git_version;
 
-use crate::{future_helper::FutureHelper, util::WEB};
+use crate::{export_dialog::ExportSettings, future_helper::FutureHelper, util::WEB};
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
@@ -17,6 +17,8 @@ pub struct MenuBar {
     file_open_channel: SendReceivePair<MenuEvent>,
     /// Whether to draw the about-window
     about_open: bool,
+    /// The export-settings-dialog to show when the user wants to export a video
+    export_settings: ExportSettings,
 }
 
 /// An event which is triggered on menu navigation.
@@ -24,8 +26,12 @@ pub struct MenuBar {
 pub enum MenuEvent {
     /// A file of the specified [FileType] with the specified content was opened
     FileOpen(FileType, Vec<u8>),
-    /// A video should be exported to the specified path
-    ExportVideo(PathBuf),
+    /// A video should be exported to the specified path with the specified resolution and fps
+    ExportVideo {
+        target: PathBuf,
+        resolution: (u32, u32),
+        fps: u32,
+    },
 }
 
 /// The available FileTypes for opening
@@ -64,6 +70,7 @@ impl MenuBar {
         Self {
             file_open_channel: channel(),
             about_open: false,
+            export_settings: Default::default(),
         }
     }
 
@@ -102,7 +109,7 @@ impl MenuBar {
                         .add_enabled(config.export, Button::new("Export Video"))
                         .clicked()
                     {
-                        self.export(future_helper);
+                        self.export_settings.show();
                     }
                 }
 
@@ -121,6 +128,10 @@ impl MenuBar {
                 }
             });
         });
+
+        if self.export_settings.draw(ctx) {
+            self.export(future_helper);
+        }
 
         self.draw_about_window(ctx);
     }
@@ -145,13 +156,19 @@ impl MenuBar {
 
     /// Show the file-saving dialog and get the path to export to if a file was selected
     fn export(&self, future_helper: &FutureHelper) {
+        let resolution = self.export_settings.resolution();
+        let fps = self.export_settings.fps();
         future_helper.execute_maybe_to(
             async move {
                 rfd::AsyncFileDialog::new()
                     .save_file()
                     .await
                     .map(|handle| handle.path().to_path_buf())
-                    .map(MenuEvent::ExportVideo)
+                    .map(|target| MenuEvent::ExportVideo {
+                        target,
+                        resolution,
+                        fps,
+                    })
             },
             self.file_open_channel.0.clone(),
         );

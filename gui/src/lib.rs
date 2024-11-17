@@ -3,6 +3,7 @@
 mod animator_adapter;
 mod app;
 mod canvas;
+mod export_dialog;
 mod future_helper;
 mod menu;
 mod util;

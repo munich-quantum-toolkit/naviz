@@ -76,9 +76,13 @@ impl eframe::App for App {
                         .expect("Failed to convert to visual-config");
                     self.animator_adapter.set_visual_config(visual);
                 }
-                MenuEvent::ExportVideo(target) => {
+                MenuEvent::ExportVideo {
+                    target,
+                    resolution,
+                    fps,
+                } => {
                     if let Some(animator) = self.animator_adapter.animator() {
-                        let video = VideoExport::new(animator, (1920, 1080), 30);
+                        let video = VideoExport::new(animator, resolution, fps);
                         let (tx, rx) = channel();
                         self.future_helper.execute_to(video, tx);
                         thread::spawn(move || {
