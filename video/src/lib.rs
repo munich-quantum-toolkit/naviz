@@ -1,8 +1,9 @@
 use std::{
-    io::Write,
+    io::{BufRead, BufReader, Write},
     path::Path,
-    process::{Command, Stdio},
-    sync::mpsc::channel,
+    process::{Command, ExitStatus, Stdio},
+    sync::mpsc::{channel, Sender},
+    thread,
 };
 
 use naviz_animator::animator::Animator;
@@ -25,6 +26,16 @@ pub struct VideoExport {
     output_buffer: Buffer,
     fps: u32,
     screen_resolution: (u32, u32),
+}
+
+/// Video progress update event
+pub enum VideoProgress {
+    /// Render-update (`current time`, `duration`)
+    Render(f32, f32),
+    /// Encode-update (`current time`, `duration`)
+    Encode(f32, f32),
+    /// Finished export (with `ffmpeg` exit status; may not always be successful)
+    Done(ExitStatus),
 }
 
 /// Creates a headless rendering [Device] and [Queue]
@@ -124,9 +135,11 @@ impl VideoExport {
     }
 
     /// Exports a video the the specified `target`-path using system-installed `ffmpeg`
-    pub fn export_video(&mut self, target: &Path) {
+    pub fn export_video(&mut self, target: &Path, progress: Sender<VideoProgress>) {
         let mut ffmpeg = Command::new("ffmpeg")
             .args([
+                "-progress",
+                "-",
                 "-f",
                 "rawvideo",
                 "-video_size",
@@ -144,6 +157,22 @@ impl VideoExport {
             .spawn()
             .expect("Failed to run ffmpeg");
         let mut ffmpeg_input = ffmpeg.stdin.take().unwrap();
+        let ffmpeg_progress = ffmpeg.stdout.take().unwrap();
+        let ffmpeg_progress = BufReader::new(ffmpeg_progress)
+            .lines()
+            .map_while(Result::ok)
+            .filter_map(|l| l.strip_prefix("out_time_us=").map(|s| s.parse::<u64>()))
+            .filter_map(Result::ok)
+            .map(|ms| ms as f32 / 1_000_000.);
+
+        let duration = self.animator.duration().try_into().unwrap();
+
+        let encode_progress = progress.clone();
+        thread::spawn(move || {
+            ffmpeg_progress.for_each(|t| {
+                let _ = encode_progress.send(VideoProgress::Encode(t, duration));
+            });
+        });
 
         self.get_frame_times().for_each(|time| {
             self.set_time(time);
@@ -153,11 +182,17 @@ impl VideoExport {
                 .expect("Failed to send frame to ffmpeg");
             drop(frame);
             self.output_buffer.unmap();
-            println!("{time:.1}");
+            let _ = progress.send(VideoProgress::Render(time, duration));
         });
         ffmpeg_input
             .flush()
             .expect("Failed to flush frames to ffmpeg");
+
+        drop(ffmpeg_input);
+
+        if let Ok(code) = ffmpeg.wait() {
+            let _ = progress.send(VideoProgress::Done(code));
+        }
     }
 
     /// Updates the [Renderer] to have the state of the [Animator] at the passed `time`

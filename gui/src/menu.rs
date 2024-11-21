@@ -7,18 +7,27 @@ use std::{
 
 use egui::{Align2, Button, Grid, Window};
 use git_version::git_version;
+use naviz_video::VideoProgress;
 
-use crate::{export_dialog::ExportSettings, future_helper::FutureHelper, util::WEB};
+use crate::{
+    export_dialog::{ExportProgresses, ExportSettings},
+    future_helper::FutureHelper,
+    util::WEB,
+};
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
 /// The menu bar struct which contains the state of the menu
 pub struct MenuBar {
     file_open_channel: SendReceivePair<MenuEvent>,
+    /// Channel for selected export-settings
+    export_channel: SendReceivePair<(PathBuf, (u32, u32), u32)>,
     /// Whether to draw the about-window
     about_open: bool,
     /// The export-settings-dialog to show when the user wants to export a video
     export_settings: ExportSettings,
+    /// The export-progress-dialogs to show
+    export_progresses: ExportProgresses,
 }
 
 /// An event which is triggered on menu navigation.
@@ -31,6 +40,8 @@ pub enum MenuEvent {
         target: PathBuf,
         resolution: (u32, u32),
         fps: u32,
+        /// Channel for progress updates
+        progress: Sender<VideoProgress>,
     },
 }
 
@@ -69,8 +80,10 @@ impl MenuBar {
     pub fn new() -> Self {
         Self {
             file_open_channel: channel(),
+            export_channel: channel(),
             about_open: false,
             export_settings: Default::default(),
+            export_progresses: Default::default(),
         }
     }
 
@@ -90,6 +103,15 @@ impl MenuBar {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
     ) {
+        if let Ok((target, resolution, fps)) = self.export_channel.1.try_recv() {
+            let _ = self.file_open_channel.0.send(MenuEvent::ExportVideo {
+                target,
+                resolution,
+                fps,
+                progress: self.export_progresses.add(),
+            });
+        }
+
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open Instructions").clicked() {
@@ -132,6 +154,8 @@ impl MenuBar {
         if self.export_settings.draw(ctx) {
             self.export(future_helper);
         }
+
+        self.export_progresses.draw(ctx);
 
         self.draw_about_window(ctx);
     }
