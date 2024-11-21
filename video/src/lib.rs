@@ -150,6 +150,7 @@ impl VideoExport {
                 format!("{}/1", self.fps).as_str(),
                 "-i",
                 "-",
+                "-y",
             ])
             .arg(target)
             .stdin(Stdio::piped())
