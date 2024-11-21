@@ -80,6 +80,7 @@ impl eframe::App for App {
                     target,
                     resolution,
                     fps,
+                    progress,
                 } => {
                     if let Some(animator) = self.animator_adapter.animator() {
                         let video = VideoExport::new(animator, resolution, fps);
@@ -87,7 +88,7 @@ impl eframe::App for App {
                         self.future_helper.execute_to(video, tx);
                         thread::spawn(move || {
                             let mut video = rx.recv().unwrap();
-                            video.export_video(&target);
+                            video.export_video(&target, progress);
                         });
                     }
                 }
