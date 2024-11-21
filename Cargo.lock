@@ -2039,7 +2039,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-animator"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "fraction",
  "naviz-parser",
@@ -2050,7 +2050,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-gui"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "eframe",
  "egui",
@@ -2099,7 +2099,7 @@ version = "0.3.0"
 
 [[package]]
 name = "naviz-video"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "naviz-animator",
  "naviz-renderer",

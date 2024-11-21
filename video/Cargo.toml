@@ -7,7 +7,7 @@ keywords = ["naviz", "video", "export"]
 license = "AGPL-3.0-or-later"
 name = "naviz-video"
 repository = "https://github.com/FloezeTv/NAViz"
-version = "0.0.0"
+version = "0.1.0"
 
 [dependencies]
 naviz-animator = {path = "../animator"}
