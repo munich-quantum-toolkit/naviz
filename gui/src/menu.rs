@@ -1,25 +1,61 @@
 //! [MenuBar] to show a menu on the top.
 
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::{
+    path::PathBuf,
+    sync::mpsc::{channel, Receiver, Sender},
+};
 
-use egui::{Align2, Grid, Window};
+use egui::{Align2, Button, Grid, Window};
 use git_version::git_version;
+use naviz_video::VideoProgress;
 
-use crate::{future_helper::FutureHelper, util::WEB};
+use crate::{
+    export_dialog::{ExportProgresses, ExportSettings},
+    future_helper::FutureHelper,
+    util::WEB,
+};
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
 /// The menu bar struct which contains the state of the menu
 pub struct MenuBar {
-    file_open_channel: SendReceivePair<(FileType, Vec<u8>)>,
+    file_open_channel: SendReceivePair<MenuEvent>,
+    /// Channel for selected export-settings
+    export_channel: SendReceivePair<(PathBuf, (u32, u32), u32)>,
     /// Whether to draw the about-window
     about_open: bool,
+    /// The export-settings-dialog to show when the user wants to export a video
+    export_settings: ExportSettings,
+    /// The export-progress-dialogs to show
+    export_progresses: ExportProgresses,
 }
 
+/// An event which is triggered on menu navigation.
+/// Higher-Level than just button-clicks.
+pub enum MenuEvent {
+    /// A file of the specified [FileType] with the specified content was opened
+    FileOpen(FileType, Vec<u8>),
+    /// A video should be exported to the specified path with the specified resolution and fps
+    ExportVideo {
+        target: PathBuf,
+        resolution: (u32, u32),
+        fps: u32,
+        /// Channel for progress updates
+        progress: Sender<VideoProgress>,
+    },
+}
+
+/// The available FileTypes for opening
 pub enum FileType {
     Instructions,
     Machine,
     Style,
+}
+
+/// Config options for what to show inside the menu
+pub struct MenuConfig {
+    /// Show export option
+    pub export: bool,
 }
 
 impl FileType {
@@ -44,7 +80,10 @@ impl MenuBar {
     pub fn new() -> Self {
         Self {
             file_open_channel: channel(),
+            export_channel: channel(),
             about_open: false,
+            export_settings: Default::default(),
+            export_progresses: Default::default(),
         }
     }
 
@@ -52,12 +91,27 @@ impl MenuBar {
     ///
     /// Whenever a new file is opened,
     /// its content will be sent over this channel.
-    pub fn file_open_channel(&self) -> &Receiver<(FileType, Vec<u8>)> {
+    pub fn events(&self) -> &Receiver<MenuEvent> {
         &self.file_open_channel.1
     }
 
     /// Draw the [MenuBar]
-    pub fn draw(&mut self, future_helper: &FutureHelper, ctx: &egui::Context, ui: &mut egui::Ui) {
+    pub fn draw(
+        &mut self,
+        config: MenuConfig,
+        future_helper: &FutureHelper,
+        ctx: &egui::Context,
+        ui: &mut egui::Ui,
+    ) {
+        if let Ok((target, resolution, fps)) = self.export_channel.1.try_recv() {
+            let _ = self.file_open_channel.0.send(MenuEvent::ExportVideo {
+                target,
+                resolution,
+                fps,
+                progress: self.export_progresses.add(),
+            });
+        }
+
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open Instructions").clicked() {
@@ -68,6 +122,17 @@ impl MenuBar {
                 }
                 if ui.button("Open Style").clicked() {
                     self.choose_file(FileType::Style, future_helper);
+                }
+
+                if !WEB {
+                    // Export only on native, as it requires a system-installed `ffmpeg` (for now)
+                    ui.separator();
+                    if ui
+                        .add_enabled(config.export, Button::new("Export Video"))
+                        .clicked()
+                    {
+                        self.export_settings.show();
+                    }
                 }
 
                 if !WEB {
@@ -86,6 +151,12 @@ impl MenuBar {
             });
         });
 
+        if self.export_settings.draw(ctx) {
+            self.export(future_helper);
+        }
+
+        self.export_progresses.draw(ctx);
+
         self.draw_about_window(ctx);
     }
 
@@ -98,12 +169,28 @@ impl MenuBar {
                     .pick_file()
                     .await
                 {
-                    Some((file_type, path.read().await))
+                    Some(MenuEvent::FileOpen(file_type, path.read().await))
                 } else {
                     None
                 }
             },
             self.file_open_channel.0.clone(),
+        );
+    }
+
+    /// Show the file-saving dialog and get the path to export to if a file was selected
+    fn export(&self, future_helper: &FutureHelper) {
+        let resolution = self.export_settings.resolution();
+        let fps = self.export_settings.fps();
+        future_helper.execute_maybe_to(
+            async move {
+                rfd::AsyncFileDialog::new()
+                    .save_file()
+                    .await
+                    .map(|handle| handle.path().to_path_buf())
+                    .map(|target| (target, resolution, fps))
+            },
+            self.export_channel.0.clone(),
         );
     }
 

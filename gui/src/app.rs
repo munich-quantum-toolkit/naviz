@@ -1,16 +1,18 @@
 use core::str;
+use std::{sync::mpsc::channel, thread};
 
 use eframe::egui_wgpu::CallbackTrait;
 use log::error;
 use naviz_parser::config::{machine::MachineConfig, visual::VisualConfig};
 use naviz_renderer::renderer::Renderer;
 use naviz_state::{config::Config, state::State};
+use naviz_video::VideoExport;
 
 use crate::{
     animator_adapter::{AnimatorAdapter, AnimatorState},
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     future_helper::FutureHelper,
-    menu::{FileType, MenuBar},
+    menu::{FileType, MenuBar, MenuConfig, MenuEvent},
 };
 
 /// The main App to draw using [egui]/[eframe]
@@ -39,9 +41,9 @@ impl eframe::App for App {
         self.animator_adapter.set_time(time);
 
         // Check if a new file was read
-        if let Ok((file_type, content)) = self.menu_bar.file_open_channel().try_recv() {
-            match file_type {
-                FileType::Instructions => {
+        if let Ok(event) = self.menu_bar.events().try_recv() {
+            match event {
+                MenuEvent::FileOpen(FileType::Instructions, content) => {
                     let input = naviz_parser::input::lexer::lex(str::from_utf8(&content).unwrap())
                         .expect("Failed to lex");
                     let input =
@@ -50,7 +52,7 @@ impl eframe::App for App {
                         .expect("Failed to convert to instructions");
                     self.animator_adapter.set_instructions(input);
                 }
-                FileType::Machine => {
+                MenuEvent::FileOpen(FileType::Machine, content) => {
                     let machine =
                         naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())
                             .expect("Failed to lex");
@@ -62,7 +64,7 @@ impl eframe::App for App {
                         .expect("Failed to convert to machine-config");
                     self.animator_adapter.set_machine_config(machine);
                 }
-                FileType::Style => {
+                MenuEvent::FileOpen(FileType::Style, content) => {
                     let visual =
                         naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())
                             .expect("Failed to lex");
@@ -74,12 +76,36 @@ impl eframe::App for App {
                         .expect("Failed to convert to visual-config");
                     self.animator_adapter.set_visual_config(visual);
                 }
+                MenuEvent::ExportVideo {
+                    target,
+                    resolution,
+                    fps,
+                    progress,
+                } => {
+                    if let Some(animator) = self.animator_adapter.animator() {
+                        let video = VideoExport::new(animator, resolution, fps);
+                        let (tx, rx) = channel();
+                        self.future_helper.execute_to(video, tx);
+                        thread::spawn(move || {
+                            let mut video = rx.recv().unwrap();
+                            video.export_video(&target, progress);
+                        });
+                    }
+                }
             }
         }
 
         // Menu
-        egui::TopBottomPanel::top("app_menu")
-            .show(ctx, |ui| self.menu_bar.draw(&self.future_helper, ctx, ui));
+        egui::TopBottomPanel::top("app_menu").show(ctx, |ui| {
+            self.menu_bar.draw(
+                MenuConfig {
+                    export: self.animator_adapter.all_inputs_set(),
+                },
+                &self.future_helper,
+                ctx,
+                ui,
+            )
+        });
 
         // Main content
         egui::CentralPanel::default().show(ctx, |ui| {

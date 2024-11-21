@@ -1,0 +1,15 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = []
+description = "Video export for NAViz"
+edition = "2021"
+keywords = ["naviz", "video", "export"]
+license = "AGPL-3.0-or-later"
+name = "naviz-video"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]
+naviz-animator = {path = "../animator"}
+naviz-renderer = {path = "../renderer"}
+wgpu = {version = "22.1.0", default-features = false}

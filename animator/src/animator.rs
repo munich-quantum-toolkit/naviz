@@ -77,6 +77,9 @@ pub struct Animator {
     atoms: Vec<Atom>,
     config: Arc<Config>,
 
+    /// The total durations of the animations
+    duration: Fraction,
+
     machine: MachineConfig,
     visual: VisualConfig,
 }
@@ -111,6 +114,8 @@ impl Animator {
 
         let mut content_size = (Fraction::ZERO, Fraction::ZERO);
 
+        let mut duration_total = Fraction::ZERO;
+
         // Animate the atoms
         while let Some((time, mut instructions_)) = instructions.pop_front() {
             if let Some((_, offset, instruction)) = instructions_.pop_front() {
@@ -138,6 +143,7 @@ impl Animator {
                     .front()
                     .map(|(x, _, _)| *x)
                     .unwrap_or_default();
+                duration_total = duration_total.max(start_time + duration);
                 let next_time = if next_from_start {
                     start_time
                 } else {
@@ -342,6 +348,7 @@ impl Animator {
         Self {
             atoms,
             config: Arc::new(config),
+            duration: duration_total,
             machine,
             visual,
         }
@@ -350,6 +357,11 @@ impl Animator {
     /// The calculated [Config]
     pub fn config(&self) -> Arc<Config> {
         self.config.clone()
+    }
+
+    /// The total duration of the animations in this [Animator]
+    pub fn duration(&self) -> Fraction {
+        self.duration
     }
 
     /// Gets the [State] at the passed [Time]
