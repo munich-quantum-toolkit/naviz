@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use egui::Ui;
 use naviz_animator::animator::Animator;
 use naviz_parser::{
     config::{machine::MachineConfig, visual::VisualConfig},
@@ -9,11 +10,12 @@ use naviz_renderer::{buffer_updater::BufferUpdater, renderer::Renderer};
 use naviz_state::{config::Config, state::State};
 use wgpu::{Device, Queue};
 
+use crate::progress_bar::ProgressBar;
+
 #[derive(Default)]
 pub struct AnimatorAdapter {
     update_full: bool,
-    time_delta: f64,
-    time: f64,
+    progress_bar: ProgressBar,
 
     animator: Option<Animator>,
     machine: Option<MachineConfig>,
@@ -85,19 +87,11 @@ impl AnimatorAdapter {
         if let (Some(machine), Some(visual), Some(instructions)) =
             (&self.machine, &self.visual, &self.instructions)
         {
-            self.animator = Some(Animator::new(
-                machine.clone(),
-                visual.clone(),
-                instructions.clone(),
-            ));
+            let animator = Animator::new(machine.clone(), visual.clone(), instructions.clone());
             self.update_full = true;
-            self.time_delta = self.time;
+            self.progress_bar = ProgressBar::new(animator.duration().try_into().unwrap());
+            self.animator = Some(animator);
         }
-    }
-
-    /// Updates the time for this [AnimatorAdapter]
-    pub fn set_time(&mut self, time: f64) {
-        self.time = time;
     }
 
     /// Gets an [AnimatorState] from this [AnimatorAdapter],
@@ -106,7 +100,7 @@ impl AnimatorAdapter {
         self.animator.as_mut().map(|animator| AnimatorState {
             update_full: self.update_full,
             config: animator.config(),
-            state: animator.state(((self.time - self.time_delta) as f32).into()),
+            state: animator.state((self.progress_bar.animation_time() as f32).into()),
             background: animator.background(),
         })
     }
@@ -134,5 +128,11 @@ impl AnimatorAdapter {
     /// are set
     pub fn all_inputs_set(&self) -> bool {
         self.machine.is_some() && self.visual.is_some() && self.instructions.is_some()
+    }
+
+    /// Draws the progress-bar of this [AnimatorAdapter] using [ProgressBar::draw].
+    /// Will also update the animation-time.
+    pub fn draw_progress_bar(&mut self, ui: &mut Ui) {
+        self.progress_bar.draw(ui);
     }
 }
