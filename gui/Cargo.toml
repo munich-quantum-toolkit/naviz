@@ -22,6 +22,7 @@ eframe = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141f
   "x11",
 ]}
 egui = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141fab20002554442c8b69aa"}
+egui_extras = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141fab20002554442c8b69aa"}
 git-version = "0.3.9"
 log = "0.4"
 naviz-animator = {path = "../animator"}

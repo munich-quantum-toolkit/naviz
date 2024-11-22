@@ -10,6 +10,7 @@ use naviz_video::VideoExport;
 
 use crate::{
     animator_adapter::{AnimatorAdapter, AnimatorState},
+    aspect_panel::AspectPanel,
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     future_helper::FutureHelper,
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
@@ -37,9 +38,6 @@ impl App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let time = ctx.input(|i| i.time);
-        self.animator_adapter.set_time(time);
-
         // Check if a new file was read
         if let Ok(event) = self.menu_bar.events().try_recv() {
             match event {
@@ -109,12 +107,35 @@ impl eframe::App for App {
 
         // Main content
         egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(animator_state) = self.animator_adapter.get() {
-                WgpuCanvas::new(RendererAdapter::new(animator_state), 16. / 9.).draw(ctx, ui);
-            } else {
-                // Animator is not ready (something missing) => empty canvas
-                WgpuCanvas::new(EmptyCanvas::new(), 16. / 9.).draw(ctx, ui);
-            }
+            let padding = ui.style().spacing.item_spacing.y;
+            let (_, space) = ui.allocate_space(ui.available_size());
+            let panel = AspectPanel {
+                space,
+                aspect_ratio: 16. / 9.,
+                top: 0.,
+                bottom: 20. + padding,
+                left: 0.,
+                right: 0.,
+            };
+            let animator_state = self.animator_adapter.get();
+            panel.draw(
+                ui,
+                |ui| {
+                    if let Some(animator_state) = animator_state {
+                        WgpuCanvas::new(RendererAdapter::new(animator_state)).draw(ctx, ui);
+                    } else {
+                        // Animator is not ready (something missing) => empty canvas
+                        WgpuCanvas::new(EmptyCanvas::new()).draw(ctx, ui);
+                    }
+                },
+                |_| {},
+                |_| {},
+                |ui| {
+                    ui.add_space(padding);
+                    self.animator_adapter.draw_progress_bar(ui);
+                },
+                |_| {},
+            );
         });
     }
 }
