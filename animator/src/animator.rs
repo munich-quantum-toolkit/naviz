@@ -430,28 +430,85 @@ fn is_in_zone(
         && position.y <= zone.to.1.f32()
 }
 
-/// Filters the passed `atoms`-iterator to only contain the atoms that are targeted
-/// by the  passed `instruction` at the specified `start_time` (time the instruction starts).
+/// Checks whether two positions `a` and `b` are at most `max_distance` apart.
+fn is_close(a: &Position, b: &Position, max_distance: Fraction) -> bool {
+    let distance_sq = (a.x - b.x).powi(2) + (a.y - b.y).powi(2);
+    distance_sq <= max_distance.f32().powi(2)
+}
+
+/// Filters the passed `atoms`-slice to only contain the atoms that are targeted
+/// by the  passed `instruction` at the specified `start_time` (time the instruction starts)
+/// and returns an iterator over all qualifying atoms.
 fn targeted<'a>(
-    atoms: impl IntoIterator<Item = &'a mut Atom>,
+    atoms: &'a mut [Atom],
     instruction: &'a TimedInstruction,
     start_time: Fraction,
     machine: &'a MachineConfig,
 ) -> impl Iterator<Item = &'a mut Atom> {
-    let (id, zone) = match instruction {
+    enum Match<'a> {
+        Id(&'a str),
+        IdOrZone {
+            id: &'a str,
+            zone: &'a naviz_parser::config::machine::ZoneConfig,
+        },
+        Index(Vec<usize>),
+        None,
+    }
+    let m = match instruction {
         // Instructions that only target individual atoms
         TimedInstruction::Load { id, .. }
         | TimedInstruction::Store { id, .. }
-        | TimedInstruction::Move { id, .. } => (id, None),
+        | TimedInstruction::Move { id, .. } => Match::Id(id),
         // Instructions that target atoms and zones
-        TimedInstruction::Rz { id, .. }
-        | TimedInstruction::Ry { id, .. }
-         // FIXME: cz cannot match on atom id at all; it can only match on zones and should only match if a sufficiently close (as taken form config) atom is nearby; This is not yet configurable
-        | TimedInstruction::Cz { id, .. } => (id, machine.zone.get(id)),
+        TimedInstruction::Rz { id, .. } | TimedInstruction::Ry { id, .. } => machine
+            .zone
+            .get(id)
+            .map_or_else(|| Match::Id(id), |zone| Match::IdOrZone { id, zone }),
+        // Instructions that target zones and require interaction distance
+        TimedInstruction::Cz { id, .. } => {
+            if let Some(zone) = machine.zone.get(id) {
+                // Get the position for each atom (identified by index) that is in the zone at the start_time
+                let in_zone: Vec<_> = atoms
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, a)| is_in_zone(a, zone, start_time))
+                    .map(|(idx, a)| (idx, a.timelines.position.get(start_time.f32().into())))
+                    .collect();
+
+                // Generate the targeted atom indices using nested loop.
+                // Assuming that at any time only clusters of two atoms exist,
+                // at most all atoms will be added to this vector
+                // as no atom will be added multiple times in the below loop.
+                // Therefore, we preallocate this size
+                let mut targeted = Vec::with_capacity(in_zone.len());
+                for a in 0..in_zone.len() {
+                    for b in (a + 1)..in_zone.len() {
+                        let (a, a_pos) = &in_zone[a];
+                        let (b, b_pos) = &in_zone[b];
+                        // Two atoms are close -> add both
+                        if is_close(a_pos, b_pos, machine.distance.interaction) {
+                            targeted.push(*a);
+                            targeted.push(*b);
+                        }
+                    }
+                }
+                Match::Index(targeted)
+            } else {
+                // Targeted zone does not exist
+                Match::None
+            }
+        }
     };
     atoms
-        .into_iter()
-        .filter(move |a| &a.id == id || zone.map(|z| is_in_zone(a, z, start_time)).unwrap_or(false))
+        .iter_mut()
+        .enumerate()
+        .filter(move |(idx, a)| match &m {
+            Match::Id(id) => &a.id == id,
+            Match::IdOrZone { id, zone } => &a.id == id || is_in_zone(a, zone, start_time),
+            Match::Index(indices) => indices.contains(idx),
+            Match::None => false,
+        })
+        .map(|(_, a)| a)
 }
 
 /// Gets the duration of the passed `instruction` when starting at the passed `time`,
