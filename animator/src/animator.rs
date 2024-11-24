@@ -106,7 +106,7 @@ impl Animator {
             .collect();
 
         // Convert the `Vec`s to `VecDeque`s to allow popping from front
-        let mut instructions: VecDeque<(_, VecDeque<_>)> = input
+        let mut absolute_timeline: VecDeque<(_, VecDeque<_>)> = input
             .instructions
             .into_iter()
             .map(|(t, i)| (t, i.into()))
@@ -117,44 +117,54 @@ impl Animator {
         let mut duration_total = Fraction::ZERO;
 
         // Animate the atoms
-        while let Some((time, mut instructions_)) = instructions.pop_front() {
-            if let Some((_, offset, instruction)) = instructions_.pop_front() {
+        while let Some((time, mut relative_timeline)) = absolute_timeline.pop_front() {
+            if let Some((_, offset, instructions)) = relative_timeline.pop_front() {
+                // Duration of the group
+                let mut duration = Fraction::ZERO;
+                // Start time of the group
                 let start_time = time + offset;
-                let duration = get_duration(&instruction, &atoms, &machine, start_time);
                 let start_time_f32 = start_time.f32();
-                let duration_f32 = duration.f32();
 
-                if let Some(position) = get_position(&instruction) {
-                    content_size.0 = content_size.0.max(position.0);
-                    content_size.1 = content_size.1.max(position.1);
+                for instruction in instructions {
+                    // Duration of the current instruction
+                    let current_duration = get_duration(&instruction, &atoms, &machine, start_time);
+                    let current_duration_f32 = current_duration.f32();
+                    // Update duration of group
+                    duration = duration.max(current_duration);
+
+                    if let Some(position) = get_position(&instruction) {
+                        content_size.0 = content_size.0.max(position.0);
+                        content_size.1 = content_size.1.max(position.1);
+                    }
+
+                    targeted(&mut atoms, &instruction, start_time, &machine).for_each(|a| {
+                        insert_animation(
+                            &mut a.timelines,
+                            &instruction,
+                            start_time_f32,
+                            current_duration_f32,
+                            &visual,
+                        )
+                    });
                 }
 
-                targeted(&mut atoms, &instruction, start_time, &machine).for_each(|a| {
-                    insert_animation(
-                        &mut a.timelines,
-                        &instruction,
-                        start_time_f32,
-                        duration_f32,
-                        &visual,
-                    )
-                });
-
-                let next_from_start = instructions_
+                let next_from_start = relative_timeline
                     .front()
                     .map(|(x, _, _)| *x)
                     .unwrap_or_default();
+                // Update duration of whole animation by duration of group
                 duration_total = duration_total.max(start_time + duration);
                 let next_time = if next_from_start {
                     start_time
                 } else {
                     start_time + duration
                 };
-                let idx = instructions.binary_search_by_key(&&next_time, |(t, _)| t);
+                let idx = absolute_timeline.binary_search_by_key(&&next_time, |(t, _)| t);
                 let idx = match idx {
                     Ok(idx) => idx,
                     Err(idx) => idx,
                 };
-                instructions.insert(idx, (next_time, instructions_));
+                absolute_timeline.insert(idx, (next_time, relative_timeline));
             }
         }
 

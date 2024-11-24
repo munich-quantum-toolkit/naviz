@@ -32,6 +32,10 @@ pub enum Token<T> {
     TupleOpen,
     /// Closing-symbol for a tuple
     TupleClose,
+    /// Opening-symbol for a group
+    GroupOpen,
+    /// Closing-symbol for a group
+    GroupClose,
     /// A separator between elements (e.g., in tuples)
     ElementSeparator,
     /// The symbol to denote the starting-time
@@ -112,6 +116,30 @@ pub mod token {
 
     pub use common::lexer::token::*;
 
+    /// Tries to parse a [Token::GroupOpen].
+    pub fn group_open<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Tok>
+    where
+        Token<I::Slice>: Into<Tok>,
+    {
+        "[".map(|_| Token::GroupOpen)
+            .output_into()
+            .parse_next(input)
+    }
+
+    /// Tries to parse a [Token::GroupClose].
+    pub fn group_close<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Tok>
+    where
+        Token<I::Slice>: Into<Tok>,
+    {
+        "]".map(|_| Token::GroupClose)
+            .output_into()
+            .parse_next(input)
+    }
+
     /// Tries to parse a single [Token::TimeSymbol].
     pub fn time_symbol<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
@@ -191,6 +219,8 @@ pub mod token {
             comment,
             tuple_open,
             tuple_close,
+            group_open,
+            group_close,
             element_separator,
             time_symbol,
             directive,
@@ -213,7 +243,15 @@ mod test {
         instruction argument "argument" ^argument$
         @0 timed_instruction arg
         @-1 negative_timed_instruction arg
-        @=2 positive_start_timed_instruction arg"#;
+        @=2 positive_start_timed_instruction arg
+        @+ [
+            group_instruction_a 1
+            group_instruction_b 2
+        ]
+        group_instruction [
+            1
+            2
+        ]"#;
 
         let expected = vec![
             Token::Directive("directive"),
@@ -247,6 +285,29 @@ mod test {
             Token::Value(Value::Number("2")),
             Token::Identifier("positive_start_timed_instruction"),
             Token::Identifier("arg"),
+            Token::Separator,
+            Token::TimeSymbol(TimeSpec::Relative {
+                from_start: false,
+                positive: true,
+            }),
+            Token::GroupOpen,
+            Token::Separator,
+            Token::Identifier("group_instruction_a"),
+            Token::Value(Value::Number("1")),
+            Token::Separator,
+            Token::Identifier("group_instruction_b"),
+            Token::Value(Value::Number("2")),
+            Token::Separator,
+            Token::GroupClose,
+            Token::Separator,
+            Token::Identifier("group_instruction"),
+            Token::GroupOpen,
+            Token::Separator,
+            Token::Value(Value::Number("1")),
+            Token::Separator,
+            Token::Value(Value::Number("2")),
+            Token::Separator,
+            Token::GroupClose,
             Token::Separator,
         ];
 
