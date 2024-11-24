@@ -79,6 +79,7 @@ machine {
 	trap {
 		color: #000000aa // Color of the traps
 		radius: 18 // Radius of the traps
+		line_width: 1 // Line width of the traps
 		name: "Trap" // Name to display in the sidebar legend
 	}
 	shuttle {
@@ -147,11 +148,18 @@ sidebar {
 		color: #000000 // Color of the sidebar legend
 	}
 	margin: 8 // Margin around the sidebar legend
+	padding {
+		color: 24 // Distance between color display and text
+		heading: 48 // Distance to advance for each header item; should be larger than font size
+		entry: 32 // Distance to advance for each entry item; should be larger than font size
+	}
+	color_radius: 8 // The radius of the color display
 }
 
 time {
 	display: true // Whether to display the current time
 	prefix: "Time: " // Text to display before the time
+	precision: 1 // Number of decimal places to show. Should be a natural number.
 	font {
 		family: "Last Font" // Font-Family of the time
 		size: 12 // Size of the time

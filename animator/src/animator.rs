@@ -277,7 +277,7 @@ impl Animator {
                         .map(|t| (t.position.0.f32(), t.position.1.f32()))
                         .collect(),
                     radius: visual.machine.trap.radius.f32(),
-                    line_width: 1., // TODO: this is not configurable currently
+                    line_width: visual.machine.trap.line_width.f32(),
                     color: visual.machine.trap.color.rgba(),
                 },
                 zones: machine
@@ -340,10 +340,10 @@ impl Animator {
                     color: visual.sidebar.font.color.rgba(),
                     family: visual.sidebar.font.family.to_owned(),
                 },
-                heading_skip: visual.sidebar.font.size.f32() * 1.6,
-                entry_skip: visual.sidebar.font.size.f32() * 1.4,
-                color_circle_radius: visual.sidebar.font.size.f32() / 2.,
-                color_padding: visual.sidebar.font.size.f32() / 2.,
+                heading_skip: visual.sidebar.padding.heading.f32(),
+                entry_skip: visual.sidebar.padding.entry.f32(),
+                color_circle_radius: visual.sidebar.color_radius.f32(),
+                color_padding: visual.sidebar.padding.color.f32(),
                 entries: legend_entries,
             },
             time: TimeConfig {
@@ -404,7 +404,13 @@ impl Animator {
                     },
                 )
                 .collect(),
-            time: format!("{}{:.1} {}", time_strings.0, time, time_strings.1),
+            time: format!(
+                "{}{:.*} {}",
+                time_strings.0,
+                self.visual.time.precision.f64().abs().floor() as usize,
+                time,
+                time_strings.1
+            ),
         }
     }
 

@@ -193,6 +193,7 @@ machine {
 	trap {
 		color: <color> // Color of the traps
 		radius: <number> // Radius of the traps
+		line_width: <number> // Line width of the traps
 		name: <string> // Name to display in the sidebar legend
 	}
 	shuttle {
@@ -273,6 +274,12 @@ sidebar {
 		color: <color> // Color of the sidebar legend
 	}
 	margin: <number> // Margin around the sidebar legend
+	padding {
+		color: <number> // Distance between color display and text
+		heading: <number> // Distance to advance for each header item; should be larger than font size
+		entry: <number> // Distance to advance for each entry item; should be larger than font size
+	}
+	color_radius: <number> // The radius of the color display
 }
 ```
 
@@ -284,6 +291,7 @@ The `time`-block allows specifying settings regarding the appearance of the time
 time {
 	display: <boolean> // Whether to display the current time
 	prefix: <string> // Text to display before the time
+	precision: <number> // Number of decimal places to show. Should be a natural number.
 	font {
 		family: <string> // Font-Family of the time
 		size: <number> // Size of the time
