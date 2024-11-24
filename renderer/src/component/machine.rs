@@ -150,20 +150,31 @@ fn get_specs<'a>(
 ) {
     let MachineConfig { grid, traps, zones } = &config.machine;
 
+    // The viewport edges
+    let vp_left = viewport_projection.source.left();
+    let vp_right = viewport_projection.source.right();
+    let vp_top = viewport_projection.source.top();
+    let vp_bottom = viewport_projection.source.bottom();
+    // The viewport-edges clamped to the grid/legend steps
+    let vp_left_grid = vp_left - vp_left % grid.step.0;
+    let vp_top_grid = vp_top - vp_top % grid.step.1;
+    let vp_left_legend = vp_left - vp_left % grid.legend.step.0;
+    let vp_top_legend = vp_top - vp_top % grid.legend.step.1;
+
     // Create the LineSpecs for the grid; first x, then y
-    let lines: Vec<_> = range_f32(0., viewport_projection.source.width, grid.step.0)
+    let lines: Vec<_> = range_f32(vp_left_grid, vp_right, grid.step.0)
         .map(|x| LineSpec {
-            start: [x, 0.],
-            end: [x, viewport_projection.source.height],
+            start: [x, vp_top],
+            end: [x, vp_bottom],
             color: grid.line.color,
             width: grid.line.width,
             segment_length: grid.line.segment_length,
             duty: grid.line.duty,
         })
         .chain(
-            range_f32(0., viewport_projection.source.height, grid.step.1).map(|y| LineSpec {
-                start: [0., y],
-                end: [viewport_projection.source.width, y],
+            range_f32(vp_top_grid, vp_bottom, grid.step.1).map(|y| LineSpec {
+                start: [vp_left, y],
+                end: [vp_right, y],
                 color: grid.line.color,
                 width: grid.line.width,
                 segment_length: grid.line.segment_length,
@@ -186,29 +197,29 @@ fn get_specs<'a>(
 
     // Create the text specs for the numbers numbers (x then y)
     // First create strings, then convert to text spec
-    *text_buffer = range_f32(0., viewport_projection.source.width, grid.legend.step.0)
+    *text_buffer = range_f32(vp_left_legend, vp_right, grid.legend.step.0)
         .map(|x| {
             (
                 format!("{x}"),
                 (
                     x,
-                    grid.legend.position.0.get(
-                        -LABEL_PADDING,
-                        viewport_projection.source.height + LABEL_PADDING,
-                    ),
+                    grid.legend
+                        .position
+                        .0
+                        .get(vp_top - LABEL_PADDING, vp_bottom + LABEL_PADDING),
                 ),
                 Alignment(HAlignment::Center, get_v_alignment(grid.legend.position.0)),
             )
         })
         .chain(
-            range_f32(0., viewport_projection.source.height, grid.legend.step.1).map(|y| {
+            range_f32(vp_top_legend, vp_bottom, grid.legend.step.1).map(|y| {
                 (
                     format!("{y}"),
                     (
-                        grid.legend.position.1.get(
-                            -LABEL_PADDING,
-                            viewport_projection.source.width + LABEL_PADDING,
-                        ),
+                        grid.legend
+                            .position
+                            .1
+                            .get(vp_left - LABEL_PADDING, vp_right + LABEL_PADDING),
                         y,
                     ),
                     Alignment(get_h_alignment(grid.legend.position.1), VAlignment::Center),
@@ -222,14 +233,12 @@ fn get_specs<'a>(
         (
             grid.legend.labels.0.as_str(),
             (
-                grid.legend.position.1.inverse().get(
-                    -LABEL_PADDING,
-                    viewport_projection.source.width + LABEL_PADDING,
-                ),
                 grid.legend
                     .position
-                    .0
-                    .get(0., viewport_projection.source.height),
+                    .1
+                    .inverse()
+                    .get(vp_left - LABEL_PADDING, vp_right + LABEL_PADDING),
+                grid.legend.position.0.get(vp_top, vp_bottom),
             ),
             Alignment(
                 get_h_alignment(grid.legend.position.1.inverse()),
@@ -239,14 +248,12 @@ fn get_specs<'a>(
         (
             grid.legend.labels.1.as_str(),
             (
+                grid.legend.position.1.get(vp_left, vp_right),
                 grid.legend
                     .position
-                    .1
-                    .get(0., viewport_projection.source.width),
-                grid.legend.position.0.inverse().get(
-                    -LABEL_PADDING,
-                    viewport_projection.source.height + LABEL_PADDING,
-                ),
+                    .0
+                    .inverse()
+                    .get(vp_top - LABEL_PADDING, vp_bottom + LABEL_PADDING),
             ),
             Alignment(
                 HAlignment::Center,

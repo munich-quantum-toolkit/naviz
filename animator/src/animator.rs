@@ -112,7 +112,20 @@ impl Animator {
             .map(|(t, i)| (t, i.into()))
             .collect();
 
-        let mut content_size = (Fraction::ZERO, Fraction::ZERO);
+        // Extract the positions / coordinates
+        let setup_positions = input.setup.iter().map(|a| match a {
+            SetupInstruction::Atom { position, .. } => position,
+        });
+        let setup_xs = setup_positions.clone().map(|p| p.0);
+        let setup_ys = setup_positions.clone().map(|p| p.0);
+
+        // (tl_x, tl_y, br_x, br_y)
+        let mut content_extent = (
+            setup_xs.clone().min().unwrap_or_default(),
+            setup_ys.clone().min().unwrap_or_default(),
+            setup_xs.clone().max().unwrap_or_default(),
+            setup_ys.clone().max().unwrap_or_default(),
+        );
 
         let mut duration_total = Fraction::ZERO;
 
@@ -132,9 +145,12 @@ impl Animator {
                     // Update duration of group
                     duration = duration.max(current_duration);
 
+                    // update extent
                     if let Some(position) = get_position(&instruction) {
-                        content_size.0 = content_size.0.max(position.0);
-                        content_size.1 = content_size.1.max(position.1);
+                        content_extent.0 = content_extent.0.min(position.0);
+                        content_extent.1 = content_extent.1.min(position.1);
+                        content_extent.2 = content_extent.2.max(position.0);
+                        content_extent.3 = content_extent.3.max(position.1);
                     }
 
                     targeted(&mut atoms, &instruction, start_time, &machine).for_each(|a| {
@@ -167,6 +183,12 @@ impl Animator {
                 absolute_timeline.insert(idx, (next_time, relative_timeline));
             }
         }
+
+        // Add margin to extent
+        content_extent.0 -= visual.coordinate.margin;
+        content_extent.1 -= visual.coordinate.margin;
+        content_extent.2 += visual.coordinate.margin;
+        content_extent.3 += visual.coordinate.margin;
 
         // The legend entries
         let mut legend_entries = Vec::new();
@@ -333,7 +355,10 @@ impl Animator {
                     color: visual.machine.shuttle.color.rgba(),
                 },
             },
-            content_size: (content_size.0.f32(), content_size.1.f32()),
+            content_extent: (
+                (content_extent.0.f32(), content_extent.1.f32()),
+                (content_extent.2.f32(), content_extent.3.f32()),
+            ),
             legend: LegendConfig {
                 font: FontConfig {
                     size: visual.sidebar.font.size.f32(),

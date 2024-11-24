@@ -71,6 +71,8 @@ impl Layout {
         // layout legend
         let legend = ViewportProjection {
             source: ViewportSource {
+                x: 0.,
+                y: 0.,
                 width: legend_width,
                 height: legend_height,
             },
@@ -91,6 +93,8 @@ impl Layout {
         // layout time
         let time = ViewportProjection {
             source: ViewportSource {
+                x: 0.,
+                y: 0.,
                 width: time_width,
                 height: time_height,
             },
