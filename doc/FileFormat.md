@@ -36,15 +36,11 @@ name: <string> // Name of the machine
 
 ### Movement Speeds
 
-The maximum movement speed as well as the allowed acceleration are specified in the `movement`-block:
+The constant jerk of the machine is specified in the `movement`-block:
 
 ```
 movement {
-	speed: <number> // Maximum speed
-	acceleration {
-		up: <number> // Maximum acceleration
-		down: <number> // Maximum deceleration
-	}
+	jerk: <number> // Constant jerk
 }
 ```
 

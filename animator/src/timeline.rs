@@ -8,8 +8,6 @@
 //! (which leads to a jump to the previous [Keyframe]'s [value][Keyframe::value]
 //! at the start of the new [Keyframe]).
 
-use std::marker::PhantomData;
-
 use ordered_float::OrderedFloat;
 
 use crate::interpolator::InterpolationFunction;
@@ -123,28 +121,41 @@ pub struct Timeline<T: Copy, Dur: Duration, I: InterpolationFunction<T>> {
     /// The default value, which is valid from `-Inf` until the first keyframe
     default: T,
     /// The used interpolation function
-    interpolation_function: PhantomData<I>,
+    interpolation_function: I,
 }
 
-impl<T: Copy + Default, Dur: Duration, I: InterpolationFunction<T>> Default
+impl<T: Copy + Default, Dur: Duration, I: InterpolationFunction<T> + Default> Default
     for Timeline<T, Dur, I>
 {
     fn default() -> Self {
         Self {
             keyframes: Vec::new(),
             default: T::default(),
-            interpolation_function: PhantomData,
+            interpolation_function: Default::default(),
+        }
+    }
+}
+
+impl<T: Copy, Dur: Duration, I: InterpolationFunction<T> + Default> Timeline<T, Dur, I> {
+    /// Creates a new [Timeline] with the passed `default`-value
+    /// and the default interpolation parameters
+    pub fn new(default: T) -> Self {
+        Self {
+            keyframes: Vec::new(),
+            default,
+            interpolation_function: Default::default(),
         }
     }
 }
 
 impl<T: Copy, Dur: Duration, I: InterpolationFunction<T>> Timeline<T, Dur, I> {
     /// Creates a new [Timeline] with the passed `default`-value
-    pub fn new(default: T) -> Self {
+    /// and the specified interpolation parameters
+    pub fn new_with_interpolation(default: T, interpolation_function: I) -> Self {
         Self {
             keyframes: Vec::new(),
             default,
-            interpolation_function: PhantomData,
+            interpolation_function,
         }
     }
 
@@ -197,7 +208,7 @@ impl<T: Copy, Dur: Duration, I: InterpolationFunction<T>> Timeline<T, Dur, I> {
             } else {
                 (1.).into()
             };
-            I::interpolate(fraction, from, to)
+            self.interpolation_function.interpolate(fraction, from, to)
         } else {
             self.default
         }

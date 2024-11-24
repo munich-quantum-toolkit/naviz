@@ -22,7 +22,7 @@ use regex::Regex;
 
 use crate::{
     color::Color,
-    interpolator::{Constant, Cubic, Triangle},
+    interpolator::{ComponentWise, Constant, ConstantJerk, DurationCalculable, Triangle},
     position::Position,
     timeline::{Time, Timeline},
     to_float::ToFloat,
@@ -30,7 +30,7 @@ use crate::{
 
 /// The timelines for a single atom
 pub struct AtomTimelines {
-    position: Timeline<Position, f32, Cubic>,
+    position: Timeline<Position, f32, ComponentWise<ConstantJerk>>,
     overlay_color: Timeline<Color, f32, Triangle>,
     size: Timeline<f32, f32, Triangle>,
     shuttling: Timeline<bool, (), Constant>,
@@ -38,9 +38,18 @@ pub struct AtomTimelines {
 
 impl AtomTimelines {
     /// Creates new AtomTimelines from the passed default values
-    pub fn new(position: Position, overlay_color: Color, size: f32, shuttling: bool) -> Self {
+    pub fn new(
+        position: Position,
+        overlay_color: Color,
+        size: f32,
+        shuttling: bool,
+        jerk: f32,
+    ) -> Self {
         Self {
-            position: Timeline::new(position),
+            position: Timeline::new_with_interpolation(
+                position,
+                ComponentWise(ConstantJerk::new(jerk)),
+            ),
             overlay_color: Timeline::new(overlay_color),
             size: Timeline::new(size),
             shuttling: Timeline::new(shuttling),
@@ -100,6 +109,7 @@ impl Animator {
                         Color::default(),
                         visual.atom.radius.f32(),
                         false,
+                        machine.movement.jerk.f32(),
                     ),
                 },
             })
@@ -562,55 +572,22 @@ fn get_duration(
     match instruction {
         TimedInstruction::Load { .. } => machine.time.load,
         TimedInstruction::Store { .. } => machine.time.store,
-        TimedInstruction::Move { position, id } => {
-            // fraction-crate currently has neither `pow` nor `sqrt`, therefore we calculate using `f64`s
-            fn dst((x0, y0): (f64, f64), (x1, y1): (f64, f64)) -> f64 {
-                ((x0 - x1).powi(2) + (y0 - y1).powi(2)).sqrt()
-            }
-            (|| {
-                let start = atoms
-                    .iter()
-                    .find(|a| &a.id == id)?
-                    .timelines
-                    .position
-                    .get(time.f32().into());
-                let start = (start.x as f64, start.y as f64);
-                let end = (position.0.f64(), position.1.f64());
-                let distance = dst(start, end);
+        TimedInstruction::Move { position, id } => (|| {
+            let start = atoms
+                .iter()
+                .find(|a| &a.id == id)?
+                .timelines
+                .position
+                .get(time.f32().into());
+            let end = (position.0.f32(), position.1.f32());
 
-                let a_up = machine.movement.acceleration.up.f64();
-                let a_down = machine.movement.acceleration.down.f64();
-                let speed_max = machine.movement.speed.f64();
-
-                // The time until speed_max is reached during speed-up
-                // a_up * t = speed_max
-                let time_until_speed_max_up = speed_max / a_up;
-                // The time from speed_max was reached during speed-down
-                // a_down * t = speed_max
-                let time_until_speed_max_down = speed_max / a_down;
-
-                // The intersection-time of the start and stop quadratics
-                // a_up / 2 * t^2 = distance - a_down / 2 * t^2
-                let t_up_down_intersect = (2. * distance / (a_up + a_down)).sqrt();
-
-                if t_up_down_intersect <= time_until_speed_max_up
-                    && t_up_down_intersect <= time_until_speed_max_down
-                {
-                    return Some(2. * t_up_down_intersect);
-                }
-
-                // The distance the atom travels at max speed
-                let distance_at_max_speed = (distance
-                    - a_down / 2. * time_until_speed_max_down.powi(2))
-                    - (a_up / 2. * time_until_speed_max_up.powi(2));
-                // The time the atoms travels at max speed
-                let time_at_max_speed = distance_at_max_speed / speed_max;
-
-                Some(time_until_speed_max_up + time_at_max_speed + time_until_speed_max_down)
-            })()
-            .map(Fraction::from)
-            .unwrap_or_default()
-        }
+            Some(
+                ComponentWise(ConstantJerk::new(machine.movement.jerk.f32()))
+                    .duration(start, Position { x: end.0, y: end.1 }),
+            )
+        })()
+        .map(Fraction::from)
+        .unwrap_or_default(),
         TimedInstruction::Rz { .. } => machine.time.rz,
         TimedInstruction::Ry { .. } => machine.time.ry,
         TimedInstruction::Cz { .. } => machine.time.cz,

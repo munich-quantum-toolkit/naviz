@@ -3,11 +3,7 @@
 name: "Name" // Name of the machine
 
 movement {
-	speed: 23 // Maximum speed
-	acceleration {
-		up: 11 // Maximum acceleration
-		down: 8 // Maximum deceleration
-	}
+	jerk: 23 // Constant jerk
 }
 
 time {
