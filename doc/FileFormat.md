@@ -126,7 +126,6 @@ atom {
 		}
 	}
 	radius: <number> // Radius of atoms
-	margin: <number> // Visual separation of atoms that are too close (i.e., all atoms will appear to be at least this far away, even if they are closer).
 }
 ```
 

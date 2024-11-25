@@ -47,7 +47,6 @@ pub struct AtomConfig {
     pub shuttling: ShuttlingConfig,
     pub legend: AtomLegendConfig,
     pub radius: Fraction,
-    pub margin: Fraction,
 }
 
 impl TryFrom<Config> for AtomConfig {
@@ -58,7 +57,6 @@ impl TryFrom<Config> for AtomConfig {
             shuttling: get_item_struct(&mut value, "shuttling")?,
             legend: get_item_struct(&mut value, "legend")?,
             radius: get_item(&mut value, "radius")?,
-            margin: get_item(&mut value, "margin")?,
         })
     }
 }
@@ -654,7 +652,6 @@ mod test {
                     },
                 },
                 radius: Fraction::new(32u64, 1u64),
-                margin: Fraction::new(8u64, 1u64),
             },
             zone: ZoneConfig {
                 config: vec![
