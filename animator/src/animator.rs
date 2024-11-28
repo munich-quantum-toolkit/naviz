@@ -106,57 +106,89 @@ impl Animator {
             .collect();
 
         // Convert the `Vec`s to `VecDeque`s to allow popping from front
-        let mut instructions: VecDeque<(_, VecDeque<_>)> = input
+        let mut absolute_timeline: VecDeque<(_, VecDeque<_>)> = input
             .instructions
             .into_iter()
             .map(|(t, i)| (t, i.into()))
             .collect();
 
-        let mut content_size = (Fraction::ZERO, Fraction::ZERO);
+        // Extract the positions / coordinates
+        let setup_positions = input.setup.iter().map(|a| match a {
+            SetupInstruction::Atom { position, .. } => position,
+        });
+        let setup_xs = setup_positions.clone().map(|p| p.0);
+        let setup_ys = setup_positions.clone().map(|p| p.0);
+
+        // (tl_x, tl_y, br_x, br_y)
+        let mut content_extent = (
+            setup_xs.clone().min().unwrap_or_default(),
+            setup_ys.clone().min().unwrap_or_default(),
+            setup_xs.clone().max().unwrap_or_default(),
+            setup_ys.clone().max().unwrap_or_default(),
+        );
 
         let mut duration_total = Fraction::ZERO;
 
         // Animate the atoms
-        while let Some((time, mut instructions_)) = instructions.pop_front() {
-            if let Some((_, offset, instruction)) = instructions_.pop_front() {
+        while let Some((time, mut relative_timeline)) = absolute_timeline.pop_front() {
+            if let Some((_, offset, instructions)) = relative_timeline.pop_front() {
+                // Duration of the group
+                let mut duration = Fraction::ZERO;
+                // Start time of the group
                 let start_time = time + offset;
-                let duration = get_duration(&instruction, &atoms, &machine, start_time);
                 let start_time_f32 = start_time.f32();
-                let duration_f32 = duration.f32();
 
-                if let Some(position) = get_position(&instruction) {
-                    content_size.0 = content_size.0.max(position.0);
-                    content_size.1 = content_size.1.max(position.1);
+                for instruction in instructions {
+                    // Duration of the current instruction
+                    let current_duration = get_duration(&instruction, &atoms, &machine, start_time);
+                    let current_duration_f32 = current_duration.f32();
+                    // Update duration of group
+                    duration = duration.max(current_duration);
+
+                    // update extent
+                    if let Some(position) = get_position(&instruction) {
+                        content_extent.0 = content_extent.0.min(position.0);
+                        content_extent.1 = content_extent.1.min(position.1);
+                        content_extent.2 = content_extent.2.max(position.0);
+                        content_extent.3 = content_extent.3.max(position.1);
+                    }
+
+                    targeted(&mut atoms, &instruction, start_time, &machine).for_each(|a| {
+                        insert_animation(
+                            &mut a.timelines,
+                            &instruction,
+                            start_time_f32,
+                            current_duration_f32,
+                            &visual,
+                        )
+                    });
                 }
 
-                targeted(&mut atoms, &instruction, start_time, &machine).for_each(|a| {
-                    insert_animation(
-                        &mut a.timelines,
-                        &instruction,
-                        start_time_f32,
-                        duration_f32,
-                        &visual,
-                    )
-                });
-
-                let next_from_start = instructions_
+                let next_from_start = relative_timeline
                     .front()
                     .map(|(x, _, _)| *x)
                     .unwrap_or_default();
+                // Update duration of whole animation by duration of group
                 duration_total = duration_total.max(start_time + duration);
                 let next_time = if next_from_start {
                     start_time
                 } else {
                     start_time + duration
                 };
-                let idx = instructions.binary_search_by_key(&&next_time, |(t, _)| t);
+                let idx = absolute_timeline.binary_search_by_key(&&next_time, |(t, _)| t);
                 let idx = match idx {
                     Ok(idx) => idx,
                     Err(idx) => idx,
                 };
-                instructions.insert(idx, (next_time, instructions_));
+                absolute_timeline.insert(idx, (next_time, relative_timeline));
             }
         }
+
+        // Add margin to extent
+        content_extent.0 -= visual.coordinate.margin;
+        content_extent.1 -= visual.coordinate.margin;
+        content_extent.2 += visual.coordinate.margin;
+        content_extent.3 += visual.coordinate.margin;
 
         // The legend entries
         let mut legend_entries = Vec::new();
@@ -267,7 +299,7 @@ impl Animator {
                         .map(|t| (t.position.0.f32(), t.position.1.f32()))
                         .collect(),
                     radius: visual.machine.trap.radius.f32(),
-                    line_width: 1., // TODO: this is not configurable currently
+                    line_width: visual.machine.trap.line_width.f32(),
                     color: visual.machine.trap.color.rgba(),
                 },
                 zones: machine
@@ -323,17 +355,20 @@ impl Animator {
                     color: visual.machine.shuttle.color.rgba(),
                 },
             },
-            content_size: (content_size.0.f32(), content_size.1.f32()),
+            content_extent: (
+                (content_extent.0.f32(), content_extent.1.f32()),
+                (content_extent.2.f32(), content_extent.3.f32()),
+            ),
             legend: LegendConfig {
                 font: FontConfig {
                     size: visual.sidebar.font.size.f32(),
                     color: visual.sidebar.font.color.rgba(),
                     family: visual.sidebar.font.family.to_owned(),
                 },
-                heading_skip: visual.sidebar.font.size.f32() * 1.6,
-                entry_skip: visual.sidebar.font.size.f32() * 1.4,
-                color_circle_radius: visual.sidebar.font.size.f32() / 2.,
-                color_padding: visual.sidebar.font.size.f32() / 2.,
+                heading_skip: visual.sidebar.padding.heading.f32(),
+                entry_skip: visual.sidebar.padding.entry.f32(),
+                color_circle_radius: visual.sidebar.color_radius.f32(),
+                color_padding: visual.sidebar.padding.color.f32(),
                 entries: legend_entries,
             },
             time: TimeConfig {
@@ -394,7 +429,13 @@ impl Animator {
                     },
                 )
                 .collect(),
-            time: format!("{}{:.1} {}", time_strings.0, time, time_strings.1),
+            time: format!(
+                "{}{:.*} {}",
+                time_strings.0,
+                self.visual.time.precision.f64().abs().floor() as usize,
+                time,
+                time_strings.1
+            ),
         }
     }
 
@@ -430,28 +471,85 @@ fn is_in_zone(
         && position.y <= zone.to.1.f32()
 }
 
-/// Filters the passed `atoms`-iterator to only contain the atoms that are targeted
-/// by the  passed `instruction` at the specified `start_time` (time the instruction starts).
+/// Checks whether two positions `a` and `b` are at most `max_distance` apart.
+fn is_close(a: &Position, b: &Position, max_distance: Fraction) -> bool {
+    let distance_sq = (a.x - b.x).powi(2) + (a.y - b.y).powi(2);
+    distance_sq <= max_distance.f32().powi(2)
+}
+
+/// Filters the passed `atoms`-slice to only contain the atoms that are targeted
+/// by the  passed `instruction` at the specified `start_time` (time the instruction starts)
+/// and returns an iterator over all qualifying atoms.
 fn targeted<'a>(
-    atoms: impl IntoIterator<Item = &'a mut Atom>,
+    atoms: &'a mut [Atom],
     instruction: &'a TimedInstruction,
     start_time: Fraction,
     machine: &'a MachineConfig,
 ) -> impl Iterator<Item = &'a mut Atom> {
-    let (id, zone) = match instruction {
+    enum Match<'a> {
+        Id(&'a str),
+        IdOrZone {
+            id: &'a str,
+            zone: &'a naviz_parser::config::machine::ZoneConfig,
+        },
+        Index(Vec<usize>),
+        None,
+    }
+    let m = match instruction {
         // Instructions that only target individual atoms
         TimedInstruction::Load { id, .. }
         | TimedInstruction::Store { id, .. }
-        | TimedInstruction::Move { id, .. } => (id, None),
+        | TimedInstruction::Move { id, .. } => Match::Id(id),
         // Instructions that target atoms and zones
-        TimedInstruction::Rz { id, .. }
-        | TimedInstruction::Ry { id, .. }
-         // FIXME: cz cannot match on atom id at all; it can only match on zones and should only match if a sufficiently close (as taken form config) atom is nearby; This is not yet configurable
-        | TimedInstruction::Cz { id, .. } => (id, machine.zone.get(id)),
+        TimedInstruction::Rz { id, .. } | TimedInstruction::Ry { id, .. } => machine
+            .zone
+            .get(id)
+            .map_or_else(|| Match::Id(id), |zone| Match::IdOrZone { id, zone }),
+        // Instructions that target zones and require interaction distance
+        TimedInstruction::Cz { id, .. } => {
+            if let Some(zone) = machine.zone.get(id) {
+                // Get the position for each atom (identified by index) that is in the zone at the start_time
+                let in_zone: Vec<_> = atoms
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, a)| is_in_zone(a, zone, start_time))
+                    .map(|(idx, a)| (idx, a.timelines.position.get(start_time.f32().into())))
+                    .collect();
+
+                // Generate the targeted atom indices using nested loop.
+                // Assuming that at any time only clusters of two atoms exist,
+                // at most all atoms will be added to this vector
+                // as no atom will be added multiple times in the below loop.
+                // Therefore, we preallocate this size
+                let mut targeted = Vec::with_capacity(in_zone.len());
+                for a in 0..in_zone.len() {
+                    for b in (a + 1)..in_zone.len() {
+                        let (a, a_pos) = &in_zone[a];
+                        let (b, b_pos) = &in_zone[b];
+                        // Two atoms are close -> add both
+                        if is_close(a_pos, b_pos, machine.distance.interaction) {
+                            targeted.push(*a);
+                            targeted.push(*b);
+                        }
+                    }
+                }
+                Match::Index(targeted)
+            } else {
+                // Targeted zone does not exist
+                Match::None
+            }
+        }
     };
     atoms
-        .into_iter()
-        .filter(move |a| &a.id == id || zone.map(|z| is_in_zone(a, z, start_time)).unwrap_or(false))
+        .iter_mut()
+        .enumerate()
+        .filter(move |(idx, a)| match &m {
+            Match::Id(id) => &a.id == id,
+            Match::IdOrZone { id, zone } => &a.id == id || is_in_zone(a, zone, start_time),
+            Match::Index(indices) => indices.contains(idx),
+            Match::None => false,
+        })
+        .map(|(_, a)| a)
 }
 
 /// Gets the duration of the passed `instruction` when starting at the passed `time`,

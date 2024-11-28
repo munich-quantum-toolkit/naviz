@@ -47,7 +47,6 @@ pub struct AtomConfig {
     pub shuttling: ShuttlingConfig,
     pub legend: AtomLegendConfig,
     pub radius: Fraction,
-    pub margin: Fraction,
 }
 
 impl TryFrom<Config> for AtomConfig {
@@ -58,7 +57,6 @@ impl TryFrom<Config> for AtomConfig {
             shuttling: get_item_struct(&mut value, "shuttling")?,
             legend: get_item_struct(&mut value, "legend")?,
             radius: get_item(&mut value, "radius")?,
-            margin: get_item(&mut value, "margin")?,
         })
     }
 }
@@ -351,6 +349,7 @@ impl TryFrom<Config> for MachineConfig {
 pub struct TrapConfig {
     pub color: Color,
     pub radius: Fraction,
+    pub line_width: Fraction,
     pub name: String,
 }
 
@@ -360,6 +359,7 @@ impl TryFrom<Config> for TrapConfig {
         Ok(Self {
             color: get_item(&mut value, "color")?,
             radius: get_item(&mut value, "radius")?,
+            line_width: get_item(&mut value, "line_width")?,
             name: get_item(&mut value, "name")?,
         })
     }
@@ -535,6 +535,8 @@ impl TryFrom<Config> for AxisConfig {
 pub struct SidebarConfig {
     pub font: FontConfig,
     pub margin: Fraction,
+    pub padding: SidebarPaddingConfig,
+    pub color_radius: Fraction,
 }
 
 impl TryFrom<Config> for SidebarConfig {
@@ -543,6 +545,27 @@ impl TryFrom<Config> for SidebarConfig {
         Ok(Self {
             font: get_item_struct(&mut value, "font")?,
             margin: get_item(&mut value, "margin")?,
+            padding: get_item_struct(&mut value, "padding")?,
+            color_radius: get_item(&mut value, "color_radius")?,
+        })
+    }
+}
+
+#[cfg_attr(test, derive(PartialEq))]
+#[derive(Debug, Clone)]
+pub struct SidebarPaddingConfig {
+    pub color: Fraction,
+    pub heading: Fraction,
+    pub entry: Fraction,
+}
+
+impl TryFrom<Config> for SidebarPaddingConfig {
+    type Error = Error;
+    fn try_from(mut value: Config) -> Result<Self, Self::Error> {
+        Ok(Self {
+            color: get_item(&mut value, "color")?,
+            heading: get_item(&mut value, "heading")?,
+            entry: get_item(&mut value, "entry")?,
         })
     }
 }
@@ -552,6 +575,7 @@ impl TryFrom<Config> for SidebarConfig {
 pub struct TimeConfig {
     pub display: bool,
     pub prefix: String,
+    pub precision: Fraction,
     pub font: FontConfig,
 }
 
@@ -561,6 +585,7 @@ impl TryFrom<Config> for TimeConfig {
         Ok(Self {
             display: get_item(&mut value, "display")?,
             prefix: get_item(&mut value, "prefix")?,
+            precision: get_item(&mut value, "precision")?,
             font: get_item_struct(&mut value, "font")?,
         })
     }
@@ -627,7 +652,6 @@ mod test {
                     },
                 },
                 radius: Fraction::new(32u64, 1u64),
-                margin: Fraction::new(8u64, 1u64),
             },
             zone: ZoneConfig {
                 config: vec![
@@ -724,6 +748,7 @@ mod test {
                         a: 170,
                     },
                     radius: Fraction::new(18u64, 1u64),
+                    line_width: Fraction::new(1u64, 1u64),
                     name: "Trap".to_string(),
                 },
                 shuttle: ShuttleConfig {
@@ -815,10 +840,17 @@ mod test {
                     },
                 },
                 margin: Fraction::new(8u64, 1u64),
+                padding: SidebarPaddingConfig {
+                    color: Fraction::new(24u64, 1u64),
+                    heading: Fraction::new(48u64, 1u64),
+                    entry: Fraction::new(32u64, 1u64),
+                },
+                color_radius: Fraction::new(8u64, 1u64),
             },
             time: TimeConfig {
                 display: true,
                 prefix: "Time: ".to_string(),
+                precision: Fraction::new(1u64, 1u64),
                 font: FontConfig {
                     family: "Last Font".to_string(),
                     size: Fraction::new(12u64, 1u64),

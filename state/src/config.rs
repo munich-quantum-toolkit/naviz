@@ -1,4 +1,4 @@
-use crate::{Color, Position, Size};
+use crate::{Color, Extent, Position, Size};
 
 /// Static config (i.e., does not usually change)
 #[derive(Clone, Debug)]
@@ -11,8 +11,8 @@ pub struct Config {
     pub legend: LegendConfig,
     /// The config for the time
     pub time: TimeConfig,
-    /// The size of the content (in content-coordinates)
-    pub content_size: Size,
+    /// The extent of the content (in content-coordinates), denoted by top-left and bottom-right
+    pub content_extent: Extent,
 }
 
 #[derive(Clone, Debug)]
@@ -333,7 +333,7 @@ impl Config {
                     family: "Fira Mono".to_owned(),
                 },
             },
-            content_size: (100., 120.),
+            content_extent: ((0., 0.), (100., 120.)),
         }
     }
 }

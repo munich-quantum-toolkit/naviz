@@ -174,16 +174,16 @@ fn get_specs<'a>(
              }| {
                 [
                     LineSpec {
-                        start: [*x, 0.],
-                        end: [*x, viewport_projection.source.height],
+                        start: [*x, viewport_projection.source.top()],
+                        end: [*x, viewport_projection.source.bottom()],
                         color: shuttle.color,
                         width: shuttle.width,
                         segment_length: shuttle.segment_length,
                         duty: shuttle.duty,
                     },
                     LineSpec {
-                        start: [0., *y],
-                        end: [viewport_projection.source.width, *y],
+                        start: [viewport_projection.source.left(), *y],
+                        end: [viewport_projection.source.right(), *y],
                         color: shuttle.color,
                         width: shuttle.width,
                         segment_length: shuttle.segment_length,

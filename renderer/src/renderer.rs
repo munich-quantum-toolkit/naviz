@@ -10,6 +10,7 @@ use crate::{
     globals::Globals,
     layout::Layout,
     shaders::{create_composer, load_default_shaders},
+    viewport::ViewportSource,
 };
 
 /// The main renderer, which renders the visualization output
@@ -44,7 +45,7 @@ impl Renderer {
             time,
         } = Layout::new(
             screen_resolution,
-            config.content_size.into(),
+            ViewportSource::from_tl_br(config.content_extent.0, config.content_extent.1),
             36.,
             1024.,
             config.time.font.size * 1.2,
@@ -132,7 +133,7 @@ impl Renderer {
             time,
         } = Layout::new(
             self.screen_resolution,
-            config.content_size.into(),
+            ViewportSource::from_tl_br(config.content_extent.0, config.content_extent.1),
             36.,
             1024.,
             config.time.font.size * 1.2,

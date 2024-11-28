@@ -5,9 +5,11 @@ use super::lexer::{TimeSpec, Token};
 use crate::common::{self, parser::try_into_value::TryIntoValue};
 use fraction::{Fraction, Zero};
 use std::fmt::Debug;
-use token::{comment, identifier, ignore_comments, number, separator, time_symbol};
+use token::{
+    comment, group_close, group_open, identifier, ignore_comments, number, separator, time_symbol,
+};
 use winnow::{
-    combinator::{alt, opt, preceded, repeat, terminated},
+    combinator::{alt, delimited, opt, preceded, repeat, terminated},
     PResult, Parser,
 };
 
@@ -17,15 +19,27 @@ pub use common::parser::*;
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug, Clone)]
 pub enum InstructionOrDirective {
+    /// A single instruction
     Instruction {
         time: Option<(TimeSpec, Fraction)>,
         name: String,
         args: Vec<Value>,
     },
-    Directive {
-        name: String,
-        args: Vec<Value>,
+    /// A single time with multiple instructions
+    GroupedTime {
+        time: Option<(TimeSpec, Fraction)>,
+        /// The grouped part: instruction and arguments
+        group: Vec<(String, Vec<Value>)>,
     },
+    /// A single time and instructions with multiple argument-instances
+    GroupedInstruction {
+        time: Option<(TimeSpec, Fraction)>,
+        name: String,
+        /// The grouped part: argument-instances
+        group: Vec<Vec<Value>>,
+    },
+    /// A single directive
+    Directive { name: String, args: Vec<Value> },
 }
 
 /// Parse a full stream of [Token]s into a [Vec] of [InstructionOrDirective]s.
@@ -38,7 +52,9 @@ pub fn parse<S: TryIntoValue + Clone + Debug + PartialEq>(
     instruction_or_directives.parse(input)
 }
 
-/// Parse all [Instruction][InstructionOrDirective::Instruction]s
+/// Parse all [Instruction][InstructionOrDirective::Instruction]s,
+/// [GroupedTime][InstructionOrDirective::GroupedTime]s,,
+/// [GroupedInstruction][InstructionOrDirective::GroupedInstruction]s,,
 /// and [Directive][InstructionOrDirective::Directive]s
 pub fn instruction_or_directives<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
@@ -48,7 +64,7 @@ pub fn instruction_or_directives<S: TryIntoValue + Clone + Debug + PartialEq>(
         repeat(
             0..,
             terminated(
-                alt((instruction, directive)),
+                alt((instruction, directive, grouped_time, grouped_instruction)),
                 ignore_comments_and_separators,
             ),
         ),
@@ -100,6 +116,66 @@ pub fn time<S: TryIntoValue + Clone + Debug>(
         .parse_next(input)
 }
 
+/// Try to parse a [GroupedTime][InstructionOrDirective::GroupedTime] from a stream of [Token]s.
+pub fn grouped_time<S: TryIntoValue + Clone + Debug + PartialEq>(
+    input: &mut &[Token<S>],
+) -> PResult<InstructionOrDirective> {
+    let grouped_instruction = terminated(
+        (
+            terminated(identifier, ignore_comments),
+            repeat(
+                0..,
+                terminated(value_or_identifier_or_tuple, ignore_comments),
+            ),
+        ),
+        separator,
+    );
+
+    let grouped_instructions = preceded(
+        ignore_comments_and_separators,
+        repeat(
+            1..,
+            terminated(grouped_instruction, ignore_comments_and_separators),
+        ),
+    );
+
+    (
+        opt(time),
+        delimited(group_open, grouped_instructions, group_close),
+    )
+        .map(|(time, group)| InstructionOrDirective::GroupedTime { time, group })
+        .parse_next(input)
+}
+
+/// Try to parse a [GroupedInstruction][InstructionOrDirective::GroupedInstruction] from a stream of [Token]s.
+pub fn grouped_instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
+    input: &mut &[Token<S>],
+) -> PResult<InstructionOrDirective> {
+    let grouped_value = terminated(
+        repeat(
+            0..,
+            terminated(value_or_identifier_or_tuple, ignore_comments),
+        ),
+        separator,
+    );
+
+    let grouped_values = preceded(
+        ignore_comments_and_separators,
+        repeat(
+            1..,
+            terminated::<_, Vec<_>, _, _, _, _>(grouped_value, ignore_comments_and_separators),
+        ),
+    );
+
+    (
+        opt(time),
+        terminated(identifier, ignore_comments),
+        delimited(group_open, grouped_values, group_close),
+    )
+        .map(|(time, name, group)| InstructionOrDirective::GroupedInstruction { time, name, group })
+        .parse_next(input)
+}
+
 /// Ignores all [Comment][Token::Comment]s and [Separator][Token::Separator]s
 pub fn ignore_comments_and_separators<S: Clone + Debug + PartialEq + TryIntoValue>(
     input: &mut &[Token<S>],
@@ -123,6 +199,16 @@ pub mod token {
                 _ => unreachable!(),
             })
             .parse_next(input)
+    }
+
+    /// Try to parse a single [Token::GroupOpen].
+    pub fn group_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+        one_of([Token::GroupOpen]).void().parse_next(input)
+    }
+
+    /// Try to parse a single [Token::GroupClose].
+    pub fn group_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+        one_of([Token::GroupClose]).void().parse_next(input)
     }
 
     /// Try to parse a single [Token::Separator].
@@ -227,6 +313,29 @@ mod test {
             Token::Identifier("positive_start_timed_instruction"),
             Token::Identifier("arg"),
             Token::Separator,
+            Token::TimeSymbol(TimeSpec::Relative {
+                from_start: false,
+                positive: true,
+            }),
+            Token::GroupOpen,
+            Token::Separator,
+            Token::Identifier("group_instruction_a"),
+            Token::Value(lexer::Value::Number("1")),
+            Token::Separator,
+            Token::Identifier("group_instruction_b"),
+            Token::Value(lexer::Value::Number("2")),
+            Token::Separator,
+            Token::GroupClose,
+            Token::Separator,
+            Token::Identifier("group_instruction"),
+            Token::GroupOpen,
+            Token::Separator,
+            Token::Value(lexer::Value::Number("1")),
+            Token::Separator,
+            Token::Value(lexer::Value::Number("2")),
+            Token::Separator,
+            Token::GroupClose,
+            Token::Separator,
         ];
 
         let expected = vec![
@@ -273,6 +382,33 @@ mod test {
                 )),
                 name: "positive_start_timed_instruction".to_string(),
                 args: vec![Value::Identifier("arg".to_string())],
+            },
+            InstructionOrDirective::GroupedTime {
+                time: Some((
+                    TimeSpec::Relative {
+                        from_start: false,
+                        positive: true,
+                    },
+                    Fraction::new(0u64, 1u64),
+                )),
+                group: vec![
+                    (
+                        "group_instruction_a".to_string(),
+                        vec![Value::Number(Fraction::new(1u64, 1u64))],
+                    ),
+                    (
+                        "group_instruction_b".to_string(),
+                        vec![Value::Number(Fraction::new(2u64, 1u64))],
+                    ),
+                ],
+            },
+            InstructionOrDirective::GroupedInstruction {
+                time: None,
+                name: "group_instruction".to_string(),
+                group: vec![
+                    vec![Value::Number(Fraction::new(1u64, 1u64))],
+                    vec![Value::Number(Fraction::new(2u64, 1u64))],
+                ],
             },
         ];
 

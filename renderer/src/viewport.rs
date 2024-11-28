@@ -20,9 +20,11 @@ pub struct ViewportProjection {
 }
 
 /// The source-coordinates of the viewport.
-/// Will be from `(0, 0)` in the top-left to `(width, height)` in the bottom-right.
+/// Will be from `(x, y)` in the top-left to `(width, height)` in the bottom-right.
 #[derive(Clone, Copy, Debug)]
 pub struct ViewportSource {
+    pub x: f32,
+    pub y: f32,
     pub width: f32,
     pub height: f32,
 }
@@ -40,8 +42,14 @@ pub struct ViewportTarget {
 impl From<ViewportProjection> for Mat4 {
     fn from(ViewportProjection { source, target }: ViewportProjection) -> Self {
         // Content -> Between
-        let from_content =
-            glam::Mat4::orthographic_rh(0., source.width, source.height, 0., -1., 1.);
+        let from_content = glam::Mat4::orthographic_rh(
+            source.left(),
+            source.right(),
+            source.bottom(),
+            source.top(),
+            -1.,
+            1.,
+        );
         // Between -> Viewport
         // Created by inverting the projection Viewport -> Between
         // Can always be inverted, as it is an orthographic projection matrix
@@ -146,11 +154,44 @@ impl Viewport {
     }
 }
 
-impl From<(f32, f32)> for ViewportSource {
-    fn from(value: (f32, f32)) -> Self {
+impl ViewportSource {
+    /// Creates a [ViewportSource] from a given start-point and size.
+    pub fn from_point_size(from: (f32, f32), size: (f32, f32)) -> Self {
         Self {
-            width: value.0,
-            height: value.1,
+            x: from.0,
+            y: from.1,
+            width: size.0,
+            height: size.1,
         }
+    }
+
+    /// Creates a [ViewportSource] from a given top-left and bottom-right point
+    pub fn from_tl_br(tl: (f32, f32), br: (f32, f32)) -> Self {
+        Self {
+            x: tl.0,
+            y: tl.1,
+            width: br.0 - tl.0,
+            height: br.1 - tl.1,
+        }
+    }
+
+    /// The left edge (minimum `x`) of this [ViewportSource]
+    pub fn left(&self) -> f32 {
+        self.x
+    }
+
+    /// The right edge (maximum `x`) of this [ViewportSource]
+    pub fn right(&self) -> f32 {
+        self.width + self.x
+    }
+
+    /// The top edge (minimum `y`) of this [ViewportSource]
+    pub fn top(&self) -> f32 {
+        self.y
+    }
+
+    /// The bottom edge (maximum `y`) of this [ViewportSource]
+    pub fn bottom(&self) -> f32 {
+        self.height + self.y
     }
 }
