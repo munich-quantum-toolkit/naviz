@@ -1,4 +1,5 @@
 use core::str;
+#[cfg(not(target_arch = "wasm32"))]
 use std::{sync::mpsc::channel, thread};
 
 use eframe::egui_wgpu::CallbackTrait;
@@ -6,6 +7,7 @@ use log::error;
 use naviz_parser::config::{machine::MachineConfig, visual::VisualConfig};
 use naviz_renderer::renderer::Renderer;
 use naviz_state::{config::Config, state::State};
+#[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoExport;
 
 use crate::{
@@ -74,6 +76,7 @@ impl eframe::App for App {
                         .expect("Failed to convert to visual-config");
                     self.animator_adapter.set_visual_config(visual);
                 }
+                #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ExportVideo {
                     target,
                     resolution,

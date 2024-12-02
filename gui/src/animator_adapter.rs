@@ -107,6 +107,7 @@ impl AnimatorAdapter {
 
     /// Creates an [Animator] from this [AnimatorAdapter],
     /// or [None] if not enough inputs were set.
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn animator(&self) -> Option<Animator> {
         if let (Some(machine), Some(visual), Some(instructions)) =
             (&self.machine, &self.visual, &self.instructions)
