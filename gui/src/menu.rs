@@ -1,33 +1,26 @@
 //! [MenuBar] to show a menu on the top.
 
-use std::{
-    path::PathBuf,
-    sync::mpsc::{channel, Receiver, Sender},
-};
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::PathBuf;
+use std::sync::mpsc::{channel, Receiver, Sender};
 
-use egui::{Align2, Button, Grid, Window};
+use egui::{Align2, Grid, Window};
+use export::ExportMenu;
 use git_version::git_version;
+#[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoProgress;
 
-use crate::{
-    export_dialog::{ExportProgresses, ExportSettings},
-    future_helper::FutureHelper,
-    util::WEB,
-};
+use crate::{future_helper::FutureHelper, util::WEB};
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
 /// The menu bar struct which contains the state of the menu
 pub struct MenuBar {
     file_open_channel: SendReceivePair<MenuEvent>,
-    /// Channel for selected export-settings
-    export_channel: SendReceivePair<(PathBuf, (u32, u32), u32)>,
     /// Whether to draw the about-window
     about_open: bool,
-    /// The export-settings-dialog to show when the user wants to export a video
-    export_settings: ExportSettings,
-    /// The export-progress-dialogs to show
-    export_progresses: ExportProgresses,
+    /// Export interaction handling (menu, config, progress)
+    export_menu: ExportMenu,
 }
 
 /// An event which is triggered on menu navigation.
@@ -36,6 +29,7 @@ pub enum MenuEvent {
     /// A file of the specified [FileType] with the specified content was opened
     FileOpen(FileType, Vec<u8>),
     /// A video should be exported to the specified path with the specified resolution and fps
+    #[cfg(not(target_arch = "wasm32"))]
     ExportVideo {
         target: PathBuf,
         resolution: (u32, u32),
@@ -80,10 +74,8 @@ impl MenuBar {
     pub fn new() -> Self {
         Self {
             file_open_channel: channel(),
-            export_channel: channel(),
             about_open: false,
-            export_settings: Default::default(),
-            export_progresses: Default::default(),
+            export_menu: ExportMenu::new(),
         }
     }
 
@@ -103,14 +95,8 @@ impl MenuBar {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
     ) {
-        if let Ok((target, resolution, fps)) = self.export_channel.1.try_recv() {
-            let _ = self.file_open_channel.0.send(MenuEvent::ExportVideo {
-                target,
-                resolution,
-                fps,
-                progress: self.export_progresses.add(),
-            });
-        }
+        self.export_menu
+            .process_events(&mut self.file_open_channel.0);
 
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
@@ -124,16 +110,7 @@ impl MenuBar {
                     self.choose_file(FileType::Style, future_helper);
                 }
 
-                if !WEB {
-                    // Export only on native, as it requires a system-installed `ffmpeg` (for now)
-                    ui.separator();
-                    if ui
-                        .add_enabled(config.export, Button::new("Export Video"))
-                        .clicked()
-                    {
-                        self.export_settings.show();
-                    }
-                }
+                self.export_menu.draw_button(config.export, ui);
 
                 if !WEB {
                     // Quit-button only on native
@@ -151,11 +128,7 @@ impl MenuBar {
             });
         });
 
-        if self.export_settings.draw(ctx) {
-            self.export(future_helper);
-        }
-
-        self.export_progresses.draw(ctx);
+        self.export_menu.draw_windows(future_helper, ctx);
 
         self.draw_about_window(ctx);
     }
@@ -175,22 +148,6 @@ impl MenuBar {
                 }
             },
             self.file_open_channel.0.clone(),
-        );
-    }
-
-    /// Show the file-saving dialog and get the path to export to if a file was selected
-    fn export(&self, future_helper: &FutureHelper) {
-        let resolution = self.export_settings.resolution();
-        let fps = self.export_settings.fps();
-        future_helper.execute_maybe_to(
-            async move {
-                rfd::AsyncFileDialog::new()
-                    .save_file()
-                    .await
-                    .map(|handle| handle.path().to_path_buf())
-                    .map(|target| (target, resolution, fps))
-            },
-            self.export_channel.0.clone(),
         );
     }
 
@@ -223,5 +180,123 @@ impl MenuBar {
                     ui.end_row();
                 });
             });
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub mod export {
+    //! Export-Menu on native
+
+    use std::{
+        path::PathBuf,
+        sync::mpsc::{channel, Sender},
+    };
+
+    use egui::{Button, Context};
+
+    use crate::{
+        export_dialog::{ExportProgresses, ExportSettings},
+        future_helper::FutureHelper,
+    };
+
+    use super::{MenuEvent, SendReceivePair};
+
+    /// Menu components concerning export
+    pub struct ExportMenu {
+        /// Channel for selected export-settings
+        export_channel: SendReceivePair<(PathBuf, (u32, u32), u32)>,
+        /// The export-settings-dialog to show when the user wants to export a video
+        export_settings: ExportSettings,
+        /// The export-progress-dialogs to show
+        export_progresses: ExportProgresses,
+    }
+
+    impl ExportMenu {
+        /// Creates a new [ExportMenu]
+        pub fn new() -> Self {
+            Self {
+                export_channel: channel(),
+                export_settings: Default::default(),
+                export_progresses: Default::default(),
+            }
+        }
+
+        /// Processes events concerning export
+        pub fn process_events(&mut self, menu_event_sender: &mut Sender<MenuEvent>) {
+            if let Ok((target, resolution, fps)) = self.export_channel.1.try_recv() {
+                let _ = menu_event_sender.send(MenuEvent::ExportVideo {
+                    target,
+                    resolution,
+                    fps,
+                    progress: self.export_progresses.add(),
+                });
+            }
+        }
+
+        /// Draws the menu button concerning export
+        pub fn draw_button(&mut self, enabled: bool, ui: &mut egui::Ui) {
+            ui.separator();
+            if ui
+                .add_enabled(enabled, Button::new("Export Video"))
+                .clicked()
+            {
+                self.export_settings.show();
+            }
+        }
+
+        /// Draws the windows concerning video export
+        pub fn draw_windows(&mut self, future_helper: &FutureHelper, ctx: &Context) {
+            if self.export_settings.draw(ctx) {
+                self.export(future_helper);
+            }
+
+            self.export_progresses.draw(ctx);
+        }
+
+        /// Show the file-saving dialog and get the path to export to if a file was selected
+        fn export(&self, future_helper: &FutureHelper) {
+            let resolution = self.export_settings.resolution();
+            let fps = self.export_settings.fps();
+            future_helper.execute_maybe_to(
+                async move {
+                    rfd::AsyncFileDialog::new()
+                        .save_file()
+                        .await
+                        .map(|handle| handle.path().to_path_buf())
+                        .map(|target| (target, resolution, fps))
+                },
+                self.export_channel.0.clone(),
+            );
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub mod export {
+    //! Export-Menu-Stub for web (does not exist on web platforms)
+    //!
+    //! Signatures should match the export-module on native.
+    //! See that module for documentation.
+
+    use std::sync::mpsc::Sender;
+
+    use egui::Context;
+
+    use crate::future_helper::FutureHelper;
+
+    use super::MenuEvent;
+
+    pub struct ExportMenu {}
+
+    impl ExportMenu {
+        pub fn new() -> Self {
+            Self {}
+        }
+
+        pub fn process_events(&mut self, _menu_event_sender: &mut Sender<MenuEvent>) {}
+
+        pub fn draw_button(&mut self, _enabled: bool, _ui: &mut egui::Ui) {}
+
+        pub fn draw_windows(&mut self, _future_helper: &FutureHelper, _ctx: &Context) {}
     }
 }
