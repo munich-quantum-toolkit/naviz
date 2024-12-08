@@ -7,6 +7,6 @@ keywords = ["naviz", "state"]
 license = "AGPL-3.0-or-later"
 name = "naviz-state"
 repository = "https://github.com/FloezeTv/NAViz"
-version = "0.3.0"
+version = "0.4.0"
 
 [dependencies]

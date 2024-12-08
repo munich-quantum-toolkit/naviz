@@ -7,7 +7,7 @@ keywords = ["naviz", "parser"]
 license = "LGPL-3.0-or-later"
 name = "naviz-parser"
 repository = "https://github.com/FloezeTv/NAViz"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 fraction = "0.15.3"

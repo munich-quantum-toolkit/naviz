@@ -2088,7 +2088,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-animator"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "fraction",
  "naviz-parser",
@@ -2099,7 +2099,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-gui"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "eframe",
  "egui",
@@ -2121,7 +2121,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-parser"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "fraction",
  "itertools",
@@ -2131,7 +2131,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-renderer"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bytemuck",
  "glam",
@@ -2145,11 +2145,11 @@ dependencies = [
 
 [[package]]
 name = "naviz-state"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "naviz-video"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "naviz-animator",
  "naviz-renderer",
