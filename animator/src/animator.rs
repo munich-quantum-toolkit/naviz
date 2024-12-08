@@ -22,7 +22,10 @@ use regex::Regex;
 
 use crate::{
     color::Color,
-    interpolator::{ComponentWise, Constant, ConstantJerk, DurationCalculable, Triangle},
+    interpolator::{
+        ComponentWise, Constant, ConstantJerk, ConstantJerkFixedAverageVelocity,
+        ConstantJerkFixedMaxVelocity, Diagonal, DurationCalculable, Jerk, MaxVelocity, Triangle,
+    },
     position::Position,
     timeline::{Time, Timeline},
     to_float::ToFloat,
@@ -30,26 +33,17 @@ use crate::{
 
 /// The timelines for a single atom
 pub struct AtomTimelines {
-    position: Timeline<Position, f32, ComponentWise<ConstantJerk>>,
-    overlay_color: Timeline<Color, f32, Triangle>,
-    size: Timeline<f32, f32, Triangle>,
-    shuttling: Timeline<bool, (), Constant>,
+    position: Timeline<(Jerk, Jerk), Position, f32, ComponentWise<ConstantJerk>>,
+    overlay_color: Timeline<(), Color, f32, Triangle>,
+    size: Timeline<(), f32, f32, Triangle>,
+    shuttling: Timeline<(), bool, (), Constant>,
 }
 
 impl AtomTimelines {
     /// Creates new AtomTimelines from the passed default values
-    pub fn new(
-        position: Position,
-        overlay_color: Color,
-        size: f32,
-        shuttling: bool,
-        jerk: f32,
-    ) -> Self {
+    pub fn new(position: Position, overlay_color: Color, size: f32, shuttling: bool) -> Self {
         Self {
-            position: Timeline::new_with_interpolation(
-                position,
-                ComponentWise(ConstantJerk::new(jerk)),
-            ),
+            position: Timeline::new_with_interpolation(position, ComponentWise(ConstantJerk())),
             overlay_color: Timeline::new(overlay_color),
             size: Timeline::new(size),
             shuttling: Timeline::new(shuttling),
@@ -109,7 +103,6 @@ impl Animator {
                         Color::default(),
                         visual.atom.radius.f32(),
                         false,
-                        machine.movement.jerk.f32(),
                     ),
                 },
             })
@@ -143,7 +136,7 @@ impl Animator {
         while let Some((time, mut relative_timeline)) = absolute_timeline.pop_front() {
             if let Some((_, offset, group)) = relative_timeline.pop_front() {
                 let InstructionGroup {
-                    variable: _,
+                    variable,
                     instructions,
                 } = group;
 
@@ -153,9 +146,19 @@ impl Animator {
                 let start_time = time + offset;
                 let start_time_f32 = start_time.f32();
 
+                // The invariable duration (if not set to `variable`)
+                let invariable_duration = (!variable).then_some(()).and_then(|()| {
+                    instructions
+                        .iter()
+                        .map(|i| get_duration(i, &atoms, &machine, start_time))
+                        .max()
+                });
+
                 for instruction in instructions {
-                    // Duration of the current instruction
-                    let current_duration = get_duration(&instruction, &atoms, &machine, start_time);
+                    // Duration of the current instruction (or the group if not `variable`)
+                    let current_duration = invariable_duration.unwrap_or_else(|| {
+                        get_duration(&instruction, &atoms, &machine, start_time)
+                    });
                     let current_duration_f32 = current_duration.f32();
                     // Update duration of group
                     duration = duration.max(current_duration);
@@ -587,8 +590,10 @@ fn get_duration(
             let end = (position.0.f32(), position.1.f32());
 
             Some(
-                ComponentWise(ConstantJerk::new(machine.movement.jerk.f32()))
-                    .duration(start, Position { x: end.0, y: end.1 }),
+                Diagonal(ConstantJerkFixedMaxVelocity::new_fixed(MaxVelocity(
+                    machine.movement.max_speed.f32(),
+                )))
+                .duration((), start, Position { x: end.0, y: end.1 }),
             )
         })()
         .map(Fraction::from)
@@ -622,6 +627,21 @@ fn insert_animation(
             .add((time, duration, config.radius.get(visual.atom.radius).f32()));
     }
 
+    fn add_move(
+        timelines: &mut AtomTimelines,
+        time: f32,
+        duration: f32,
+        target: (Fraction, Fraction),
+    ) {
+        let target: Position = target.into();
+        let source = timelines.position.get(time.into());
+        let jerk_x = ConstantJerkFixedAverageVelocity::jerk_for_move(source.x, target.x, duration);
+        let jerk_y = ConstantJerkFixedAverageVelocity::jerk_for_move(source.y, target.y, duration);
+        timelines
+            .position
+            .add((time, duration, (jerk_x, jerk_y), target));
+    }
+
     fn add_load_store(
         timelines: &mut AtomTimelines,
         time: f32,
@@ -635,7 +655,7 @@ fn insert_animation(
             timelines.shuttling.add((time + duration, false));
         };
         if let Some(position) = position {
-            timelines.position.add((time, duration, position.into()));
+            add_move(timelines, time, duration, position);
         }
     }
 
@@ -647,9 +667,7 @@ fn insert_animation(
             add_load_store(timelines, start_time, duration, false, *position);
         }
         TimedInstruction::Move { position, .. } => {
-            timelines
-                .position
-                .add((start_time, duration, (*position).into()));
+            add_move(timelines, start_time, duration, *position);
         }
         TimedInstruction::Rz { .. } => {
             add_operation(

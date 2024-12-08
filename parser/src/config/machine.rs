@@ -48,14 +48,14 @@ impl TryFrom<Config> for MachineConfig {
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug, Clone)]
 pub struct MovementConfig {
-    pub jerk: Fraction,
+    pub max_speed: Fraction,
 }
 
 impl TryFrom<Config> for MovementConfig {
     type Error = Error;
     fn try_from(mut value: Config) -> Result<Self, Self::Error> {
         Ok(Self {
-            jerk: get_item(&mut value, "jerk")?,
+            max_speed: get_item(&mut value, "max_speed")?,
         })
     }
 }
@@ -149,7 +149,7 @@ mod test {
         let expected = MachineConfig {
             name: "Name".to_string(),
             movement: MovementConfig {
-                jerk: Fraction::new(23u64, 1u64),
+                max_speed: Fraction::new(23u64, 1u64),
             },
             time: TimeConfig {
                 load: Fraction::new(21u64, 5u64),

@@ -36,11 +36,12 @@ name: <string> // Name of the machine
 
 ### Movement Speeds
 
-The constant jerk of the machine is specified in the `movement`-block:
+The maximum movement speed of the machine is specified in the `movement`-block.
+The machine will interpolate using constant jerk while respecting this `max_speed`.
 
 ```
 movement {
-	jerk: <number> // Constant jerk
+	max_speed: <number>> // Max speed
 }
 ```
 
