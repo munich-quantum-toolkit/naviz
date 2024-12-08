@@ -9,7 +9,7 @@ use naviz_parser::{
             ZoneConfigConfig,
         },
     },
-    input::concrete::{Instructions, SetupInstruction, TimedInstruction},
+    input::concrete::{InstructionGroup, Instructions, SetupInstruction, TimedInstruction},
 };
 use naviz_state::{
     config::{
@@ -141,7 +141,12 @@ impl Animator {
 
         // Animate the atoms
         while let Some((time, mut relative_timeline)) = absolute_timeline.pop_front() {
-            if let Some((_, offset, instructions)) = relative_timeline.pop_front() {
+            if let Some((_, offset, group)) = relative_timeline.pop_front() {
+                let InstructionGroup {
+                    variable: _,
+                    instructions,
+                } = group;
+
                 // Duration of the group
                 let mut duration = Fraction::ZERO;
                 // Start time of the group

@@ -19,7 +19,18 @@ pub type AbsoluteTimeline = Vec<(Fraction, RelativeTimeline)>;
 /// Timeline which shows relative times.
 /// Item format: `(from_start, offset, instruction)`.
 /// Each entry is relative to the previous entry.
-pub type RelativeTimeline = Vec<(bool, Fraction, Vec<TimedInstruction>)>;
+pub type RelativeTimeline = Vec<(bool, Fraction, InstructionGroup)>;
+
+/// A group of instructions.
+/// Single instructions can be represented as groups of size `1`
+#[derive(Debug, PartialEq, Clone)]
+pub struct InstructionGroup {
+    /// Whether this is a variable group
+    /// (i.e., the timing of the instructions is allowed to vary)
+    pub variable: bool,
+    /// The instructions of this group
+    pub instructions: Vec<TimedInstruction>,
+}
 
 /// A single instruction which does not require a time.
 /// See documentation of file format.
@@ -166,6 +177,7 @@ impl Instructions {
                         }
                         Instruction::TimedInstruction(instruction) => insert_at_time(
                             time,
+                            false,
                             vec![instruction],
                             &mut prev,
                             &mut instructions.instructions,
@@ -173,7 +185,11 @@ impl Instructions {
                     }
                 }
 
-                InstructionOrDirective::GroupedTime { time, group } => {
+                InstructionOrDirective::GroupedTime {
+                    time,
+                    variable,
+                    group,
+                } => {
                     let (setup, timed): (Vec<_>, Vec<_>) = group
                         .into_iter()
                         .map(|(name, args)| parse_instruction(name.into(), args))
@@ -191,10 +207,21 @@ impl Instructions {
                         })?
                     }
                     setup.into_iter().for_each(|s| instructions.setup.push(s));
-                    insert_at_time(time, timed, &mut prev, &mut instructions.instructions)?;
+                    insert_at_time(
+                        time,
+                        variable,
+                        timed,
+                        &mut prev,
+                        &mut instructions.instructions,
+                    )?;
                 }
 
-                InstructionOrDirective::GroupedInstruction { time, name, group } => {
+                InstructionOrDirective::GroupedInstruction {
+                    time,
+                    variable,
+                    name,
+                    group,
+                } => {
                     let (setup, timed): (Vec<_>, Vec<_>) = group
                         .into_iter()
                         .map(|args| parse_instruction(name.as_str().into(), args))
@@ -212,7 +239,13 @@ impl Instructions {
                         })?
                     }
                     setup.into_iter().for_each(|s| instructions.setup.push(s));
-                    insert_at_time(time, timed, &mut prev, &mut instructions.instructions)?;
+                    insert_at_time(
+                        time,
+                        variable,
+                        timed,
+                        &mut prev,
+                        &mut instructions.instructions,
+                    )?;
                 }
             }
         }
@@ -288,13 +321,15 @@ fn parse_instruction(
 /// # Arguments:
 ///
 /// - `time`: Time to insert. Will return an [ParseInstructionsError::MissingTime] if [None]
-/// - `instructions`: Instructions to insert
+/// - `variable`: Whether the group to insert is variable
+/// - `instructions`: Instructions to insert as a group
 /// - `prev`: Previous insertion-point (or [None] if nothing was previously inserted).
 ///   Will be updated to be the new insertion-point.
 ///   Value is the index in `target` (and is assumed to be valid).
 /// - `target`: Target timeline to insert into
 fn insert_at_time(
     time: Option<(TimeSpec, Fraction)>,
+    variable: bool,
     instructions: Vec<TimedInstruction>,
     prev: &mut Option<usize>,
     target: &mut AbsoluteTimeline,
@@ -307,7 +342,17 @@ fn insert_at_time(
     })?;
     match spec {
         TimeSpec::Absolute => {
-            target.push((time, vec![(true, Fraction::zero(), instructions)]));
+            target.push((
+                time,
+                vec![(
+                    true,
+                    Fraction::zero(),
+                    InstructionGroup {
+                        variable,
+                        instructions,
+                    },
+                )],
+            ));
             *prev = Some(target.len() - 1);
         }
         TimeSpec::Relative {
@@ -318,10 +363,27 @@ fn insert_at_time(
                 time *= -1;
             }
             if let Some(idx) = prev {
-                target[*idx].1.push((from_start, time, instructions));
+                target[*idx].1.push((
+                    from_start,
+                    time,
+                    InstructionGroup {
+                        variable,
+                        instructions,
+                    },
+                ));
                 // prev stays the same
             } else {
-                target.push((time, vec![(from_start, time, instructions)]));
+                target.push((
+                    time,
+                    vec![(
+                        from_start,
+                        time,
+                        InstructionGroup {
+                            variable,
+                            instructions,
+                        },
+                    )],
+                ));
                 *prev = Some(target.len() - 1);
             }
         }
@@ -471,87 +533,114 @@ mod test {
                     (
                         false,
                         Fraction::new(0u64, 1u64),
-                        vec![
-                            TimedInstruction::Load {
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![
+                                TimedInstruction::Load {
+                                    position: None,
+                                    id: "atom0".to_string(),
+                                },
+                                TimedInstruction::Load {
+                                    position: Some((
+                                        Fraction::new(16u64, 1u64),
+                                        Fraction::new(2u64, 1u64),
+                                    )),
+                                    id: "atom1".to_string(),
+                                },
+                            ],
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Move {
+                                position: (Fraction::new(8u64, 1u64), Fraction::new(8u64, 1u64)),
+                                id: "atom0".to_string(),
+                            }],
+                        },
+                    ),
+                    (
+                        true,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Move {
+                                position: (Fraction::new(16u64, 1u64), Fraction::new(16u64, 1u64)),
+                                id: "atom1".to_string(),
+                            }],
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Store {
                                 position: None,
                                 id: "atom0".to_string(),
-                            },
-                            TimedInstruction::Load {
-                                position: Some((
-                                    Fraction::new(16u64, 1u64),
-                                    Fraction::new(2u64, 1u64),
-                                )),
+                            }],
+                        },
+                    ),
+                    (
+                        true,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Store {
+                                position: None,
                                 id: "atom1".to_string(),
-                            },
-                        ],
+                            }],
+                        },
                     ),
                     (
                         false,
                         Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Move {
-                            position: (Fraction::new(8u64, 1u64), Fraction::new(8u64, 1u64)),
-                            id: "atom0".to_string(),
-                        }],
-                    ),
-                    (
-                        true,
-                        Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Move {
-                            position: (Fraction::new(16u64, 1u64), Fraction::new(16u64, 1u64)),
-                            id: "atom1".to_string(),
-                        }],
-                    ),
-                    (
-                        false,
-                        Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Store {
-                            position: None,
-                            id: "atom0".to_string(),
-                        }],
-                    ),
-                    (
-                        true,
-                        Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Store {
-                            position: None,
-                            id: "atom1".to_string(),
-                        }],
-                    ),
-                    (
-                        false,
-                        Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Rz {
-                            value: Fraction::new(3141u64, 1000u64),
-                            id: "atom0".to_string(),
-                        }],
-                    ),
-                    (
-                        false,
-                        Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Ry {
-                            value: Fraction::new(3141u64, 1000u64),
-                            id: "atom1".to_string(),
-                        }],
-                    ),
-                    (
-                        false,
-                        Fraction::new(0u64, 1u64),
-                        vec![TimedInstruction::Cz {
-                            id: "zone0".to_string(),
-                        }],
-                    ),
-                    (
-                        false,
-                        Fraction::new(0u64, 1u64),
-                        vec![
-                            TimedInstruction::Cz {
-                                id: "zone1".to_string(),
-                            },
-                            TimedInstruction::Ry {
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Rz {
                                 value: Fraction::new(3141u64, 1000u64),
                                 id: "atom0".to_string(),
-                            },
-                        ],
+                            }],
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Ry {
+                                value: Fraction::new(3141u64, 1000u64),
+                                id: "atom1".to_string(),
+                            }],
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: false,
+                            instructions: vec![TimedInstruction::Cz {
+                                id: "zone0".to_string(),
+                            }],
+                        },
+                    ),
+                    (
+                        false,
+                        Fraction::new(0u64, 1u64),
+                        InstructionGroup {
+                            variable: true,
+                            instructions: vec![
+                                TimedInstruction::Cz {
+                                    id: "zone1".to_string(),
+                                },
+                                TimedInstruction::Ry {
+                                    value: Fraction::new(3141u64, 1000u64),
+                                    id: "atom0".to_string(),
+                                },
+                            ],
+                        },
                     ),
                 ],
             )],
@@ -649,6 +738,7 @@ mod test {
             },
             InstructionOrDirective::GroupedTime {
                 time: Some((TimeSpec::Absolute, Fraction::new(20u64, 1u64))),
+                variable: false,
                 group: vec![
                     (
                         "load".to_string(),
@@ -668,6 +758,7 @@ mod test {
                     },
                     Fraction::new(0u64, 1u64),
                 )),
+                variable: true,
                 name: "store".to_string(),
                 group: vec![
                     vec![Value::Identifier("atom0".to_string())],
@@ -691,26 +782,35 @@ mod test {
                         (
                             false,
                             Fraction::zero(),
-                            vec![TimedInstruction::Load {
-                                position: None,
-                                id: "atom1".to_string(),
-                            }],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![TimedInstruction::Load {
+                                    position: None,
+                                    id: "atom1".to_string(),
+                                }],
+                            },
                         ),
                         (
                             true,
                             Fraction::new(2u64, 1u64),
-                            vec![TimedInstruction::Store {
-                                position: None,
-                                id: "atom1".to_string(),
-                            }],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![TimedInstruction::Store {
+                                    position: None,
+                                    id: "atom1".to_string(),
+                                }],
+                            },
                         ),
                         (
                             false,
                             Fraction::new(3u64, 1u64),
-                            vec![TimedInstruction::Load {
-                                position: None,
-                                id: "atom1".to_string(),
-                            }],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![TimedInstruction::Load {
+                                    position: None,
+                                    id: "atom1".to_string(),
+                                }],
+                            },
                         ),
                     ],
                 ),
@@ -720,26 +820,35 @@ mod test {
                         (
                             true,
                             Fraction::zero(),
-                            vec![TimedInstruction::Store {
-                                position: None,
-                                id: "atom1".to_string(),
-                            }],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![TimedInstruction::Store {
+                                    position: None,
+                                    id: "atom1".to_string(),
+                                }],
+                            },
                         ),
                         (
                             true,
                             Fraction::new(2u64, 1u64),
-                            vec![TimedInstruction::Load {
-                                position: None,
-                                id: "atom1".to_string(),
-                            }],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![TimedInstruction::Load {
+                                    position: None,
+                                    id: "atom1".to_string(),
+                                }],
+                            },
                         ),
                         (
                             false,
                             Fraction::new(0u64, 1u64),
-                            vec![TimedInstruction::Store {
-                                position: None,
-                                id: "atom1".to_string(),
-                            }],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![TimedInstruction::Store {
+                                    position: None,
+                                    id: "atom1".to_string(),
+                                }],
+                            },
                         ),
                     ],
                 ),
@@ -749,30 +858,36 @@ mod test {
                         (
                             true,
                             Fraction::new(0u64, 1u64),
-                            vec![
-                                TimedInstruction::Load {
-                                    position: None,
-                                    id: "atom0".to_string(),
-                                },
-                                TimedInstruction::Load {
-                                    position: None,
-                                    id: "atom1".to_string(),
-                                },
-                            ],
+                            InstructionGroup {
+                                variable: false,
+                                instructions: vec![
+                                    TimedInstruction::Load {
+                                        position: None,
+                                        id: "atom0".to_string(),
+                                    },
+                                    TimedInstruction::Load {
+                                        position: None,
+                                        id: "atom1".to_string(),
+                                    },
+                                ],
+                            },
                         ),
                         (
                             false,
                             Fraction::new(0u64, 1u64),
-                            vec![
-                                TimedInstruction::Store {
-                                    position: None,
-                                    id: "atom0".to_string(),
-                                },
-                                TimedInstruction::Store {
-                                    position: None,
-                                    id: "atom1".to_string(),
-                                },
-                            ],
+                            InstructionGroup {
+                                variable: true,
+                                instructions: vec![
+                                    TimedInstruction::Store {
+                                        position: None,
+                                        id: "atom0".to_string(),
+                                    },
+                                    TimedInstruction::Store {
+                                        position: None,
+                                        id: "atom1".to_string(),
+                                    },
+                                ],
+                            },
                         ),
                     ],
                 ),

@@ -33,7 +33,10 @@ pub enum Token<T> {
     /// Closing-symbol for a tuple
     TupleClose,
     /// Opening-symbol for a group
-    GroupOpen,
+    GroupOpen {
+        /// The timing of the subcommands can be variable
+        variable: bool,
+    },
     /// Closing-symbol for a group
     GroupClose,
     /// A separator between elements (e.g., in tuples)
@@ -123,7 +126,10 @@ pub mod token {
     where
         Token<I::Slice>: Into<Tok>,
     {
-        "[".map(|_| Token::GroupOpen)
+        (opt("~"), "[")
+            .map(|(variable, _)| Token::GroupOpen {
+                variable: variable.is_some(),
+            })
             .output_into()
             .parse_next(input)
     }
@@ -248,7 +254,7 @@ mod test {
             group_instruction_a 1
             group_instruction_b 2
         ]
-        group_instruction [
+        group_instruction ~[
             1
             2
         ]"#;
@@ -290,7 +296,7 @@ mod test {
                 from_start: false,
                 positive: true,
             }),
-            Token::GroupOpen,
+            Token::GroupOpen { variable: false },
             Token::Separator,
             Token::Identifier("group_instruction_a"),
             Token::Value(Value::Number("1")),
@@ -301,7 +307,7 @@ mod test {
             Token::GroupClose,
             Token::Separator,
             Token::Identifier("group_instruction"),
-            Token::GroupOpen,
+            Token::GroupOpen { variable: true },
             Token::Separator,
             Token::Value(Value::Number("1")),
             Token::Separator,
