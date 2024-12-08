@@ -23,7 +23,7 @@ atom [
 
 @+ cz zone0
 
-@+ [
+@+ ~[
 	cz zone1
 	ry 3.141 atom0
 ]

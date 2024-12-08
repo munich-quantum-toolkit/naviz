@@ -9,7 +9,7 @@ use naviz_parser::{
             ZoneConfigConfig,
         },
     },
-    input::concrete::{Instructions, SetupInstruction, TimedInstruction},
+    input::concrete::{InstructionGroup, Instructions, SetupInstruction, TimedInstruction},
 };
 use naviz_state::{
     config::{
@@ -22,7 +22,10 @@ use regex::Regex;
 
 use crate::{
     color::Color,
-    interpolator::{Constant, Cubic, Triangle},
+    interpolator::{
+        ComponentWise, Constant, ConstantJerk, ConstantJerkFixedAverageVelocity,
+        ConstantJerkFixedMaxVelocity, Diagonal, DurationCalculable, Jerk, MaxVelocity, Triangle,
+    },
     position::Position,
     timeline::{Time, Timeline},
     to_float::ToFloat,
@@ -30,17 +33,17 @@ use crate::{
 
 /// The timelines for a single atom
 pub struct AtomTimelines {
-    position: Timeline<Position, f32, Cubic>,
-    overlay_color: Timeline<Color, f32, Triangle>,
-    size: Timeline<f32, f32, Triangle>,
-    shuttling: Timeline<bool, (), Constant>,
+    position: Timeline<(Jerk, Jerk), Position, f32, ComponentWise<ConstantJerk>>,
+    overlay_color: Timeline<(), Color, f32, Triangle>,
+    size: Timeline<(), f32, f32, Triangle>,
+    shuttling: Timeline<(), bool, (), Constant>,
 }
 
 impl AtomTimelines {
     /// Creates new AtomTimelines from the passed default values
     pub fn new(position: Position, overlay_color: Color, size: f32, shuttling: bool) -> Self {
         Self {
-            position: Timeline::new(position),
+            position: Timeline::new_with_interpolation(position, ComponentWise(ConstantJerk())),
             overlay_color: Timeline::new(overlay_color),
             size: Timeline::new(size),
             shuttling: Timeline::new(shuttling),
@@ -131,16 +134,31 @@ impl Animator {
 
         // Animate the atoms
         while let Some((time, mut relative_timeline)) = absolute_timeline.pop_front() {
-            if let Some((_, offset, instructions)) = relative_timeline.pop_front() {
+            if let Some((_, offset, group)) = relative_timeline.pop_front() {
+                let InstructionGroup {
+                    variable,
+                    instructions,
+                } = group;
+
                 // Duration of the group
                 let mut duration = Fraction::ZERO;
                 // Start time of the group
                 let start_time = time + offset;
                 let start_time_f32 = start_time.f32();
 
+                // The invariable duration (if not set to `variable`)
+                let invariable_duration = (!variable).then_some(()).and_then(|()| {
+                    instructions
+                        .iter()
+                        .map(|i| get_duration(i, &atoms, &machine, start_time))
+                        .max()
+                });
+
                 for instruction in instructions {
-                    // Duration of the current instruction
-                    let current_duration = get_duration(&instruction, &atoms, &machine, start_time);
+                    // Duration of the current instruction (or the group if not `variable`)
+                    let current_duration = invariable_duration.unwrap_or_else(|| {
+                        get_duration(&instruction, &atoms, &machine, start_time)
+                    });
                     let current_duration_f32 = current_duration.f32();
                     // Update duration of group
                     duration = duration.max(current_duration);
@@ -562,55 +580,24 @@ fn get_duration(
     match instruction {
         TimedInstruction::Load { .. } => machine.time.load,
         TimedInstruction::Store { .. } => machine.time.store,
-        TimedInstruction::Move { position, id } => {
-            // fraction-crate currently has neither `pow` nor `sqrt`, therefore we calculate using `f64`s
-            fn dst((x0, y0): (f64, f64), (x1, y1): (f64, f64)) -> f64 {
-                ((x0 - x1).powi(2) + (y0 - y1).powi(2)).sqrt()
-            }
-            (|| {
-                let start = atoms
-                    .iter()
-                    .find(|a| &a.id == id)?
-                    .timelines
-                    .position
-                    .get(time.f32().into());
-                let start = (start.x as f64, start.y as f64);
-                let end = (position.0.f64(), position.1.f64());
-                let distance = dst(start, end);
+        TimedInstruction::Move { position, id } => (|| {
+            let start = atoms
+                .iter()
+                .find(|a| &a.id == id)?
+                .timelines
+                .position
+                .get(time.f32().into());
+            let end = (position.0.f32(), position.1.f32());
 
-                let a_up = machine.movement.acceleration.up.f64();
-                let a_down = machine.movement.acceleration.down.f64();
-                let speed_max = machine.movement.speed.f64();
-
-                // The time until speed_max is reached during speed-up
-                // a_up * t = speed_max
-                let time_until_speed_max_up = speed_max / a_up;
-                // The time from speed_max was reached during speed-down
-                // a_down * t = speed_max
-                let time_until_speed_max_down = speed_max / a_down;
-
-                // The intersection-time of the start and stop quadratics
-                // a_up / 2 * t^2 = distance - a_down / 2 * t^2
-                let t_up_down_intersect = (2. * distance / (a_up + a_down)).sqrt();
-
-                if t_up_down_intersect <= time_until_speed_max_up
-                    && t_up_down_intersect <= time_until_speed_max_down
-                {
-                    return Some(2. * t_up_down_intersect);
-                }
-
-                // The distance the atom travels at max speed
-                let distance_at_max_speed = (distance
-                    - a_down / 2. * time_until_speed_max_down.powi(2))
-                    - (a_up / 2. * time_until_speed_max_up.powi(2));
-                // The time the atoms travels at max speed
-                let time_at_max_speed = distance_at_max_speed / speed_max;
-
-                Some(time_until_speed_max_up + time_at_max_speed + time_until_speed_max_down)
-            })()
-            .map(Fraction::from)
-            .unwrap_or_default()
-        }
+            Some(
+                Diagonal(ConstantJerkFixedMaxVelocity::new_fixed(MaxVelocity(
+                    machine.movement.max_speed.f32(),
+                )))
+                .duration((), start, Position { x: end.0, y: end.1 }),
+            )
+        })()
+        .map(Fraction::from)
+        .unwrap_or_default(),
         TimedInstruction::Rz { .. } => machine.time.rz,
         TimedInstruction::Ry { .. } => machine.time.ry,
         TimedInstruction::Cz { .. } => machine.time.cz,
@@ -640,6 +627,21 @@ fn insert_animation(
             .add((time, duration, config.radius.get(visual.atom.radius).f32()));
     }
 
+    fn add_move(
+        timelines: &mut AtomTimelines,
+        time: f32,
+        duration: f32,
+        target: (Fraction, Fraction),
+    ) {
+        let target: Position = target.into();
+        let source = timelines.position.get(time.into());
+        let jerk_x = ConstantJerkFixedAverageVelocity::jerk_for_move(source.x, target.x, duration);
+        let jerk_y = ConstantJerkFixedAverageVelocity::jerk_for_move(source.y, target.y, duration);
+        timelines
+            .position
+            .add((time, duration, (jerk_x, jerk_y), target));
+    }
+
     fn add_load_store(
         timelines: &mut AtomTimelines,
         time: f32,
@@ -653,7 +655,7 @@ fn insert_animation(
             timelines.shuttling.add((time + duration, false));
         };
         if let Some(position) = position {
-            timelines.position.add((time, duration, position.into()));
+            add_move(timelines, time, duration, position);
         }
     }
 
@@ -665,9 +667,7 @@ fn insert_animation(
             add_load_store(timelines, start_time, duration, false, *position);
         }
         TimedInstruction::Move { position, .. } => {
-            timelines
-                .position
-                .add((start_time, duration, (*position).into()));
+            add_move(timelines, start_time, duration, *position);
         }
         TimedInstruction::Rz { .. } => {
             add_operation(

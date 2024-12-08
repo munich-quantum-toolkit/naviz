@@ -36,15 +36,12 @@ name: <string> // Name of the machine
 
 ### Movement Speeds
 
-The maximum movement speed as well as the allowed acceleration are specified in the `movement`-block:
+The maximum movement speed of the machine is specified in the `movement`-block.
+The machine will interpolate using constant jerk while respecting this `max_speed`.
 
 ```
 movement {
-	speed: <number> // Maximum speed
-	acceleration {
-		up: <number> // Maximum acceleration
-		down: <number> // Maximum deceleration
-	}
+	max_speed: <number>> // Max speed
 }
 ```
 
@@ -413,6 +410,13 @@ The time may be specified relative to the start or the end of the previous opera
 #### Grouping
 
 Instructions and times may be grouped by specifying the time/instruction and all group-members in brackets (`[`/`]`).
+A group's end-time (for the relative time of the next instruction) is the latest any of its instructions is finished.
+
+Groups may be variable.
+This is denoted by prepending a `~` to the group start symbol (`~[`/`]`).
+Normal groups make all instructions take the same time.
+A variable group makes all instructions take their minimum time.
+The group's ent-time is not affected by this, only the end-times of its children instructions.
 
 ```
 @<time> [
@@ -423,6 +427,22 @@ Instructions and times may be grouped by specifying the time/instruction and all
 ]
 
 @<time> <instruction> [
+	<arguments>
+	<arguments>
+	<...>
+	<arguments>
+]
+
+// Variable groups
+
+@<time> ~[
+	<instruction>
+	<instruction>
+	<...>
+	<instruction>
+]
+
+@<time> <instruction> ~[
 	<arguments>
 	<arguments>
 	<...>

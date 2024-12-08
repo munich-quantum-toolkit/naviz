@@ -8,8 +8,6 @@
 //! (which leads to a jump to the previous [Keyframe]'s [value][Keyframe::value]
 //! at the start of the new [Keyframe]).
 
-use std::marker::PhantomData;
-
 use ordered_float::OrderedFloat;
 
 use crate::interpolator::InterpolationFunction;
@@ -37,16 +35,18 @@ impl Duration for () {
 /// A single keyframe.
 ///
 /// Keyframes are ordered only by their time.
-pub struct Keyframe<T, Dur: Duration> {
+pub struct Keyframe<A, T, Dur: Duration> {
     /// The start-time of this keyframe
     pub time: Time,
     /// The duration this keyframe will interpolate for
     pub duration: Dur,
+    /// Additional data for the interpolator
+    pub argument: A,
     /// The value this keyframe will interpolate to
     pub value: T,
 }
 
-impl<T, Dur: Duration> Keyframe<T, Dur> {
+impl<A, T, Dur: Duration> Keyframe<A, T, Dur> {
     /// The start-time of this keyframe
     pub fn time(&self) -> &Time {
         &self.time
@@ -61,90 +61,129 @@ impl<T, Dur: Duration> Keyframe<T, Dur> {
     pub fn value(&self) -> &T {
         &self.value
     }
+
+    /// The argument of this keyframe (used for interpolation)
+    pub fn argument(&self) -> &A {
+        &self.argument
+    }
 }
 
-impl<T, Dur: Duration> PartialEq for Keyframe<T, Dur> {
+impl<A, T, Dur: Duration> PartialEq for Keyframe<A, T, Dur> {
     fn eq(&self, other: &Self) -> bool {
         self.time.eq(&other.time)
     }
 }
 
-impl<T, Dur: Duration> Eq for Keyframe<T, Dur> {}
+impl<A, T, Dur: Duration> Eq for Keyframe<A, T, Dur> {}
 
-impl<T, Dur: Duration> PartialOrd for Keyframe<T, Dur> {
+impl<A, T, Dur: Duration> PartialOrd for Keyframe<A, T, Dur> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<T, Dur: Duration> Ord for Keyframe<T, Dur> {
+impl<A, T, Dur: Duration> Ord for Keyframe<A, T, Dur> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.time.cmp(&other.time)
     }
 }
 
-impl<T> From<(Time, T)> for Keyframe<T, ()> {
+impl<T> From<(Time, T)> for Keyframe<(), T, ()> {
     fn from((time, value): (Time, T)) -> Self {
         Self {
             time,
             duration: (),
+            argument: (),
             value,
         }
     }
 }
 
-impl<T> From<(f32, T)> for Keyframe<T, ()> {
+impl<T> From<(f32, T)> for Keyframe<(), T, ()> {
     fn from((time, value): (f32, T)) -> Self {
         Self::from((OrderedFloat::from(time), value))
     }
 }
 
-impl<T, Dur: Duration> From<(Time, Dur, T)> for Keyframe<T, Dur> {
+impl<T, Dur: Duration> From<(Time, Dur, T)> for Keyframe<(), T, Dur> {
     fn from((time, duration, value): (Time, Dur, T)) -> Self {
         Self {
             time,
             duration,
             value,
+            argument: (),
         }
     }
 }
 
-impl<T, Dur: Duration> From<(f32, Dur, T)> for Keyframe<T, Dur> {
+impl<T, Dur: Duration> From<(f32, Dur, T)> for Keyframe<(), T, Dur> {
     fn from((time, duration, value): (f32, Dur, T)) -> Self {
         Self::from((OrderedFloat::from(time), duration, value))
     }
 }
 
+impl<A, T, Dur: Duration> From<(Time, Dur, A, T)> for Keyframe<A, T, Dur> {
+    fn from((time, duration, argument, value): (Time, Dur, A, T)) -> Self {
+        Self {
+            time,
+            duration,
+            value,
+            argument,
+        }
+    }
+}
+
+impl<A, T, Dur: Duration> From<(f32, Dur, A, T)> for Keyframe<A, T, Dur> {
+    fn from((time, duration, argument, value): (f32, Dur, A, T)) -> Self {
+        Self::from((OrderedFloat::from(time), duration, argument, value))
+    }
+}
+
 /// A timeline which holds many keyframes and specifies the used interpolation function.
-pub struct Timeline<T: Copy, Dur: Duration, I: InterpolationFunction<T>> {
+pub struct Timeline<A: Copy, T: Copy, Dur: Duration, I: InterpolationFunction<A, T>> {
     /// The keyframes of this functions.
     /// This vector is expected to be ordered at any time.
-    keyframes: Vec<Keyframe<T, Dur>>,
+    keyframes: Vec<Keyframe<A, T, Dur>>,
     /// The default value, which is valid from `-Inf` until the first keyframe
     default: T,
     /// The used interpolation function
-    interpolation_function: PhantomData<I>,
+    interpolation_function: I,
 }
 
-impl<T: Copy + Default, Dur: Duration, I: InterpolationFunction<T>> Default
-    for Timeline<T, Dur, I>
+impl<A: Copy, T: Copy + Default, Dur: Duration, I: InterpolationFunction<A, T> + Default> Default
+    for Timeline<A, T, Dur, I>
 {
     fn default() -> Self {
         Self {
             keyframes: Vec::new(),
             default: T::default(),
-            interpolation_function: PhantomData,
+            interpolation_function: Default::default(),
         }
     }
 }
 
-impl<T: Copy, Dur: Duration, I: InterpolationFunction<T>> Timeline<T, Dur, I> {
+impl<A: Copy, T: Copy, Dur: Duration, I: InterpolationFunction<A, T> + Default>
+    Timeline<A, T, Dur, I>
+{
     /// Creates a new [Timeline] with the passed `default`-value
+    /// and the default interpolation parameters
     pub fn new(default: T) -> Self {
         Self {
             keyframes: Vec::new(),
             default,
-            interpolation_function: PhantomData,
+            interpolation_function: Default::default(),
+        }
+    }
+}
+
+impl<A: Copy, T: Copy, Dur: Duration, I: InterpolationFunction<A, T>> Timeline<A, T, Dur, I> {
+    /// Creates a new [Timeline] with the passed `default`-value
+    /// and the specified interpolation parameters
+    pub fn new_with_interpolation(default: T, interpolation_function: I) -> Self {
+        Self {
+            keyframes: Vec::new(),
+            default,
+            interpolation_function,
         }
     }
 
@@ -197,14 +236,15 @@ impl<T: Copy, Dur: Duration, I: InterpolationFunction<T>> Timeline<T, Dur, I> {
             } else {
                 (1.).into()
             };
-            I::interpolate(fraction, from, to)
+            self.interpolation_function
+                .interpolate(fraction, keyframe.argument, from, to)
         } else {
             self.default
         }
     }
 
     /// Adds a keyframe into this [Timeline]
-    pub fn add(&mut self, keyframe: impl Into<Keyframe<T, Dur>>) -> &mut Self {
+    pub fn add(&mut self, keyframe: impl Into<Keyframe<A, T, Dur>>) -> &mut Self {
         let keyframe = keyframe.into();
         self.keyframes.insert(self.get_idx(keyframe.time), keyframe);
         self
@@ -213,7 +253,7 @@ impl<T: Copy, Dur: Duration, I: InterpolationFunction<T>> Timeline<T, Dur, I> {
     /// Adds multiple keyframes into this [Timeline]
     pub fn add_all(
         &mut self,
-        keyframes: impl IntoIterator<Item = impl Into<Keyframe<T, Dur>>>,
+        keyframes: impl IntoIterator<Item = impl Into<Keyframe<A, T, Dur>>>,
     ) -> &mut Self {
         self.keyframes.extend(keyframes.into_iter().map(Into::into));
         self.keyframes.sort();

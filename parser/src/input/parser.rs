@@ -9,7 +9,7 @@ use token::{
     comment, group_close, group_open, identifier, ignore_comments, number, separator, time_symbol,
 };
 use winnow::{
-    combinator::{alt, delimited, opt, preceded, repeat, terminated},
+    combinator::{alt, opt, preceded, repeat, terminated},
     PResult, Parser,
 };
 
@@ -28,12 +28,16 @@ pub enum InstructionOrDirective {
     /// A single time with multiple instructions
     GroupedTime {
         time: Option<(TimeSpec, Fraction)>,
+        /// The durations are allowed to vary
+        variable: bool,
         /// The grouped part: instruction and arguments
         group: Vec<(String, Vec<Value>)>,
     },
     /// A single time and instructions with multiple argument-instances
     GroupedInstruction {
         time: Option<(TimeSpec, Fraction)>,
+        /// The durations are allowed to vary
+        variable: bool,
         name: String,
         /// The grouped part: argument-instances
         group: Vec<Vec<Value>>,
@@ -141,9 +145,15 @@ pub fn grouped_time<S: TryIntoValue + Clone + Debug + PartialEq>(
 
     (
         opt(time),
-        delimited(group_open, grouped_instructions, group_close),
+        terminated((group_open, grouped_instructions), group_close),
     )
-        .map(|(time, group)| InstructionOrDirective::GroupedTime { time, group })
+        .map(
+            |(time, (variable, group))| InstructionOrDirective::GroupedTime {
+                time,
+                variable,
+                group,
+            },
+        )
         .parse_next(input)
 }
 
@@ -170,9 +180,16 @@ pub fn grouped_instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
     (
         opt(time),
         terminated(identifier, ignore_comments),
-        delimited(group_open, grouped_values, group_close),
+        terminated((group_open, grouped_values), group_close),
     )
-        .map(|(time, name, group)| InstructionOrDirective::GroupedInstruction { time, name, group })
+        .map(
+            |(time, name, (variable, group))| InstructionOrDirective::GroupedInstruction {
+                time,
+                variable,
+                name,
+                group,
+            },
+        )
         .parse_next(input)
 }
 
@@ -202,8 +219,13 @@ pub mod token {
     }
 
     /// Try to parse a single [Token::GroupOpen].
-    pub fn group_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        one_of([Token::GroupOpen]).void().parse_next(input)
+    pub fn group_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<bool> {
+        one_of(|t| matches!(t, Token::GroupOpen { .. }))
+            .map(|t| match t {
+                Token::GroupOpen { variable } => variable,
+                _ => unreachable!(),
+            })
+            .parse_next(input)
     }
 
     /// Try to parse a single [Token::GroupClose].
@@ -317,7 +339,7 @@ mod test {
                 from_start: false,
                 positive: true,
             }),
-            Token::GroupOpen,
+            Token::GroupOpen { variable: false },
             Token::Separator,
             Token::Identifier("group_instruction_a"),
             Token::Value(lexer::Value::Number("1")),
@@ -328,7 +350,7 @@ mod test {
             Token::GroupClose,
             Token::Separator,
             Token::Identifier("group_instruction"),
-            Token::GroupOpen,
+            Token::GroupOpen { variable: true },
             Token::Separator,
             Token::Value(lexer::Value::Number("1")),
             Token::Separator,
@@ -391,6 +413,7 @@ mod test {
                     },
                     Fraction::new(0u64, 1u64),
                 )),
+                variable: false,
                 group: vec![
                     (
                         "group_instruction_a".to_string(),
@@ -404,6 +427,7 @@ mod test {
             },
             InstructionOrDirective::GroupedInstruction {
                 time: None,
+                variable: true,
                 name: "group_instruction".to_string(),
                 group: vec![
                     vec![Value::Number(Fraction::new(1u64, 1u64))],

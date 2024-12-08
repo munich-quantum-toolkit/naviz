@@ -3,8 +3,10 @@ use fraction::Fraction;
 /// Something that can be converted into a float ([f32] or [f64]).
 pub(crate) trait ToFloat {
     /// Converts this value to a [f32]
+    #[allow(unused)]
     fn f32(self) -> f32;
     /// Converts this value to a [f64]
+    #[allow(unused)]
     fn f64(self) -> f64;
 }
 
