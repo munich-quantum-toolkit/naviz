@@ -23,8 +23,8 @@ use regex::Regex;
 use crate::{
     color::Color,
     interpolator::{
-        ComponentWise, Constant, ConstantJerk, ConstantJerkFixedAverageVelocity,
-        ConstantJerkFixedMaxVelocity, Diagonal, DurationCalculable, Jerk, MaxVelocity, Triangle,
+        AverageVelocity, Constant, ConstantJerkFixedAverageVelocity, ConstantJerkFixedMaxVelocity,
+        Diagonal, DurationCalculable, MaxVelocity, Triangle,
     },
     position::Position,
     timeline::{Time, Timeline},
@@ -33,7 +33,7 @@ use crate::{
 
 /// The timelines for a single atom
 pub struct AtomTimelines {
-    position: Timeline<(Jerk, Jerk), Position, f32, ComponentWise<ConstantJerk>>,
+    position: Timeline<AverageVelocity, Position, f32, Diagonal<ConstantJerkFixedAverageVelocity>>,
     overlay_color: Timeline<(), Color, f32, Triangle>,
     size: Timeline<(), f32, f32, Triangle>,
     shuttling: Timeline<(), bool, (), Constant>,
@@ -43,7 +43,10 @@ impl AtomTimelines {
     /// Creates new AtomTimelines from the passed default values
     pub fn new(position: Position, overlay_color: Color, size: f32, shuttling: bool) -> Self {
         Self {
-            position: Timeline::new_with_interpolation(position, ComponentWise(ConstantJerk())),
+            position: Timeline::new_with_interpolation(
+                position,
+                Diagonal(ConstantJerkFixedAverageVelocity()),
+            ),
             overlay_color: Timeline::new(overlay_color),
             size: Timeline::new(size),
             shuttling: Timeline::new(shuttling),
@@ -635,11 +638,12 @@ fn insert_animation(
     ) {
         let target: Position = target.into();
         let source = timelines.position.get(time.into());
-        let jerk_x = ConstantJerkFixedAverageVelocity::jerk_for_move(source.x, target.x, duration);
-        let jerk_y = ConstantJerkFixedAverageVelocity::jerk_for_move(source.y, target.y, duration);
-        timelines
-            .position
-            .add((time, duration, (jerk_x, jerk_y), target));
+        timelines.position.add((
+            time,
+            duration,
+            AverageVelocity::for_2d_move(source, target, time),
+            target,
+        ));
     }
 
     fn add_load_store(
