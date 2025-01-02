@@ -2144,6 +2144,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "naviz-repository"
+version = "0.0.0"
+
+[[package]]
 name = "naviz-state"
 version = "0.4.0"
 
