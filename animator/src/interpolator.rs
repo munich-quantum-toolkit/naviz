@@ -266,6 +266,13 @@ impl ConstantJerkImpl<MaxVelocity> for ConstantJerkFixedMaxVelocity {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct AverageVelocity(pub f32);
 
+impl AverageVelocity {
+    /// Gets the average velocity for a 2d move from `source` to `destination` in `time`
+    pub fn for_2d_move(source: Position, destination: Position, time: f32) -> Self {
+        Self(distance(source, destination) / time)
+    }
+}
+
 /// A [ConstantJerkImpl] with a set average velocity.
 /// The jerk value is calculated from the average velocity for a given interpolation.
 pub struct ConstantJerkFixedAverageVelocity();
