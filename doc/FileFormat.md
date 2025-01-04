@@ -99,6 +99,14 @@ trap <id> {
 Visual configuration can be specified in a `.nastyle`-file.
 It contains the following blocks:
 
+### Display-name
+
+A human-readable name for the style can be set in the `name`-field.
+
+```
+name: <string> // Name of the style
+```
+
 ### Atoms
 
 The `atom`-block allows specifying settings regarding the appearance of atoms.

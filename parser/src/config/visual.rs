@@ -14,6 +14,7 @@ use regex::Regex;
 #[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug, Clone)]
 pub struct VisualConfig {
+    pub name: String,
     pub atom: AtomConfig,
     pub zone: ZoneConfig,
     pub operation: OperationConfig,
@@ -28,6 +29,7 @@ impl TryFrom<Config> for VisualConfig {
     type Error = Error;
     fn try_from(mut value: Config) -> Result<Self, Self::Error> {
         Ok(Self {
+            name: get_item(&mut value, "name")?,
             atom: get_item_struct(&mut value, "atom")?,
             zone: get_item_struct(&mut value, "zone")?,
             operation: get_item_struct(&mut value, "operation")?,
@@ -621,6 +623,7 @@ mod test {
         ));
 
         let expected = VisualConfig {
+            name: "Example".to_string(),
             atom: AtomConfig {
                 trapped: TrappedConfig {
                     color: Color {
