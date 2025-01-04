@@ -2,7 +2,7 @@
 //!
 //! Use [lex] to lex some input.
 
-use crate::common;
+use crate::{common, ParseError};
 use token::*;
 use winnow::{
     ascii::multispace0,
@@ -75,10 +75,7 @@ pub fn lex<
         + Copy,
 >(
     input: I,
-) -> Result<
-    Vec<Token<<I as Stream>::Slice>>,
-    winnow::error::ParseError<I, winnow::error::ContextError>,
->
+) -> Result<Vec<Token<<I as Stream>::Slice>>, ParseError<I>>
 where
     <I as Stream>::Token: AsChar + Clone,
     I::Slice: SliceLen,
