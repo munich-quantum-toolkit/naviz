@@ -109,9 +109,11 @@ impl eframe::App for App {
                                 compatible_machine.expect("Failed to load machine"),
                             );
                             self.current_machine = CurrentMachine::Id(id.clone());
+                            self.menu_bar.set_selected_machine(Some(id.clone()));
                         }
                     }
-                    self.menu_bar.set_compatible_machines(&input.directives.targets);
+                    self.menu_bar
+                        .set_compatible_machines(&input.directives.targets);
                     self.animator_adapter.set_instructions(input);
                 }
                 MenuEvent::FileOpen(FileType::Machine, content) => {
@@ -126,6 +128,7 @@ impl eframe::App for App {
                         .expect("Failed to convert to machine-config");
                     self.animator_adapter.set_machine_config(machine);
                     self.current_machine = CurrentMachine::Manual;
+                    self.menu_bar.set_selected_machine(None);
                 }
                 MenuEvent::FileOpen(FileType::Style, content) => {
                     let visual =
@@ -138,6 +141,7 @@ impl eframe::App for App {
                         .try_into()
                         .expect("Failed to convert to visual-config");
                     self.animator_adapter.set_visual_config(visual);
+                    self.menu_bar.set_selected_style(None);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ExportVideo {
@@ -163,14 +167,18 @@ impl eframe::App for App {
                             .expect("Invalid state: Selected machine does not exist")
                             .expect("Failed to load machine"),
                     );
-                    self.current_machine = CurrentMachine::Id(id);
+                    self.current_machine = CurrentMachine::Id(id.clone());
+                    self.menu_bar.set_selected_machine(Some(id));
                 }
-                MenuEvent::SetStyle(id) => self.animator_adapter.set_visual_config(
-                    self.style_repository
-                        .get(&id)
-                        .expect("Invalid state: Selected style does not exist")
-                        .expect("Failed to load style"),
-                ),
+                MenuEvent::SetStyle(id) => {
+                    self.animator_adapter.set_visual_config(
+                        self.style_repository
+                            .get(&id)
+                            .expect("Invalid state: Selected style does not exist")
+                            .expect("Failed to load style"),
+                    );
+                    self.menu_bar.set_selected_style(Some(id));
+                }
             }
         }
 

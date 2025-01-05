@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
-use egui::{Align2, Grid, Window};
+use egui::{Align2, Button, Grid, Window};
 use export::ExportMenu;
 use git_version::git_version;
 #[cfg(not(target_arch = "wasm32"))]
@@ -25,6 +25,10 @@ pub struct MenuBar {
     machines: Vec<(String, String)>,
     /// List of styles: `(id, name)`
     styles: Vec<(String, String)>,
+    /// The currently selected machine
+    selected_machine: Option<String>,
+    /// The currently selected style
+    selected_style: Option<String>,
 }
 
 /// An event which is triggered on menu navigation.
@@ -86,6 +90,8 @@ impl MenuBar {
             export_menu: ExportMenu::new(),
             machines: vec![],
             styles: vec![],
+            selected_machine: None,
+            selected_style: None,
         }
     }
 
@@ -108,11 +114,23 @@ impl MenuBar {
         });
     }
 
+    /// Sets the currently selected machine to the passed id.
+    /// Used to display feedback in the selection.
+    pub fn set_selected_machine(&mut self, selected_machine: Option<String>) {
+        self.selected_machine = selected_machine;
+    }
+
     /// Update the style-list.
     /// Styles are `(id, name)`.
     pub fn update_styles(&mut self, styles: Vec<(String, String)>) {
         self.styles = styles;
         self.styles.sort_by(|(_, a), (_, b)| a.cmp(b));
+    }
+
+    /// Sets the currently selected style to the passed id.
+    /// Used to display feedback in the selection.
+    pub fn set_selected_style(&mut self, selected_style: Option<String>) {
+        self.selected_style = selected_style;
     }
 
     /// Get the file open channel.
@@ -159,7 +177,10 @@ impl MenuBar {
             // Machine selection
             ui.menu_button("Machine", |ui| {
                 for (id, name) in &self.machines {
-                    if ui.button(name).clicked() {
+                    if ui
+                        .add(Button::new(name).selected(self.selected_machine.as_ref() == Some(id)))
+                        .clicked()
+                    {
                         let _ = self.event_channel.0.send(MenuEvent::SetMachine(id.clone()));
                         ui.close_menu();
                     }
@@ -169,7 +190,10 @@ impl MenuBar {
             // Style selection
             ui.menu_button("Style", |ui| {
                 for (id, name) in &self.styles {
-                    if ui.button(name).clicked() {
+                    if ui
+                        .add(Button::new(name).selected(self.selected_style.as_ref() == Some(id)))
+                        .clicked()
+                    {
                         let _ = self.event_channel.0.send(MenuEvent::SetStyle(id.clone()));
                         ui.close_menu();
                     }
