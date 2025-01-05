@@ -1,5 +1,5 @@
 use super::lexer::Token;
-use crate::common;
+use crate::{common, ParseError};
 use std::fmt::Debug;
 use token::{block_close, block_open, identifier, ignore_comments, separator};
 use try_into_value::TryIntoValue;
@@ -27,7 +27,7 @@ pub type Config = Vec<ConfigItem>;
 /// Parse a full stream of [Token]s into a [Config].
 pub fn parse<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &[Token<S>],
-) -> Result<Config, winnow::error::ParseError<&[Token<S>], winnow::error::ContextError>> {
+) -> Result<Config, ParseError<&[Token<S>]>> {
     config.parse(input)
 }
 

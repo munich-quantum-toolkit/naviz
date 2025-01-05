@@ -1,5 +1,7 @@
 // Example-Config for tests
 
+name: "Example" // Name of the style
+
 atom {
 	trapped {
 		color: #000000 // Color of a trapped atom

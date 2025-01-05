@@ -1,0 +1,15 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = []
+description = "Repository for NAViz"
+edition = "2021"
+keywords = ["naviz", "repository"]
+license = "AGPL-3.0-or-later"
+name = "naviz-repository"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]
+directories = "5.0.1"
+include_dir = "0.7.4"
+naviz-parser = {path = "../parser"}

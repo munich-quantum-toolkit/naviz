@@ -1,0 +1,184 @@
+name: "Catpuccin Macchiato"
+
+atom {
+	trapped {
+		color: #a6da95
+	}
+	shuttling {
+		color: #b7bdf8
+	}
+	legend {
+		name {
+			^atom[_-]?(.*)$: "$1"
+			^.*$: "$0"
+		}
+		font {
+			family: "Fira Mono"
+			size: 3
+			color: #181926
+		}
+	}
+	radius: 2
+	margin: 1
+}
+
+zone {
+	config ^(zone[_-]?)?cz.*$ {
+		color: #f5a97f
+		line {
+			thickness: 1
+			dash {
+				length: 0
+				duty: 100%
+			}
+		}
+		name: "CZ"
+	}
+	config ^_(zone[_-]?)?(.*)$ {
+		color: #c6a0f6
+		line {
+			thickness: 1
+			dash {
+				length: 0
+				duty: 100%
+			}
+		}
+		name: ""
+	}
+	config ^(zone[_-]?)?(.*)$ {
+		color: #c6a0f6
+		line {
+			thickness: 1
+			dash {
+				length: 0
+				duty: 100%
+			}
+		}
+		name: "$2"
+	}
+	legend {
+		display: true
+		title: "Zones"
+	}
+}
+
+operation {
+	config {
+		ry {
+			color: #8bd5ca
+			name: "RY"
+			radius: 150%
+		}
+		rz {
+			color: #8aadf4
+			name: "RZ"
+			radius: 150%
+		}
+		cz {
+			color: #f5a97f
+			name: "CZ"
+			radius: 150%
+		}
+	}
+	legend {
+		display: true
+		title: "Gates"
+	}
+}
+
+machine {
+	trap {
+		color: #939ab7
+		radius: 2
+		line_width: 0.5
+		name: "SLM"
+	}
+	shuttle {
+		color: #8087a2
+		line {
+			thickness: 0.5
+			dash {
+				length: 5
+				duty: 50%
+			}
+		}
+		name: "AOD"
+	}
+	legend {
+		display: true
+		title: "Atom States"
+	}
+}
+
+coordinate {
+	tick {
+		x: 20
+		y: 20
+		color: #6e738d
+		line {
+			thickness: 0.5
+			dash {
+				length: 0
+				duty: 100%
+			}
+		}
+	}
+	number {
+		x {
+			distance: 40
+			position: bottom
+		}
+		y {
+			distance: 40
+			position: left
+		}
+		display: true
+		font {
+			family: "Fira Mono"
+			size: 8
+			color: #cad3f5
+		}
+	}
+	axis {
+		x: "x"
+		y: "y"
+		display: true
+		font {
+			family: "Fira Mono"
+			size: 8
+			color: #cad3f5
+		}
+	}
+	margin: 20
+}
+
+sidebar {
+	font {
+		family: "Fira Mono"
+		size: 32
+		color: #cad3f5
+	}
+	margin: 8
+	padding {
+		color: 16
+		heading: 52
+		entry: 45
+	}
+	color_radius: 16
+}
+
+time {
+	display: true
+	prefix: "Time: "
+	precision: 1
+	font {
+		family: "Fira Mono"
+		size: 12
+		color: #cad3f5
+	}
+}
+
+viewport {
+	margin: 4
+	color: #24273a
+}

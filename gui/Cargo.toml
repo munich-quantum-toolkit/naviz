@@ -28,6 +28,7 @@ log = "0.4"
 naviz-animator = {path = "../animator"}
 naviz-parser = {path = "../parser"}
 naviz-renderer = {path = "../renderer"}
+naviz-repository = {path = "../repository"}
 naviz-state = {path = "../state"}
 rfd = "0.15.0"
 wgpu = {version = "*", features = ["webgl"]}# Enable webgl-support in wgpu

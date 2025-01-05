@@ -6,6 +6,7 @@ use eframe::egui_wgpu::CallbackTrait;
 use log::error;
 use naviz_parser::config::{machine::MachineConfig, visual::VisualConfig};
 use naviz_renderer::renderer::Renderer;
+use naviz_repository::Repository;
 use naviz_state::{config::Config, state::State};
 #[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoExport;
@@ -14,8 +15,10 @@ use crate::{
     animator_adapter::{AnimatorAdapter, AnimatorState},
     aspect_panel::AspectPanel,
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
+    current_machine::CurrentMachine,
     future_helper::FutureHelper,
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
+    util::WEB,
 };
 
 /// The main App to draw using [egui]/[eframe]
@@ -23,6 +26,9 @@ pub struct App {
     future_helper: FutureHelper,
     menu_bar: MenuBar,
     animator_adapter: AnimatorAdapter,
+    machine_repository: Repository,
+    style_repository: Repository,
+    current_machine: CurrentMachine,
 }
 
 impl App {
@@ -30,11 +36,75 @@ impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         RendererAdapter::setup(cc);
 
-        Self {
-            future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
-            menu_bar: MenuBar::new(),
-            animator_adapter: AnimatorAdapter::default(),
+        let mut machine_repository = Repository::empty()
+            .bundled_machines()
+            .expect("Failed to load bundled machines");
+        let mut style_repository = Repository::empty()
+            .bundled_styles()
+            .expect("Failed to load bundled styles");
+
+        // Load user-dirs only on non-web builds as there is no filesystem on web
+        if !WEB {
+            machine_repository = machine_repository
+                .user_dir_machines()
+                .expect("Failed to load machines from user dir");
+            style_repository = style_repository
+                .user_dir_styles()
+                .expect("Failed to load styles from user dir");
         }
+
+        let mut menu_bar = MenuBar::new();
+
+        let mut animator_adapter = AnimatorAdapter::default();
+        // Load any style as default (if any style is available)
+        if let Some((id, style)) = style_repository.try_get_any() {
+            animator_adapter.set_visual_config(style);
+            menu_bar.set_selected_style(Some(id.to_string()));
+        }
+        // Load any machine as default (if any machine is available)
+        if let Some((id, machine)) = machine_repository.try_get_any() {
+            animator_adapter.set_machine_config(machine);
+            menu_bar.set_selected_machine(Some(id.to_string()));
+        }
+
+        let mut app = Self {
+            future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
+            menu_bar,
+            animator_adapter,
+            machine_repository,
+            style_repository,
+            current_machine: Default::default(),
+        };
+        app.update_machines();
+        app.update_styles();
+        app
+    }
+
+    /// Update the machines displayed in the menu from the repository
+    fn update_machines(&mut self) {
+        self.menu_bar.update_machines(
+            self.machine_repository
+                .list()
+                .into_iter()
+                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .collect(),
+        );
+
+        if let Some(instructions) = self.animator_adapter.get_instructions() {
+            self.menu_bar
+                .set_compatible_machines(&instructions.directives.targets);
+        }
+    }
+
+    /// Update the styles displayed in the menu from the repository
+    fn update_styles(&mut self) {
+        self.menu_bar.update_styles(
+            self.style_repository
+                .list()
+                .into_iter()
+                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .collect(),
+        );
     }
 }
 
@@ -50,6 +120,28 @@ impl eframe::App for App {
                         naviz_parser::input::parser::parse(&input).expect("Failed to parse");
                     let input = naviz_parser::input::concrete::Instructions::new(input)
                         .expect("Failed to convert to instructions");
+                    // Update machine if not compatible or not set
+                    if !input.directives.targets.is_empty()
+                        && !self
+                            .current_machine
+                            .compatible_with(&input.directives.targets)
+                    {
+                        let compatible_machine = input
+                            .directives
+                            .targets
+                            .iter()
+                            .filter_map(|id| self.machine_repository.get(id).map(|m| (id, m)))
+                            .next();
+                        if let Some((id, compatible_machine)) = compatible_machine {
+                            self.animator_adapter.set_machine_config(
+                                compatible_machine.expect("Failed to load machine"),
+                            );
+                            self.current_machine = CurrentMachine::Id(id.clone());
+                            self.menu_bar.set_selected_machine(Some(id.clone()));
+                        }
+                    }
+                    self.menu_bar
+                        .set_compatible_machines(&input.directives.targets);
                     self.animator_adapter.set_instructions(input);
                 }
                 MenuEvent::FileOpen(FileType::Machine, content) => {
@@ -63,6 +155,8 @@ impl eframe::App for App {
                         .try_into()
                         .expect("Failed to convert to machine-config");
                     self.animator_adapter.set_machine_config(machine);
+                    self.current_machine = CurrentMachine::Manual;
+                    self.menu_bar.set_selected_machine(None);
                 }
                 MenuEvent::FileOpen(FileType::Style, content) => {
                     let visual =
@@ -75,6 +169,7 @@ impl eframe::App for App {
                         .try_into()
                         .expect("Failed to convert to visual-config");
                     self.animator_adapter.set_visual_config(visual);
+                    self.menu_bar.set_selected_style(None);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ExportVideo {
@@ -92,6 +187,37 @@ impl eframe::App for App {
                             video.export_video(&target, progress);
                         });
                     }
+                }
+                MenuEvent::SetMachine(id) => {
+                    self.animator_adapter.set_machine_config(
+                        self.machine_repository
+                            .get(&id)
+                            .expect("Invalid state: Selected machine does not exist")
+                            .expect("Failed to load machine"),
+                    );
+                    self.current_machine = CurrentMachine::Id(id.clone());
+                    self.menu_bar.set_selected_machine(Some(id));
+                }
+                MenuEvent::SetStyle(id) => {
+                    self.animator_adapter.set_visual_config(
+                        self.style_repository
+                            .get(&id)
+                            .expect("Invalid state: Selected style does not exist")
+                            .expect("Failed to load style"),
+                    );
+                    self.menu_bar.set_selected_style(Some(id));
+                }
+                MenuEvent::ImportMachine(file) => {
+                    self.machine_repository
+                        .import_machine_to_user_dir(&file)
+                        .expect("Failed to import machine");
+                    self.update_machines();
+                }
+                MenuEvent::ImportStyle(file) => {
+                    self.style_repository
+                        .import_style_to_user_dir(&file)
+                        .expect("Failed to import style");
+                    self.update_styles();
                 }
             }
         }

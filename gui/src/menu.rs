@@ -2,13 +2,17 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::{
+    future::Future,
+    sync::mpsc::{channel, Receiver, Sender},
+};
 
-use egui::{Align2, Grid, Window};
+use egui::{Align2, Button, Grid, ScrollArea, Window};
 use export::ExportMenu;
 use git_version::git_version;
 #[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoProgress;
+use rfd::FileHandle;
 
 use crate::{future_helper::FutureHelper, util::WEB};
 
@@ -16,11 +20,19 @@ type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
 /// The menu bar struct which contains the state of the menu
 pub struct MenuBar {
-    file_open_channel: SendReceivePair<MenuEvent>,
+    event_channel: SendReceivePair<MenuEvent>,
     /// Whether to draw the about-window
     about_open: bool,
     /// Export interaction handling (menu, config, progress)
     export_menu: ExportMenu,
+    /// List of machines: `(id, name)`
+    machines: Vec<(String, String)>,
+    /// List of styles: `(id, name)`
+    styles: Vec<(String, String)>,
+    /// The currently selected machine
+    selected_machine: Option<String>,
+    /// The currently selected style
+    selected_style: Option<String>,
 }
 
 /// An event which is triggered on menu navigation.
@@ -37,6 +49,30 @@ pub enum MenuEvent {
         /// Channel for progress updates
         progress: Sender<VideoProgress>,
     },
+    /// A new machine with the specified `id` was selected
+    SetMachine(String),
+    /// A new style with the specified `id` was selected
+    SetStyle(String),
+    /// The machine at the specified `path` should be imported
+    ImportMachine(PathBuf),
+    /// The style at the specified `path` should be imported
+    ImportStyle(PathBuf),
+}
+
+impl MenuEvent {
+    /// Creates a [MenuEvent::FileOpen] for [MenuBar::choose_file]
+    async fn file_open(file_type: FileType, handle: FileHandle) -> Self {
+        Self::FileOpen(file_type, handle.read().await)
+    }
+
+    /// Creates a [MenuEvent::ImportMachine] or [MenuEvent::ImportStyle] for [MenuBar::choose_file]
+    async fn file_import(file_type: FileType, handle: FileHandle) -> Self {
+        match file_type {
+            FileType::Instructions => panic!("Unable to import instructions"),
+            FileType::Machine => Self::ImportMachine(handle.path().to_owned()),
+            FileType::Style => Self::ImportStyle(handle.path().to_owned()),
+        }
+    }
 }
 
 /// The available FileTypes for opening
@@ -73,10 +109,52 @@ impl MenuBar {
     /// Create a new [MenuBar]
     pub fn new() -> Self {
         Self {
-            file_open_channel: channel(),
+            event_channel: channel(),
             about_open: false,
             export_menu: ExportMenu::new(),
+            machines: vec![],
+            styles: vec![],
+            selected_machine: None,
+            selected_style: None,
         }
+    }
+
+    /// Update the machine-list.
+    /// Machines are `(id, name)`.
+    pub fn update_machines(&mut self, machines: Vec<(String, String)>) {
+        self.machines = machines;
+        self.machines.sort_by(|(_, a), (_, b)| a.cmp(b));
+    }
+
+    /// Move the compatible machines to the top of the list
+    pub fn set_compatible_machines(&mut self, machines: &[String]) {
+        // Sort by containment in machines, then by name
+        self.machines.sort_by(|(id_a, name_a), (id_b, name_b)| {
+            machines
+                .contains(id_a)
+                .cmp(&machines.contains(id_b))
+                .reverse()
+                .then_with(|| name_a.cmp(name_b))
+        });
+    }
+
+    /// Sets the currently selected machine to the passed id.
+    /// Used to display feedback in the selection.
+    pub fn set_selected_machine(&mut self, selected_machine: Option<String>) {
+        self.selected_machine = selected_machine;
+    }
+
+    /// Update the style-list.
+    /// Styles are `(id, name)`.
+    pub fn update_styles(&mut self, styles: Vec<(String, String)>) {
+        self.styles = styles;
+        self.styles.sort_by(|(_, a), (_, b)| a.cmp(b));
+    }
+
+    /// Sets the currently selected style to the passed id.
+    /// Used to display feedback in the selection.
+    pub fn set_selected_style(&mut self, selected_style: Option<String>) {
+        self.selected_style = selected_style;
     }
 
     /// Get the file open channel.
@@ -84,7 +162,7 @@ impl MenuBar {
     /// Whenever a new file is opened,
     /// its content will be sent over this channel.
     pub fn events(&self) -> &Receiver<MenuEvent> {
-        &self.file_open_channel.1
+        &self.event_channel.1
     }
 
     /// Draw the [MenuBar]
@@ -95,19 +173,12 @@ impl MenuBar {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
     ) {
-        self.export_menu
-            .process_events(&mut self.file_open_channel.0);
+        self.export_menu.process_events(&mut self.event_channel.0);
 
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
-                if ui.button("Open Instructions").clicked() {
-                    self.choose_file(FileType::Instructions, future_helper);
-                }
-                if ui.button("Open Machine").clicked() {
-                    self.choose_file(FileType::Machine, future_helper);
-                }
-                if ui.button("Open Style").clicked() {
-                    self.choose_file(FileType::Style, future_helper);
+                if ui.button("Open").clicked() {
+                    self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
                 }
 
                 self.export_menu.draw_button(config.export, ui);
@@ -119,6 +190,64 @@ impl MenuBar {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 }
+            });
+
+            // Machine selection
+            ui.menu_button("Machine", |ui| {
+                if ui.button("Open").clicked() {
+                    self.choose_file(FileType::Machine, future_helper, MenuEvent::file_open);
+                    ui.close_menu();
+                }
+                if !WEB && ui.button("Import").clicked() {
+                    self.choose_file(FileType::Machine, future_helper, MenuEvent::file_import);
+                    ui.close_menu();
+                }
+
+                ui.separator();
+
+                ScrollArea::vertical().show(ui, |ui| {
+                    for (id, name) in &self.machines {
+                        if ui
+                            .add(
+                                Button::new(name)
+                                    .selected(self.selected_machine.as_ref() == Some(id)),
+                            )
+                            .clicked()
+                        {
+                            let _ = self.event_channel.0.send(MenuEvent::SetMachine(id.clone()));
+                            ui.close_menu();
+                        }
+                    }
+                });
+            });
+
+            // Style selection
+            ui.menu_button("Style", |ui| {
+                if ui.button("Open").clicked() {
+                    self.choose_file(FileType::Style, future_helper, MenuEvent::file_open);
+                    ui.close_menu();
+                }
+                if !WEB && ui.button("Import").clicked() {
+                    self.choose_file(FileType::Style, future_helper, MenuEvent::file_import);
+                    ui.close_menu();
+                }
+
+                ui.separator();
+
+                ScrollArea::vertical().show(ui, |ui| {
+                    for (id, name) in &self.styles {
+                        if ui
+                            .add(
+                                Button::new(name)
+                                    .selected(self.selected_style.as_ref() == Some(id)),
+                            )
+                            .clicked()
+                        {
+                            let _ = self.event_channel.0.send(MenuEvent::SetStyle(id.clone()));
+                            ui.close_menu();
+                        }
+                    }
+                });
             });
 
             ui.menu_button("Help", |ui| {
@@ -134,20 +263,27 @@ impl MenuBar {
     }
 
     /// Show the file-choosing dialog and read the file if a new file was selected
-    fn choose_file(&self, file_type: FileType, future_helper: &FutureHelper) {
+    fn choose_file<EvFut, F: FnOnce(FileType, FileHandle) -> EvFut + Send + 'static>(
+        &self,
+        file_type: FileType,
+        future_helper: &FutureHelper,
+        mk_event: F,
+    ) where
+        EvFut: Future<Output = MenuEvent> + Send,
+    {
         future_helper.execute_maybe_to(
             async move {
-                if let Some(path) = rfd::AsyncFileDialog::new()
+                if let Some(handle) = rfd::AsyncFileDialog::new()
                     .add_filter(file_type.name(), file_type.extensions())
                     .pick_file()
                     .await
                 {
-                    Some(MenuEvent::FileOpen(file_type, path.read().await))
+                    Some(mk_event(file_type, handle).await)
                 } else {
                     None
                 }
             },
-            self.file_open_channel.0.clone(),
+            self.event_channel.0.clone(),
         );
     }
 

@@ -99,6 +99,14 @@ trap <id> {
 Visual configuration can be specified in a `.nastyle`-file.
 It contains the following blocks:
 
+### Display-name
+
+A human-readable name for the style can be set in the `name`-field.
+
+```
+name: <string> // Name of the style
+```
+
 ### Atoms
 
 The `atom`-block allows specifying settings regarding the appearance of atoms.
@@ -141,7 +149,7 @@ zone {
 				duty: <percentage> // How much of the dash-segment will be filled
 			}
 		}
-		name: <string> // What to display the zone as
+		name: <string> // What to display the zone as; the name can reference groups from the regex
 	}
 	legend {
 		display: <boolean> // Whether to display the zone-names in the sidebar legend
