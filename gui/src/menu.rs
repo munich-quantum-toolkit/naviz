@@ -7,7 +7,7 @@ use std::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-use egui::{Align2, Button, Grid, Window};
+use egui::{Align2, Button, Grid, ScrollArea, Window};
 use export::ExportMenu;
 use git_version::git_version;
 #[cfg(not(target_arch = "wasm32"))]
@@ -205,15 +205,20 @@ impl MenuBar {
 
                 ui.separator();
 
-                for (id, name) in &self.machines {
-                    if ui
-                        .add(Button::new(name).selected(self.selected_machine.as_ref() == Some(id)))
-                        .clicked()
-                    {
-                        let _ = self.event_channel.0.send(MenuEvent::SetMachine(id.clone()));
-                        ui.close_menu();
+                ScrollArea::vertical().show(ui, |ui| {
+                    for (id, name) in &self.machines {
+                        if ui
+                            .add(
+                                Button::new(name)
+                                    .selected(self.selected_machine.as_ref() == Some(id)),
+                            )
+                            .clicked()
+                        {
+                            let _ = self.event_channel.0.send(MenuEvent::SetMachine(id.clone()));
+                            ui.close_menu();
+                        }
                     }
-                }
+                });
             });
 
             // Style selection
@@ -229,15 +234,20 @@ impl MenuBar {
 
                 ui.separator();
 
-                for (id, name) in &self.styles {
-                    if ui
-                        .add(Button::new(name).selected(self.selected_style.as_ref() == Some(id)))
-                        .clicked()
-                    {
-                        let _ = self.event_channel.0.send(MenuEvent::SetStyle(id.clone()));
-                        ui.close_menu();
+                ScrollArea::vertical().show(ui, |ui| {
+                    for (id, name) in &self.styles {
+                        if ui
+                            .add(
+                                Button::new(name)
+                                    .selected(self.selected_style.as_ref() == Some(id)),
+                            )
+                            .clicked()
+                        {
+                            let _ = self.event_channel.0.send(MenuEvent::SetStyle(id.clone()));
+                            ui.close_menu();
+                        }
                     }
-                }
+                });
             });
 
             ui.menu_button("Help", |ui| {
