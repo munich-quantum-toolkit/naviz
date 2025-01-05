@@ -1,0 +1,12 @@
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = []
+description = "Importer for for converting other formats to the NAViz format"
+edition = "2021"
+keywords = ["naviz", "import"]
+license = "LGPL-3.0-or-later"
+name = "naviz-import"
+repository = "https://github.com/FloezeTv/NAViz"
+version = "0.0.0"
+
+[dependencies]

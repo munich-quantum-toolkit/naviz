@@ -2171,6 +2171,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "naviz-import"
+version = "0.0.0"
+
+[[package]]
 name = "naviz-parser"
 version = "0.3.0"
 dependencies = [

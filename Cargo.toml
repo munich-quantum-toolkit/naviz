@@ -7,5 +7,6 @@ members = [
   "animator",
   "video",
   "repository",
+  "import",
 ]
 resolver = "2"
