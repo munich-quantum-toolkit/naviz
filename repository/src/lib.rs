@@ -3,7 +3,7 @@
 
 use std::{
     borrow::{Borrow, Cow},
-    collections::HashSet,
+    collections::HashMap,
     fs,
     hash::Hash,
     path::{Path, PathBuf},
@@ -23,7 +23,7 @@ const MACHINES_SUBDIR: &str = "machines";
 const STYLES_SUBDIR: &str = "styles";
 
 /// A repository of config files.
-pub struct Repository(HashSet<RepositoryEntry>);
+pub struct Repository(HashMap<String, RepositoryEntry>);
 
 /// The project directories for this application
 fn project_dirs() -> Result<ProjectDirs> {
@@ -44,7 +44,7 @@ impl Repository {
         self.0 = insert_results(
             self.0,
             bundled.files().map(|f| {
-                RepositoryEntry::new(
+                RepositoryEntry::new_with_id(
                     f.path()
                         .file_stem()
                         .ok_or(Error::IdError)?
@@ -98,7 +98,7 @@ impl Repository {
                     }
                 })
                 .map(|p| {
-                    RepositoryEntry::new(
+                    RepositoryEntry::new_with_id(
                         p.file_stem()
                             .ok_or(Error::IdError)?
                             .to_string_lossy()
@@ -133,13 +133,12 @@ impl Repository {
             )));
         }
 
-        let entry = RepositoryEntry::new(
-            file.file_stem()
-                .ok_or(Error::IdError)?
-                .to_string_lossy()
-                .into_owned(),
-            RepositorySource::UserDir(file.to_owned()),
-        )?;
+        let id = file
+            .file_stem()
+            .ok_or(Error::IdError)?
+            .to_string_lossy()
+            .into_owned();
+        let entry = RepositoryEntry::new(RepositorySource::UserDir(file.to_owned()))?;
         // Ensure the config is valid (i.e., can be parsed correctly)
         entry
             .contents_as_config()?
@@ -152,7 +151,7 @@ impl Repository {
         )
         .map_err(Error::IoError)?;
 
-        self.0.insert(entry);
+        self.0.insert(id, entry);
 
         Ok(())
     }
@@ -171,7 +170,10 @@ impl Repository {
 
     /// The list of entries of this repository: `(id, name)`-pairs
     pub fn list(&self) -> Vec<(&str, &str)> {
-        self.0.iter().map(|i| (i.id(), i.name())).collect()
+        self.0
+            .iter()
+            .map(|(id, entry)| (id.as_str(), entry.name()))
+            .collect()
     }
 
     /// Tries to get the raw contents of the entry with the passed `id`.
@@ -208,7 +210,12 @@ impl Repository {
     {
         self.0
             .iter()
-            .filter_map(|e| Some((e.id(), e.contents_as_config().ok()?.try_into().ok()?)))
+            .filter_map(|(id, entry)| {
+                Some((
+                    id.as_str(),
+                    entry.contents_as_config().ok()?.try_into().ok()?,
+                ))
+            })
             .next()
     }
 }
@@ -219,19 +226,23 @@ impl Repository {
 struct RepositoryEntry {
     /// The name as read from the config-file
     name: String,
-    /// The id of the entry
-    id: String,
     /// The source of the entry
     source: RepositorySource,
 }
 
 impl RepositoryEntry {
-    /// Creates a new [RepositoryEntry] with the given `id` from the passed `source`.
+    /// Creates a new [RepositoryEntry] from the passed `source`.
+    /// Will also return the `id` for usage as a [HashMap]-entry.
     /// Will extract the name from the `source`.
-    fn new(id: String, source: RepositorySource) -> Result<Self> {
+    fn new_with_id(id: String, source: RepositorySource) -> Result<(String, Self)> {
+        Ok((id, Self::new(source)?))
+    }
+
+    /// Creates a new [RepositoryEntry] from the passed `source`.
+    /// Will extract the name from the `source`.
+    fn new(source: RepositorySource) -> Result<Self> {
         Ok(Self {
             name: source.name()?,
-            id,
             source,
         })
     }
@@ -239,11 +250,6 @@ impl RepositoryEntry {
     /// The name of this [RepositoryEntry]
     pub fn name(&self) -> &str {
         &self.name
-    }
-
-    /// The id of this [RepositoryEntry]
-    pub fn id(&self) -> &str {
-        &self.id
     }
 
     /// The contents of this [RepositoryEntry]
@@ -254,26 +260,6 @@ impl RepositoryEntry {
     /// The name of this [RepositoryEntry] as a [Config]
     pub fn contents_as_config(&self) -> Result<Config> {
         self.source.contents_as_config()
-    }
-}
-
-impl PartialEq for RepositoryEntry {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-
-impl Eq for RepositoryEntry {}
-
-impl Hash for RepositoryEntry {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
-    }
-}
-
-impl Borrow<str> for RepositoryEntry {
-    fn borrow(&self) -> &str {
-        &self.id
     }
 }
 
@@ -315,16 +301,17 @@ pub fn config_from_bytes(bytes: &[u8]) -> Result<Config> {
     Ok(config.into())
 }
 
-/// Insert an [Iterator] of [Result]s into the `target` [HashSet].
+/// Insert an [Iterator] of [Result]s into the `target` [HashMap].
 ///
-/// Returns [Ok] with the updated [HashSet] if all [Result]s were [Ok]
+/// Returns [Ok] with the updated [HashMap] if all [Result]s were [Ok]
 /// or the first [Err].
-fn insert_results<T: Eq + Hash>(
-    mut target: HashSet<T>,
-    source: impl IntoIterator<Item = Result<T>>,
-) -> Result<HashSet<T>> {
-    for value in source.into_iter() {
-        target.insert(value?);
+fn insert_results<K: Eq + Hash, V>(
+    mut target: HashMap<K, V>,
+    source: impl IntoIterator<Item = Result<(K, V)>>,
+) -> Result<HashMap<K, V>> {
+    for result in source.into_iter() {
+        let (key, value) = result?;
+        target.insert(key, value);
     }
     Ok(target)
 }
