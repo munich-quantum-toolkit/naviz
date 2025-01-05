@@ -15,6 +15,7 @@ use crate::{
     animator_adapter::{AnimatorAdapter, AnimatorState},
     aspect_panel::AspectPanel,
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
+    current_machine::CurrentMachine,
     future_helper::FutureHelper,
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
     util::WEB,
@@ -27,6 +28,7 @@ pub struct App {
     animator_adapter: AnimatorAdapter,
     machine_repository: Repository,
     style_repository: Repository,
+    current_machine: CurrentMachine,
 }
 
 impl App {
@@ -73,6 +75,7 @@ impl App {
             animator_adapter: AnimatorAdapter::default(),
             machine_repository,
             style_repository,
+            current_machine: Default::default(),
         }
     }
 }
@@ -89,6 +92,25 @@ impl eframe::App for App {
                         naviz_parser::input::parser::parse(&input).expect("Failed to parse");
                     let input = naviz_parser::input::concrete::Instructions::new(input)
                         .expect("Failed to convert to instructions");
+                    // Update machine if not compatible or not set
+                    if !input.directives.targets.is_empty()
+                        && !self
+                            .current_machine
+                            .compatible_with(&input.directives.targets)
+                    {
+                        let compatible_machine = input
+                            .directives
+                            .targets
+                            .iter()
+                            .filter_map(|id| self.machine_repository.get(id).map(|m| (id, m)))
+                            .next();
+                        if let Some((id, compatible_machine)) = compatible_machine {
+                            self.animator_adapter.set_machine_config(
+                                compatible_machine.expect("Failed to load machine"),
+                            );
+                            self.current_machine = CurrentMachine::Id(id.clone());
+                        }
+                    }
                     self.animator_adapter.set_instructions(input);
                 }
                 MenuEvent::FileOpen(FileType::Machine, content) => {
@@ -102,6 +124,7 @@ impl eframe::App for App {
                         .try_into()
                         .expect("Failed to convert to machine-config");
                     self.animator_adapter.set_machine_config(machine);
+                    self.current_machine = CurrentMachine::Manual;
                 }
                 MenuEvent::FileOpen(FileType::Style, content) => {
                     let visual =
@@ -132,12 +155,15 @@ impl eframe::App for App {
                         });
                     }
                 }
-                MenuEvent::SetMachine(id) => self.animator_adapter.set_machine_config(
-                    self.machine_repository
-                        .get(&id)
-                        .expect("Invalid state: Selected machine does not exist")
-                        .expect("Failed to load machine"),
-                ),
+                MenuEvent::SetMachine(id) => {
+                    self.animator_adapter.set_machine_config(
+                        self.machine_repository
+                            .get(&id)
+                            .expect("Invalid state: Selected machine does not exist")
+                            .expect("Failed to load machine"),
+                    );
+                    self.current_machine = CurrentMachine::Id(id);
+                }
                 MenuEvent::SetStyle(id) => self.animator_adapter.set_visual_config(
                     self.style_repository
                         .get(&id)
