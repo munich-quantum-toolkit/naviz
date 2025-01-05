@@ -66,30 +66,36 @@ impl AnimatorAdapter {
     /// Sets the machine config
     pub fn set_machine_config(&mut self, config: MachineConfig) {
         self.machine = Some(config);
-        self.recreate_animator();
+        self.recreate_animator(false);
     }
 
     /// Sets the visual config
     pub fn set_visual_config(&mut self, config: VisualConfig) {
         self.visual = Some(config);
-        self.recreate_animator();
+        self.recreate_animator(false);
     }
 
     /// Sets the instructions
     pub fn set_instructions(&mut self, instructions: Instructions) {
         self.instructions = Some(instructions);
-        self.recreate_animator();
+        self.recreate_animator(true);
     }
 
     /// Recreates the animator.
     /// Call this when new machine, visual, instructions are set.
-    fn recreate_animator(&mut self) {
+    ///
+    /// Set `reset_time` to `true` when the duration needs to be updated.
+    /// This also sets the time back to `0`.
+    /// Time will always be reset when creating the animator for the first time.
+    fn recreate_animator(&mut self, reset_time: bool) {
         if let (Some(machine), Some(visual), Some(instructions)) =
             (&self.machine, &self.visual, &self.instructions)
         {
             let animator = Animator::new(machine.clone(), visual.clone(), instructions.clone());
             self.update_full = true;
-            self.progress_bar = ProgressBar::new(animator.duration().try_into().unwrap());
+            if reset_time || self.animator.is_none() {
+                self.progress_bar = ProgressBar::new(animator.duration().try_into().unwrap());
+            }
             self.animator = Some(animator);
         }
     }
