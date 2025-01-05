@@ -69,10 +69,22 @@ impl App {
                 .collect(),
         );
 
+        let mut animator_adapter = AnimatorAdapter::default();
+        // Load any style as default (if any style is available)
+        if let Some((id, style)) = style_repository.try_get_any() {
+            animator_adapter.set_visual_config(style);
+            menu_bar.set_selected_style(Some(id.to_string()));
+        }
+        // Load any machine as default (if any machine is available)
+        if let Some((id, machine)) = machine_repository.try_get_any() {
+            animator_adapter.set_machine_config(machine);
+            menu_bar.set_selected_machine(Some(id.to_string()));
+        }
+
         Self {
             future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
             menu_bar,
-            animator_adapter: AnimatorAdapter::default(),
+            animator_adapter,
             machine_repository,
             style_repository,
             current_machine: Default::default(),

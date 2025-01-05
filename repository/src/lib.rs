@@ -143,6 +143,17 @@ impl Repository {
                 .map_err(Error::ConfigReadError)
         })
     }
+
+    /// Try to get any config from this repository
+    pub fn try_get_any<C>(&self) -> Option<(&str, C)>
+    where
+        Config: TryInto<C>,
+    {
+        self.0
+            .iter()
+            .filter_map(|e| Some((e.id(), e.contents_as_config().ok()?.try_into().ok()?)))
+            .next()
+    }
 }
 
 /// An entry in the repository.
