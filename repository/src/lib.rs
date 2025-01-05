@@ -46,7 +46,7 @@ impl Repository {
             bundled.files().map(|f| {
                 RepositoryEntry::new(
                     f.path()
-                        .file_name()
+                        .file_stem()
                         .ok_or(Error::IdError)?
                         .to_string_lossy()
                         .into_owned(),
