@@ -10,3 +10,6 @@ repository = "https://github.com/FloezeTv/NAViz"
 version = "0.0.0"
 
 [dependencies]
+directories = "5.0.1"
+include_dir = "0.7.4"
+naviz-parser = {path = "../parser"}
