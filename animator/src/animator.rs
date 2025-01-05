@@ -220,10 +220,10 @@ impl Animator {
                     .zone
                     .iter()
                     .filter_map(|(id, _)| {
-                        get_first_match(&visual.zone.config, id)
-                            .filter(|zone| !zone.name.is_empty())
-                            .map(|zone| LegendEntry {
-                                text: zone.name.clone(),
+                        get_first_match_with_regex(&visual.zone.config, id)
+                            .filter(|(_, zone)| !zone.name.is_empty())
+                            .map(|(regex, zone)| LegendEntry {
+                                text: regex.replace(id, &zone.name).into_owned(),
                                 color: Some(zone.color.rgba()),
                             })
                     })
@@ -714,7 +714,12 @@ fn get_name(names: &[(Regex, String)], id: &str) -> String {
         .unwrap_or_default()
 }
 
+/// Gets the first entry of the passed `input`-map where the id matches the regex.
+fn get_first_match_with_regex<'t, T>(input: &'t [(Regex, T)], id: &str) -> Option<&'t (Regex, T)> {
+    input.iter().find(|(r, _)| r.is_match(id))
+}
+
 /// Gets the first item of the passed `input`-map where the id matches the regex.
 fn get_first_match<'t, T>(input: &'t [(Regex, T)], id: &str) -> Option<&'t T> {
-    input.iter().find(|(r, _)| r.is_match(id)).map(|(_, t)| t)
+    get_first_match_with_regex(input, id).map(|(_, t)| t)
 }
