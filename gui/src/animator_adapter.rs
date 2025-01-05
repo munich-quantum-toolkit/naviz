@@ -81,6 +81,11 @@ impl AnimatorAdapter {
         self.recreate_animator(true);
     }
 
+    /// Gets the instructions
+    pub fn get_instructions(&self) -> Option<&Instructions> {
+        self.instructions.as_ref()
+    }
+
     /// Recreates the animator.
     /// Call this when new machine, visual, instructions are set.
     ///

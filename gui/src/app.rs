@@ -54,20 +54,6 @@ impl App {
         }
 
         let mut menu_bar = MenuBar::new();
-        menu_bar.update_machines(
-            machine_repository
-                .list()
-                .into_iter()
-                .map(|(a, b)| (a.to_owned(), b.to_owned()))
-                .collect(),
-        );
-        menu_bar.update_styles(
-            style_repository
-                .list()
-                .into_iter()
-                .map(|(a, b)| (a.to_owned(), b.to_owned()))
-                .collect(),
-        );
 
         let mut animator_adapter = AnimatorAdapter::default();
         // Load any style as default (if any style is available)
@@ -81,14 +67,44 @@ impl App {
             menu_bar.set_selected_machine(Some(id.to_string()));
         }
 
-        Self {
+        let mut app = Self {
             future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
             menu_bar,
             animator_adapter,
             machine_repository,
             style_repository,
             current_machine: Default::default(),
+        };
+        app.update_machines();
+        app.update_styles();
+        app
+    }
+
+    /// Update the machines displayed in the menu from the repository
+    fn update_machines(&mut self) {
+        self.menu_bar.update_machines(
+            self.machine_repository
+                .list()
+                .into_iter()
+                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .collect(),
+        );
+
+        if let Some(instructions) = self.animator_adapter.get_instructions() {
+            self.menu_bar
+                .set_compatible_machines(&instructions.directives.targets);
         }
+    }
+
+    /// Update the styles displayed in the menu from the repository
+    fn update_styles(&mut self) {
+        self.menu_bar.update_styles(
+            self.style_repository
+                .list()
+                .into_iter()
+                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .collect(),
+        );
     }
 }
 
@@ -190,6 +206,18 @@ impl eframe::App for App {
                             .expect("Failed to load style"),
                     );
                     self.menu_bar.set_selected_style(Some(id));
+                }
+                MenuEvent::ImportMachine(file) => {
+                    self.machine_repository
+                        .import_machine_to_user_dir(&file)
+                        .expect("Failed to import machine");
+                    self.update_machines();
+                }
+                MenuEvent::ImportStyle(file) => {
+                    self.style_repository
+                        .import_style_to_user_dir(&file)
+                        .expect("Failed to import style");
+                    self.update_styles();
                 }
             }
         }

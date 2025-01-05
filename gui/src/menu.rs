@@ -2,13 +2,17 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::{
+    future::Future,
+    sync::mpsc::{channel, Receiver, Sender},
+};
 
 use egui::{Align2, Button, Grid, Window};
 use export::ExportMenu;
 use git_version::git_version;
 #[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoProgress;
+use rfd::FileHandle;
 
 use crate::{future_helper::FutureHelper, util::WEB};
 
@@ -49,6 +53,26 @@ pub enum MenuEvent {
     SetMachine(String),
     /// A new style with the specified `id` was selected
     SetStyle(String),
+    /// The machine at the specified `path` should be imported
+    ImportMachine(PathBuf),
+    /// The style at the specified `path` should be imported
+    ImportStyle(PathBuf),
+}
+
+impl MenuEvent {
+    /// Creates a [MenuEvent::FileOpen] for [MenuBar::choose_file]
+    async fn file_open(file_type: FileType, handle: FileHandle) -> Self {
+        Self::FileOpen(file_type, handle.read().await)
+    }
+
+    /// Creates a [MenuEvent::ImportMachine] or [MenuEvent::ImportStyle] for [MenuBar::choose_file]
+    async fn file_import(file_type: FileType, handle: FileHandle) -> Self {
+        match file_type {
+            FileType::Instructions => panic!("Unable to import instructions"),
+            FileType::Machine => Self::ImportMachine(handle.path().to_owned()),
+            FileType::Style => Self::ImportStyle(handle.path().to_owned()),
+        }
+    }
 }
 
 /// The available FileTypes for opening
@@ -153,14 +177,8 @@ impl MenuBar {
 
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
-                if ui.button("Open Instructions").clicked() {
-                    self.choose_file(FileType::Instructions, future_helper);
-                }
-                if ui.button("Open Machine").clicked() {
-                    self.choose_file(FileType::Machine, future_helper);
-                }
-                if ui.button("Open Style").clicked() {
-                    self.choose_file(FileType::Style, future_helper);
+                if ui.button("Open").clicked() {
+                    self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
                 }
 
                 self.export_menu.draw_button(config.export, ui);
@@ -176,6 +194,17 @@ impl MenuBar {
 
             // Machine selection
             ui.menu_button("Machine", |ui| {
+                if ui.button("Open").clicked() {
+                    self.choose_file(FileType::Machine, future_helper, MenuEvent::file_open);
+                    ui.close_menu();
+                }
+                if !WEB && ui.button("Import").clicked() {
+                    self.choose_file(FileType::Machine, future_helper, MenuEvent::file_import);
+                    ui.close_menu();
+                }
+
+                ui.separator();
+
                 for (id, name) in &self.machines {
                     if ui
                         .add(Button::new(name).selected(self.selected_machine.as_ref() == Some(id)))
@@ -189,6 +218,17 @@ impl MenuBar {
 
             // Style selection
             ui.menu_button("Style", |ui| {
+                if ui.button("Open").clicked() {
+                    self.choose_file(FileType::Style, future_helper, MenuEvent::file_open);
+                    ui.close_menu();
+                }
+                if !WEB && ui.button("Import").clicked() {
+                    self.choose_file(FileType::Style, future_helper, MenuEvent::file_import);
+                    ui.close_menu();
+                }
+
+                ui.separator();
+
                 for (id, name) in &self.styles {
                     if ui
                         .add(Button::new(name).selected(self.selected_style.as_ref() == Some(id)))
@@ -213,15 +253,22 @@ impl MenuBar {
     }
 
     /// Show the file-choosing dialog and read the file if a new file was selected
-    fn choose_file(&self, file_type: FileType, future_helper: &FutureHelper) {
+    fn choose_file<EvFut, F: FnOnce(FileType, FileHandle) -> EvFut + Send + 'static>(
+        &self,
+        file_type: FileType,
+        future_helper: &FutureHelper,
+        mk_event: F,
+    ) where
+        EvFut: Future<Output = MenuEvent> + Send,
+    {
         future_helper.execute_maybe_to(
             async move {
-                if let Some(path) = rfd::AsyncFileDialog::new()
+                if let Some(handle) = rfd::AsyncFileDialog::new()
                     .add_filter(file_type.name(), file_type.extensions())
                     .pick_file()
                     .await
                 {
-                    Some(MenuEvent::FileOpen(file_type, path.read().await))
+                    Some(mk_event(file_type, handle).await)
                 } else {
                     None
                 }

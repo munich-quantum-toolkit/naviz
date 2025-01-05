@@ -6,18 +6,21 @@ use std::{
     collections::HashSet,
     fs,
     hash::Hash,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use directories::ProjectDirs;
 use error::{Error, Result};
 use include_dir::{include_dir, Dir};
-use naviz_parser::config::generic::Config;
+use naviz_parser::config::{generic::Config, machine::MachineConfig, visual::VisualConfig};
 
 pub mod error;
 
 static BUNDLED_MACHINES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../configs/machines");
 static BUNDLED_STYLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../configs/styles");
+
+const MACHINES_SUBDIR: &str = "machines";
+const STYLES_SUBDIR: &str = "styles";
 
 /// A repository of config files.
 pub struct Repository(HashSet<RepositoryEntry>);
@@ -64,18 +67,23 @@ impl Repository {
         self.load_bundled(&BUNDLED_STYLES)
     }
 
-    /// Loads the configs from the passed `subdir` of the user-directory
-    /// into the passed [Repository]
-    fn load_user_dir(mut self, subdir: &str) -> Result<Self> {
+    /// Gets the path of the passed `subdir` of the user-directory
+    fn user_dir(subdir: &str) -> Result<PathBuf> {
         let directory = project_dirs()?.data_dir().join(subdir);
 
         if !directory.exists() {
             fs::create_dir_all(&directory).map_err(Error::IoError)?;
         }
 
+        Ok(directory)
+    }
+
+    /// Loads the configs from the passed `subdir` of the user-directory
+    /// into the passed [Repository]
+    fn load_user_dir(mut self, subdir: &str) -> Result<Self> {
         self.0 = insert_results(
             self.0,
-            directory
+            Self::user_dir(subdir)?
                 .read_dir()
                 .map_err(Error::IoError)?
                 .filter_map(|x| {
@@ -104,12 +112,61 @@ impl Repository {
 
     /// Loads the machines from the user-directory into the passed [Repository]
     pub fn user_dir_machines(self) -> Result<Self> {
-        self.load_user_dir("machines")
+        self.load_user_dir(MACHINES_SUBDIR)
     }
 
     /// Loads the styles from the user-directory into the passed [Repository]
     pub fn user_dir_styles(self) -> Result<Self> {
-        self.load_user_dir("styles")
+        self.load_user_dir(STYLES_SUBDIR)
+    }
+
+    /// Imports a `file` into the passed `subdir` in the user-directory.
+    /// Will validate that the config can be parsed into a valid `C`.
+    fn import_to_user_dir<C>(&mut self, subdir: &str, file: &Path) -> Result<()>
+    where
+        Config: TryInto<C, Error = naviz_parser::config::error::Error>,
+    {
+        if !file.is_file() {
+            return Err(Error::IoError(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "File to import is not a file.",
+            )));
+        }
+
+        let entry = RepositoryEntry::new(
+            file.file_stem()
+                .ok_or(Error::IdError)?
+                .to_string_lossy()
+                .into_owned(),
+            RepositorySource::UserDir(file.to_owned()),
+        )?;
+        // Ensure the config is valid (i.e., can be parsed correctly)
+        entry
+            .contents_as_config()?
+            .try_into()
+            .map_err(Error::ConfigReadError)?;
+
+        fs::copy(
+            file,
+            Self::user_dir(subdir)?.join(file.file_name().unwrap()),
+        )
+        .map_err(Error::IoError)?;
+
+        self.0.insert(entry);
+
+        Ok(())
+    }
+
+    /// Import a machine into the user-directory.
+    /// Will validate that the config can be parsed into a valid [MachineConfig].
+    pub fn import_machine_to_user_dir(&mut self, file: &Path) -> Result<()> {
+        self.import_to_user_dir::<MachineConfig>(MACHINES_SUBDIR, file)
+    }
+
+    /// Import a style into the user-directory.
+    /// Will validate that the config can be parsed into a valid [VisualConfig].
+    pub fn import_style_to_user_dir(&mut self, file: &Path) -> Result<()> {
+        self.import_to_user_dir::<VisualConfig>(STYLES_SUBDIR, file)
     }
 
     /// The list of entries of this repository: `(id, name)`-pairs
