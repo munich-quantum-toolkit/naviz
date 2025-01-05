@@ -6,6 +6,7 @@ use eframe::egui_wgpu::CallbackTrait;
 use log::error;
 use naviz_parser::config::{machine::MachineConfig, visual::VisualConfig};
 use naviz_renderer::renderer::Renderer;
+use naviz_repository::Repository;
 use naviz_state::{config::Config, state::State};
 #[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoExport;
@@ -16,6 +17,7 @@ use crate::{
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     future_helper::FutureHelper,
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
+    util::WEB,
 };
 
 /// The main App to draw using [egui]/[eframe]
@@ -23,6 +25,8 @@ pub struct App {
     future_helper: FutureHelper,
     menu_bar: MenuBar,
     animator_adapter: AnimatorAdapter,
+    machine_repository: Repository,
+    style_repository: Repository,
 }
 
 impl App {
@@ -30,10 +34,45 @@ impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         RendererAdapter::setup(cc);
 
+        let mut machine_repository = Repository::empty()
+            .bundled_machines()
+            .expect("Failed to load bundled machines");
+        let mut style_repository = Repository::empty()
+            .bundled_styles()
+            .expect("Failed to load bundled styles");
+
+        // Load user-dirs only on non-web builds as there is no filesystem on web
+        if !WEB {
+            machine_repository = machine_repository
+                .user_dir_machines()
+                .expect("Failed to load machines from user dir");
+            style_repository = style_repository
+                .user_dir_styles()
+                .expect("Failed to load styles from user dir");
+        }
+
+        let mut menu_bar = MenuBar::new();
+        menu_bar.update_machines(
+            machine_repository
+                .list()
+                .into_iter()
+                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .collect(),
+        );
+        menu_bar.update_styles(
+            style_repository
+                .list()
+                .into_iter()
+                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .collect(),
+        );
+
         Self {
             future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
-            menu_bar: MenuBar::new(),
+            menu_bar,
             animator_adapter: AnimatorAdapter::default(),
+            machine_repository,
+            style_repository,
         }
     }
 }
@@ -93,6 +132,18 @@ impl eframe::App for App {
                         });
                     }
                 }
+                MenuEvent::SetMachine(id) => self.animator_adapter.set_machine_config(
+                    self.machine_repository
+                        .get(&id)
+                        .expect("Invalid state: Selected machine does not exist")
+                        .expect("Failed to load machine"),
+                ),
+                MenuEvent::SetStyle(id) => self.animator_adapter.set_visual_config(
+                    self.style_repository
+                        .get(&id)
+                        .expect("Invalid state: Selected style does not exist")
+                        .expect("Failed to load style"),
+                ),
             }
         }
 

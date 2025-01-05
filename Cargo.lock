@@ -2161,6 +2161,7 @@ dependencies = [
  "naviz-animator",
  "naviz-parser",
  "naviz-renderer",
+ "naviz-repository",
  "naviz-state",
  "naviz-video",
  "rfd",

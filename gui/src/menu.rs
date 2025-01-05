@@ -16,11 +16,15 @@ type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
 /// The menu bar struct which contains the state of the menu
 pub struct MenuBar {
-    file_open_channel: SendReceivePair<MenuEvent>,
+    event_channel: SendReceivePair<MenuEvent>,
     /// Whether to draw the about-window
     about_open: bool,
     /// Export interaction handling (menu, config, progress)
     export_menu: ExportMenu,
+    /// List of machines: `(id, name)`
+    machines: Vec<(String, String)>,
+    /// List of styles: `(id, name)`
+    styles: Vec<(String, String)>,
 }
 
 /// An event which is triggered on menu navigation.
@@ -37,6 +41,10 @@ pub enum MenuEvent {
         /// Channel for progress updates
         progress: Sender<VideoProgress>,
     },
+    /// A new machine with the specified `id` was selected
+    SetMachine(String),
+    /// A new style with the specified `id` was selected
+    SetStyle(String),
 }
 
 /// The available FileTypes for opening
@@ -73,10 +81,24 @@ impl MenuBar {
     /// Create a new [MenuBar]
     pub fn new() -> Self {
         Self {
-            file_open_channel: channel(),
+            event_channel: channel(),
             about_open: false,
             export_menu: ExportMenu::new(),
+            machines: vec![],
+            styles: vec![],
         }
+    }
+
+    /// Update the machine-list.
+    /// Machines are `(id, name)`.
+    pub fn update_machines(&mut self, machines: Vec<(String, String)>) {
+        self.machines = machines;
+    }
+
+    /// Update the style-list.
+    /// Styles are `(id, name)`.
+    pub fn update_styles(&mut self, styles: Vec<(String, String)>) {
+        self.styles = styles;
     }
 
     /// Get the file open channel.
@@ -84,7 +106,7 @@ impl MenuBar {
     /// Whenever a new file is opened,
     /// its content will be sent over this channel.
     pub fn events(&self) -> &Receiver<MenuEvent> {
-        &self.file_open_channel.1
+        &self.event_channel.1
     }
 
     /// Draw the [MenuBar]
@@ -95,8 +117,7 @@ impl MenuBar {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
     ) {
-        self.export_menu
-            .process_events(&mut self.file_open_channel.0);
+        self.export_menu.process_events(&mut self.event_channel.0);
 
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
@@ -117,6 +138,26 @@ impl MenuBar {
                     ui.separator();
                     if ui.button("Quit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                }
+            });
+
+            // Machine selection
+            ui.menu_button("Machine", |ui| {
+                for (id, name) in &self.machines {
+                    if ui.button(name).clicked() {
+                        let _ = self.event_channel.0.send(MenuEvent::SetMachine(id.clone()));
+                        ui.close_menu();
+                    }
+                }
+            });
+
+            // Style selection
+            ui.menu_button("Style", |ui| {
+                for (id, name) in &self.styles {
+                    if ui.button(name).clicked() {
+                        let _ = self.event_channel.0.send(MenuEvent::SetStyle(id.clone()));
+                        ui.close_menu();
                     }
                 }
             });
@@ -147,7 +188,7 @@ impl MenuBar {
                     None
                 }
             },
-            self.file_open_channel.0.clone(),
+            self.event_channel.0.clone(),
         );
     }
 
