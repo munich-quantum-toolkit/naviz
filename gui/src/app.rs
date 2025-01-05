@@ -111,6 +111,7 @@ impl eframe::App for App {
                             self.current_machine = CurrentMachine::Id(id.clone());
                         }
                     }
+                    self.menu_bar.set_compatible_machines(&input.directives.targets);
                     self.animator_adapter.set_instructions(input);
                 }
                 MenuEvent::FileOpen(FileType::Machine, content) => {

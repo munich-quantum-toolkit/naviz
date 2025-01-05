@@ -93,12 +93,26 @@ impl MenuBar {
     /// Machines are `(id, name)`.
     pub fn update_machines(&mut self, machines: Vec<(String, String)>) {
         self.machines = machines;
+        self.machines.sort_by(|(_, a), (_, b)| a.cmp(b));
+    }
+
+    /// Move the compatible machines to the top of the list
+    pub fn set_compatible_machines(&mut self, machines: &[String]) {
+        // Sort by containment in machines, then by name
+        self.machines.sort_by(|(id_a, name_a), (id_b, name_b)| {
+            machines
+                .contains(id_a)
+                .cmp(&machines.contains(id_b))
+                .reverse()
+                .then_with(|| name_a.cmp(name_b))
+        });
     }
 
     /// Update the style-list.
     /// Styles are `(id, name)`.
     pub fn update_styles(&mut self, styles: Vec<(String, String)>) {
         self.styles = styles;
+        self.styles.sort_by(|(_, a), (_, b)| a.cmp(b));
     }
 
     /// Get the file open channel.
