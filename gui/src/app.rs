@@ -275,7 +275,7 @@ impl eframe::App for App {
 /// before drawing the renderer using the callback implementation.
 #[derive(Clone)]
 struct RendererAdapter {
-    size: (u32, u32),
+    size: (f32, f32),
     /// The animator_state to render
     animator_state: AnimatorState,
 }
@@ -321,12 +321,19 @@ impl CallbackTrait for RendererAdapter {
         &self,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        _screen_descriptor: &eframe::egui_wgpu::ScreenDescriptor,
+        screen_descriptor: &eframe::egui_wgpu::ScreenDescriptor,
         _egui_encoder: &mut wgpu::CommandEncoder,
         callback_resources: &mut eframe::egui_wgpu::CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
         if let Some(r) = callback_resources.get_mut::<Renderer>() {
-            r.update_viewport(device, queue, self.size);
+            r.update_viewport(
+                device,
+                queue,
+                (
+                    (self.size.0 * screen_descriptor.pixels_per_point) as u32,
+                    (self.size.1 * screen_descriptor.pixels_per_point) as u32,
+                ),
+            );
             self.animator_state
                 .update(r, &mut (device, queue), device, queue);
         } else {
@@ -356,6 +363,6 @@ impl CanvasContent for RendererAdapter {
     }
 
     fn target_size(&mut self, size: (f32, f32)) {
-        self.size = (size.0 as u32, size.1 as u32);
+        self.size = size;
     }
 }
