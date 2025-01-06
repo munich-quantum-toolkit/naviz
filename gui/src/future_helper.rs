@@ -9,6 +9,23 @@ use std::sync::mpsc::Sender;
 #[cfg(not(target_arch = "wasm32"))]
 use futures::executor::ThreadPool;
 
+/// A future that is [Send] except on wasm and has output `O`.
+/// Used for passing into methods of [FutureHelper].
+///
+/// Non-WASM-version: Requires [Send].
+#[cfg(not(target_arch = "wasm32"))]
+pub trait SendFuture<O>: Future<Output = O> + Send {}
+#[cfg(not(target_arch = "wasm32"))]
+impl<O, T: Future<Output = O> + Send> SendFuture<O> for T {}
+/// A future that is [Send] except on wasm and has output `O`.
+/// Used for passing into methods of [FutureHelper].
+///
+/// WASM-version: Does not require [Send].
+#[cfg(target_arch = "wasm32")]
+pub trait SendFuture<O>: Future<Output = O> {}
+#[cfg(target_arch = "wasm32")]
+impl<O, T: Future<Output = O>> SendFuture<O> for T {}
+
 /// A struct which has some functions to help with executing futures
 /// on both web and native.
 pub struct FutureHelper {
@@ -36,24 +53,20 @@ impl FutureHelper {
 
     /// Execute a future asynchronously
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn execute<F: Future<Output = ()> + 'static + Send>(&self, f: F) {
+    pub fn execute<F: SendFuture<()> + 'static>(&self, f: F) {
         self.executor.spawn_ok(f);
     }
 
     /// Execute a future asynchronously
     #[cfg(target_arch = "wasm32")]
-    pub fn execute<F: Future<Output = ()> + 'static>(&self, f: F) {
+    pub fn execute<F: SendFuture<()> + 'static>(&self, f: F) {
         wasm_bindgen_futures::spawn_local(f);
     }
 
     /// Execute a future asynchronously
     /// and send its result to the passed channel
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn execute_to<F: Future<Output = O> + 'static + Send, O: 'static + Send>(
-        &self,
-        f: F,
-        r: Sender<O>,
-    ) {
+    pub fn execute_to<F: SendFuture<O> + 'static, O: 'static + Send>(&self, f: F, r: Sender<O>) {
         self.execute(async move {
             let _ = r.send(f.await);
         });
@@ -62,7 +75,7 @@ impl FutureHelper {
     /// Execute a future asynchronously
     /// and send its result to the passed channel
     #[cfg(target_arch = "wasm32")]
-    pub fn execute_to<F: Future<Output = O> + 'static, O: 'static>(&self, f: F, r: Sender<O>) {
+    pub fn execute_to<F: SendFuture<O> + 'static, O: 'static>(&self, f: F, r: Sender<O>) {
         self.execute(async move {
             let _ = r.send(f.await);
         });
@@ -72,7 +85,7 @@ impl FutureHelper {
     /// and send its result to the passed channel
     /// if it finishes with [Some]
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn execute_maybe_to<F: Future<Output = Option<O>> + 'static + Send, O: 'static + Send>(
+    pub fn execute_maybe_to<F: SendFuture<Option<O>> + 'static, O: 'static + Send>(
         &self,
         f: F,
         r: Sender<O>,
@@ -88,7 +101,7 @@ impl FutureHelper {
     /// and send its result to the passed channel
     /// if it finishes with [Some]
     #[cfg(target_arch = "wasm32")]
-    pub fn execute_maybe_to<F: Future<Output = Option<O>> + 'static, O: 'static>(
+    pub fn execute_maybe_to<F: SendFuture<Option<O>> + 'static, O: 'static>(
         &self,
         f: F,
         r: Sender<O>,
