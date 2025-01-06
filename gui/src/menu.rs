@@ -2,10 +2,7 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-use std::{
-    future::Future,
-    sync::mpsc::{channel, Receiver, Sender},
-};
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 use egui::{Align2, Button, Grid, ScrollArea, Window};
 use export::ExportMenu;
@@ -14,7 +11,10 @@ use git_version::git_version;
 use naviz_video::VideoProgress;
 use rfd::FileHandle;
 
-use crate::{future_helper::FutureHelper, util::WEB};
+use crate::{
+    future_helper::{FutureHelper, SendFuture},
+    util::WEB,
+};
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);
 
@@ -54,8 +54,10 @@ pub enum MenuEvent {
     /// A new style with the specified `id` was selected
     SetStyle(String),
     /// The machine at the specified `path` should be imported
+    #[cfg(not(target_arch = "wasm32"))]
     ImportMachine(PathBuf),
     /// The style at the specified `path` should be imported
+    #[cfg(not(target_arch = "wasm32"))]
     ImportStyle(PathBuf),
 }
 
@@ -66,6 +68,7 @@ impl MenuEvent {
     }
 
     /// Creates a [MenuEvent::ImportMachine] or [MenuEvent::ImportStyle] for [MenuBar::choose_file]
+    #[cfg(not(target_arch = "wasm32"))]
     async fn file_import(file_type: FileType, handle: FileHandle) -> Self {
         match file_type {
             FileType::Instructions => panic!("Unable to import instructions"),
@@ -198,7 +201,8 @@ impl MenuBar {
                     self.choose_file(FileType::Machine, future_helper, MenuEvent::file_open);
                     ui.close_menu();
                 }
-                if !WEB && ui.button("Import").clicked() {
+                #[cfg(not(target_arch = "wasm32"))]
+                if ui.button("Import").clicked() {
                     self.choose_file(FileType::Machine, future_helper, MenuEvent::file_import);
                     ui.close_menu();
                 }
@@ -227,7 +231,8 @@ impl MenuBar {
                     self.choose_file(FileType::Style, future_helper, MenuEvent::file_open);
                     ui.close_menu();
                 }
-                if !WEB && ui.button("Import").clicked() {
+                #[cfg(not(target_arch = "wasm32"))]
+                if ui.button("Import").clicked() {
                     self.choose_file(FileType::Style, future_helper, MenuEvent::file_import);
                     ui.close_menu();
                 }
@@ -269,7 +274,7 @@ impl MenuBar {
         future_helper: &FutureHelper,
         mk_event: F,
     ) where
-        EvFut: Future<Output = MenuEvent> + Send,
+        EvFut: SendFuture<MenuEvent>,
     {
         future_helper.execute_maybe_to(
             async move {
