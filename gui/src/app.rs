@@ -207,12 +207,14 @@ impl eframe::App for App {
                     );
                     self.menu_bar.set_selected_style(Some(id));
                 }
+                #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ImportMachine(file) => {
                     self.machine_repository
                         .import_machine_to_user_dir(&file)
                         .expect("Failed to import machine");
                     self.update_machines();
                 }
+                #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ImportStyle(file) => {
                     self.style_repository
                         .import_style_to_user_dir(&file)
