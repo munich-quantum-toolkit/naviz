@@ -2173,6 +2173,10 @@ dependencies = [
 [[package]]
 name = "naviz-import"
 version = "0.0.0"
+dependencies = [
+ "fraction",
+ "winnow 0.6.22",
+]
 
 [[package]]
 name = "naviz-parser"
@@ -2181,7 +2185,7 @@ dependencies = [
  "fraction",
  "itertools",
  "regex",
- "winnow 0.6.18",
+ "winnow 0.6.22",
 ]
 
 [[package]]
@@ -3480,7 +3484,7 @@ checksum = "583c44c02ad26b0c3f3066fe629275e50627026c51ac2e595cca4c230ce1ce1d"
 dependencies = [
  "indexmap",
  "toml_datetime",
- "winnow 0.6.18",
+ "winnow 0.6.22",
 ]
 
 [[package]]
@@ -4415,9 +4419,9 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.6.18"
+version = "0.6.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68a9bda4691f099d435ad181000724da8e5899daa10713c2d432552b9ccd3a6f"
+checksum = "39281189af81c07ec09db316b302a3e67bf9bd7cbf6c820b50e35fee9c2fa980"
 dependencies = [
  "memchr",
 ]
