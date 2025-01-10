@@ -1,6 +1,6 @@
 //! Converter from the [na][super]-format to the [naviz][naviz_parser]-format.
 
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 use fraction::{ConstZero, Fraction};
 use naviz_parser::input::concrete::{
@@ -10,30 +10,49 @@ use naviz_parser::input::concrete::{
 use super::format::{Number, Operation, OperationArgs, OperationList, Position};
 
 /// Options for [convert]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ConvertOptions<'a> {
     /// The prefix to name atoms with.
     /// Atoms will be numbered starting from zero and named as `<atom_prefix><number>`
-    pub atom_prefix: &'a str,
+    pub atom_prefix: Cow<'a, str>,
     pub global_zones: GlobalZoneNames<'a>,
 }
 
+impl<'a> Default for ConvertOptions<'a> {
+    fn default() -> Self {
+        Self {
+            atom_prefix: "atom".into(),
+            global_zones: Default::default(),
+        }
+    }
+}
+
 /// Names of the zones to use for global operations (i.e., operations that are not targeted)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct GlobalZoneNames<'a> {
-    pub cz: &'a str,
-    pub ry: &'a str,
-    pub rz: &'a str,
+    pub cz: Cow<'a, str>,
+    pub ry: Cow<'a, str>,
+    pub rz: Cow<'a, str>,
+}
+
+impl<'a> Default for GlobalZoneNames<'a> {
+    fn default() -> Self {
+        Self {
+            cz: "zone_cz".into(),
+            ry: "zone_ry".into(),
+            rz: "zone_rz".into(),
+        }
+    }
 }
 
 impl<'a> GlobalZoneNames<'a> {
     /// Gets the global zone name for an operation
     /// or returns an [OperationConversionError::InvalidName] if the name is unknown.
-    fn get(&self, name: &str) -> Result<&'a str, OperationConversionError> {
+    fn get(&'a self, name: &str) -> Result<&'a str, OperationConversionError> {
         match name {
-            "cz" => Ok(self.cz),
-            "ry" => Ok(self.ry),
-            "rz" => Ok(self.rz),
+            "cz" => Ok(&self.cz),
+            "ry" => Ok(&self.ry),
+            "rz" => Ok(&self.rz),
             _ => Err(OperationConversionError::InvalidName),
         }
     }
@@ -62,7 +81,7 @@ pub fn convert(
                 setup.push(SetupInstruction::Atom {
                     position: position.into(),
                     id: create_id(
-                        options.atom_prefix,
+                        &options.atom_prefix,
                         &mut atom_counter,
                         position,
                         &mut position_cache,
@@ -79,7 +98,7 @@ pub fn convert(
                     instructions: convert_operation(
                         operation,
                         &mut position_cache,
-                        options.global_zones,
+                        &options.global_zones,
                     )?,
                 },
             ));
@@ -116,7 +135,7 @@ pub enum OperationConversionError {
 pub fn convert_operation(
     operation: &Operation<&str>,
     position_cache: &mut PositionCache,
-    global_zone_options: GlobalZoneNames,
+    global_zone_options: &GlobalZoneNames,
 ) -> Result<Vec<TimedInstruction>, OperationConversionError> {
     match &operation.args {
         // Init is not a timed instruction
@@ -288,11 +307,11 @@ mod test {
         let converted = convert(
             &parsed,
             ConvertOptions {
-                atom_prefix: "atom",
+                atom_prefix: "atom".into(),
                 global_zones: GlobalZoneNames {
-                    cz: "global_cz",
-                    ry: "global_ry",
-                    rz: "global_rz",
+                    cz: "global_cz".into(),
+                    ry: "global_ry".into(),
+                    rz: "global_rz".into(),
                 },
             },
         )
