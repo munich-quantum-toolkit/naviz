@@ -144,6 +144,10 @@ impl eframe::App for App {
                         .set_compatible_machines(&input.directives.targets);
                     self.animator_adapter.set_instructions(input);
                 }
+                MenuEvent::FileImport(options, content) => {
+                    self.animator_adapter
+                        .set_instructions(options.import(&content).expect("Failed to import"));
+                }
                 MenuEvent::FileOpen(FileType::Machine, content) => {
                     let machine =
                         naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())

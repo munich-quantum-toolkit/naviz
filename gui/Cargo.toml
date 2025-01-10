@@ -26,6 +26,7 @@ egui_extras = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6
 git-version = "0.3.9"
 log = "0.4"
 naviz-animator = {path = "../animator"}
+naviz-import = {path = "../import"}
 naviz-parser = {path = "../parser"}
 naviz-renderer = {path = "../renderer"}
 naviz-repository = {path = "../repository"}

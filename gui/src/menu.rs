@@ -13,6 +13,7 @@ use rfd::FileHandle;
 
 use crate::{
     future_helper::{FutureHelper, SendFuture},
+    import::{ImportFormat, ImportOptions, IMPORT_FORMATS},
     util::WEB,
 };
 
@@ -33,6 +34,7 @@ pub struct MenuBar {
     selected_machine: Option<String>,
     /// The currently selected style
     selected_style: Option<String>,
+    current_import_options: Option<ImportOptions>,
 }
 
 /// An event which is triggered on menu navigation.
@@ -40,6 +42,8 @@ pub struct MenuBar {
 pub enum MenuEvent {
     /// A file of the specified [FileType] with the specified content was opened
     FileOpen(FileType, Vec<u8>),
+    /// A file should be imported
+    FileImport(ImportOptions, Vec<u8>),
     /// A video should be exported to the specified path with the specified resolution and fps
     #[cfg(not(target_arch = "wasm32"))]
     ExportVideo {
@@ -85,21 +89,29 @@ pub enum FileType {
     Style,
 }
 
+/// Something which can be used to filter files by extension
+pub trait FileFilter {
+    /// The name of this filter
+    fn name(&self) -> &str;
+    /// Allowed extensions
+    fn extensions(&self) -> &[&str];
+}
+
 /// Config options for what to show inside the menu
 pub struct MenuConfig {
     /// Show export option
     pub export: bool,
 }
 
-impl FileType {
-    pub fn name(&self) -> &'static str {
+impl FileFilter for FileType {
+    fn name(&self) -> &'static str {
         match self {
             FileType::Instructions => "NAViz instructions",
             FileType::Machine => "NAViz machine",
             FileType::Style => "NAViz style",
         }
     }
-    pub fn extensions(&self) -> &'static [&'static str] {
+    fn extensions(&self) -> &'static [&'static str] {
         match self {
             FileType::Instructions => &["naviz"],
             FileType::Machine => &["namachine"],
@@ -119,6 +131,7 @@ impl MenuBar {
             styles: vec![],
             selected_machine: None,
             selected_style: None,
+            current_import_options: None,
         }
     }
 
@@ -178,11 +191,22 @@ impl MenuBar {
     ) {
         self.export_menu.process_events(&mut self.event_channel.0);
 
+        self.show_import_dialog(future_helper, ctx);
+
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open").clicked() {
                     self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
                 }
+
+                ui.menu_button("Import", |ui| {
+                    for import_format in IMPORT_FORMATS {
+                        if ui.button(import_format.name()).clicked() {
+                            self.current_import_options = Some(import_format.into());
+                            ui.close_menu();
+                        }
+                    }
+                });
 
                 self.export_menu.draw_button(config.export, ui);
 
@@ -267,10 +291,46 @@ impl MenuBar {
         self.draw_about_window(ctx);
     }
 
+    /// Show the import dialog if [MenuBar::current_import_options] is `Some`.
+    fn show_import_dialog(&mut self, future_helper: &FutureHelper, ctx: &egui::Context) {
+        if let Some(current_import_options) = self.current_import_options.as_mut() {
+            let mut open = true; // window open?
+            let mut do_import = false; // ok button clicked?
+
+            Window::new("Import")
+                .open(&mut open)
+                .collapsible(false)
+                .show(ctx, |ui| {
+                    current_import_options.draw(ui);
+                    do_import = ui
+                        .vertical_centered_justified(|ui| ui.button("Ok"))
+                        .inner
+                        .clicked();
+                });
+
+            if do_import {
+                let options = self.current_import_options.take().unwrap(); // Can unwrap because we are inside of `if let Some`
+                self.choose_file(
+                    ImportFormat::from(&options),
+                    future_helper,
+                    |_, file| async move { MenuEvent::FileImport(options, file.read().await) },
+                );
+            }
+
+            if !open {
+                self.current_import_options = None;
+            }
+        }
+    }
+
     /// Show the file-choosing dialog and read the file if a new file was selected
-    fn choose_file<EvFut, F: FnOnce(FileType, FileHandle) -> EvFut + Send + 'static>(
+    fn choose_file<
+        Arg: FileFilter + Send + 'static,
+        EvFut,
+        F: FnOnce(Arg, FileHandle) -> EvFut + Send + 'static,
+    >(
         &self,
-        file_type: FileType,
+        file_type: Arg,
         future_helper: &FutureHelper,
         mk_event: F,
     ) where
@@ -376,7 +436,6 @@ pub mod export {
 
         /// Draws the menu button concerning export
         pub fn draw_button(&mut self, enabled: bool, ui: &mut egui::Ui) {
-            ui.separator();
             if ui
                 .add_enabled(enabled, Button::new("Export Video"))
                 .clicked()

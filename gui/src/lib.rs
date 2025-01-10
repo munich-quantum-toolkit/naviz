@@ -8,6 +8,7 @@ mod current_machine;
 #[cfg(not(target_arch = "wasm32"))]
 mod export_dialog;
 mod future_helper;
+mod import;
 mod menu;
 mod progress_bar;
 mod util;
