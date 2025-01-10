@@ -641,7 +641,7 @@ fn insert_animation(
         timelines.position.add((
             time,
             duration,
-            AverageVelocity::for_2d_move(source, target, time),
+            AverageVelocity::for_2d_move(source, target, duration),
             target,
         ));
     }
