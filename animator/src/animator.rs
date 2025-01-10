@@ -23,8 +23,8 @@ use regex::Regex;
 use crate::{
     color::Color,
     interpolator::{
-        AverageVelocity, Constant, ConstantJerkFixedAverageVelocity, ConstantJerkFixedMaxVelocity,
-        Diagonal, DurationCalculable, MaxVelocity, Triangle,
+        Constant, ConstantJerkFixedAverageVelocity, ConstantJerkFixedMaxVelocity, Diagonal,
+        DurationCalculable, MaxVelocity, Triangle,
     },
     position::Position,
     timeline::{Time, Timeline},
@@ -33,7 +33,7 @@ use crate::{
 
 /// The timelines for a single atom
 pub struct AtomTimelines {
-    position: Timeline<AverageVelocity, Position, f32, Diagonal<ConstantJerkFixedAverageVelocity>>,
+    position: Timeline<(), Position, f32, Diagonal<ConstantJerkFixedAverageVelocity>>,
     overlay_color: Timeline<(), Color, f32, Triangle>,
     size: Timeline<(), f32, f32, Triangle>,
     shuttling: Timeline<(), bool, (), Constant>,
@@ -637,13 +637,7 @@ fn insert_animation(
         target: (Fraction, Fraction),
     ) {
         let target: Position = target.into();
-        let source = timelines.position.get(time.into());
-        timelines.position.add((
-            time,
-            duration,
-            AverageVelocity::for_2d_move(source, target, time),
-            target,
-        ));
+        timelines.position.add((time, duration, (), target));
     }
 
     fn add_load_store(

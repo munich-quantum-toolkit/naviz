@@ -230,12 +230,13 @@ impl<A: Copy, T: Copy, Dur: Duration, I: InterpolationFunction<A, T>> Timeline<A
                 .map(|i| &self.keyframes[i])
                 .map(|k| I::ENDPOINT.get(self.default, k.value))
                 .unwrap_or(self.default);
-            let duration = keyframe.duration.as_f32();
-            let fraction = if duration > 0. {
-                ((time - keyframe.time) / (Time::from(duration))).min((1.).into())
-            } else {
-                (1.).into()
-            };
+            let duration = keyframe.duration.as_f32().into();
+            let keyframe_relative_time = time - keyframe.time; // time inside keyframe
+            if keyframe_relative_time >= duration {
+                // outside of keyframe: return endpoint
+                return I::ENDPOINT.get(from, to);
+            }
+            let fraction = keyframe_relative_time / duration;
             self.interpolation_function
                 .interpolate(fraction, keyframe.argument, from, to)
         } else {

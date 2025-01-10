@@ -304,11 +304,11 @@ impl ConstantJerkFixedAverageVelocity {
     }
 }
 
+/// Implementation using [AverageVelocity].
+/// Use this when needing the correct values..
 impl ConstantJerkImpl<AverageVelocity> for ConstantJerkFixedAverageVelocity {
     fn j0(&self, average_velocity: AverageVelocity, s_start: f32, s_finish: f32) -> f32 {
-        let v0 = self.v0(average_velocity, s_start, s_finish);
-        let t_total = self.t_total(average_velocity, s_start, s_finish);
-        v0 * 8. / t_total.powi(2)
+        12. * average_velocity.0.powi(3) / (s_finish - s_start).powi(2)
     }
 
     fn t_total(&self, average_velocity: AverageVelocity, s_start: f32, s_finish: f32) -> f32 {
@@ -319,9 +319,28 @@ impl ConstantJerkImpl<AverageVelocity> for ConstantJerkFixedAverageVelocity {
         (s_start + s_finish) / 2.
     }
 
-    fn v0(&self, average_velocity: AverageVelocity, s_start: f32, s_finish: f32) -> f32 {
-        let t_total = self.t_total(average_velocity, s_start, s_finish);
-        3. / 2. * (s_finish - s_start) / t_total
+    fn v0(&self, average_velocity: AverageVelocity, _s_start: f32, _s_finish: f32) -> f32 {
+        3. / 2. * average_velocity.0
+    }
+}
+
+/// Implementation using no argument, as the [AverageVelocity] reduces in the final interpolation.
+/// Use this for interpolation in the timeline.
+impl ConstantJerkImpl<()> for ConstantJerkFixedAverageVelocity {
+    fn j0(&self, (): (), s_start: f32, s_finish: f32) -> f32 {
+        12. / (s_finish - s_start).powi(2)
+    }
+
+    fn t_total(&self, (): (), s_start: f32, s_finish: f32) -> f32 {
+        s_finish - s_start
+    }
+
+    fn s0(&self, (): (), s_start: f32, s_finish: f32) -> f32 {
+        (s_start + s_finish) / 2.
+    }
+
+    fn v0(&self, (): (), _s_start: f32, _s_finish: f32) -> f32 {
+        3. / 2.
     }
 }
 
@@ -352,6 +371,11 @@ impl<A, I: InterpolationFunction<A, f32>> InterpolationFunction<A, Position> for
 
         // Distance between the points (1D-coordinate of `to`):
         let distance = distance(from, to);
+        if distance <= 0. {
+            // from = to
+            // nothing to interpolate (and unable to construct axis)
+            return from;
+        }
         // Our axis-vector (unit-vector from `from` to `to`):
         let axis = ((to.x - from.x) / distance, (to.y - from.y) / distance);
 
