@@ -2159,6 +2159,7 @@ dependencies = [
  "git-version",
  "log",
  "naviz-animator",
+ "naviz-import",
  "naviz-parser",
  "naviz-renderer",
  "naviz-repository",
