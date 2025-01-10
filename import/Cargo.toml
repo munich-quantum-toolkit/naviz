@@ -11,4 +11,5 @@ version = "0.0.0"
 
 [dependencies]
 fraction = "0.15.3"
+naviz-parser = {path = "../parser"}
 winnow = "0.6.22"

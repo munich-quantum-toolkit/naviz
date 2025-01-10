@@ -2175,6 +2175,7 @@ name = "naviz-import"
 version = "0.0.0"
 dependencies = [
  "fraction",
+ "naviz-parser",
  "winnow 0.6.22",
 ]
 

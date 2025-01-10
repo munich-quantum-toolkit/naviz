@@ -2,7 +2,7 @@
 
 use std::{fmt::Display, sync::Arc};
 
-use fraction::Decimal;
+use fraction::{Decimal, Fraction};
 use operation::operation;
 use winnow::{
     ascii::{multispace0, Caseless},
@@ -61,13 +61,13 @@ impl Display for OperationArgs {
             }
             Self::Local { argument, target } => {
                 if let Some(argument) = argument {
-                    write!(f, "({})", argument)?;
+                    write!(f, "({})", Decimal::from_fraction(*argument))?;
                 }
                 write!(f, " at {target}")
             }
             Self::Global(argument) => {
                 if let Some(argument) = argument {
-                    write!(f, "({})", argument)?;
+                    write!(f, "({})", Decimal::from_fraction(*argument))?;
                 }
                 Ok(())
             }
@@ -87,7 +87,12 @@ pub struct Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
+        write!(
+            f,
+            "({}, {})",
+            Decimal::from_fraction(self.x),
+            Decimal::from_fraction(self.y)
+        )
     }
 }
 
@@ -95,7 +100,7 @@ impl Display for Position {
 pub type PositionList = Arc<[Position]>;
 
 /// A number from the parsed format
-pub type Number = Decimal;
+pub type Number = Fraction;
 
 /// Error returned when parsing.
 /// Contains Reference to the input.
