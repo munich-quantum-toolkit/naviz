@@ -304,6 +304,8 @@ impl ConstantJerkFixedAverageVelocity {
     }
 }
 
+/// Implementation using [AverageVelocity].
+/// Use this when needing the correct values..
 impl ConstantJerkImpl<AverageVelocity> for ConstantJerkFixedAverageVelocity {
     fn j0(&self, average_velocity: AverageVelocity, s_start: f32, s_finish: f32) -> f32 {
         12. * average_velocity.0.powi(3) / (s_finish - s_start).powi(2)
@@ -319,6 +321,26 @@ impl ConstantJerkImpl<AverageVelocity> for ConstantJerkFixedAverageVelocity {
 
     fn v0(&self, average_velocity: AverageVelocity, _s_start: f32, _s_finish: f32) -> f32 {
         3. / 2. * average_velocity.0
+    }
+}
+
+/// Implementation using no argument, as the [AverageVelocity] reduces in the final interpolation.
+/// Use this for interpolation in the timeline.
+impl ConstantJerkImpl<()> for ConstantJerkFixedAverageVelocity {
+    fn j0(&self, (): (), s_start: f32, s_finish: f32) -> f32 {
+        12. / (s_finish - s_start).powi(2)
+    }
+
+    fn t_total(&self, (): (), s_start: f32, s_finish: f32) -> f32 {
+        s_finish - s_start
+    }
+
+    fn s0(&self, (): (), s_start: f32, s_finish: f32) -> f32 {
+        (s_start + s_finish) / 2.
+    }
+
+    fn v0(&self, (): (), _s_start: f32, _s_finish: f32) -> f32 {
+        3. / 2.
     }
 }
 
