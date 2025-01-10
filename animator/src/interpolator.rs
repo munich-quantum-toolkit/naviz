@@ -352,6 +352,11 @@ impl<A, I: InterpolationFunction<A, f32>> InterpolationFunction<A, Position> for
 
         // Distance between the points (1D-coordinate of `to`):
         let distance = distance(from, to);
+        if distance <= 0. {
+            // from = to
+            // nothing to interpolate (and unable to construct axis)
+            return from;
+        }
         // Our axis-vector (unit-vector from `from` to `to`):
         let axis = ((to.x - from.x) / distance, (to.y - from.y) / distance);
 
