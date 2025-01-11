@@ -17,6 +17,7 @@ use crate::{
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     current_machine::CurrentMachine,
     future_helper::FutureHelper,
+    import::{ImportError, ImportOptions},
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
     util::WEB,
 };
@@ -53,31 +54,148 @@ impl App {
                 .expect("Failed to load styles from user dir");
         }
 
-        let mut menu_bar = MenuBar::new();
-
-        let mut animator_adapter = AnimatorAdapter::default();
-        // Load any style as default (if any style is available)
-        if let Some((id, style)) = style_repository.try_get_any() {
-            animator_adapter.set_visual_config(style);
-            menu_bar.set_selected_style(Some(id.to_string()));
-        }
-        // Load any machine as default (if any machine is available)
-        if let Some((id, machine)) = machine_repository.try_get_any() {
-            animator_adapter.set_machine_config(machine);
-            menu_bar.set_selected_machine(Some(id.to_string()));
-        }
-
         let mut app = Self {
             future_helper: FutureHelper::new().expect("Failed to create FutureHelper"),
-            menu_bar,
-            animator_adapter,
+            menu_bar: MenuBar::new(),
+            animator_adapter: AnimatorAdapter::default(),
             machine_repository,
             style_repository,
             current_machine: Default::default(),
         };
+
         app.update_machines();
         app.update_styles();
+
+        // Load any machine as default (if any machine is available)
+        if let Some((id, machine)) = app.machine_repository.try_get_any() {
+            app.set_loaded_machine(Some(id.to_string()), machine);
+        }
+        // Load any style as default (if any style is available)
+        if let Some((id, style)) = app.style_repository.try_get_any() {
+            app.set_loaded_style(Some(id.to_string()), style);
+        }
+
         app
+    }
+
+    /// Import the instructions from `data` using the specified [ImportOptions]
+    pub fn import(
+        &mut self,
+        import_options: ImportOptions,
+        data: &[u8],
+    ) -> Result<(), ImportError> {
+        let instructions = import_options.import(data)?;
+        self.animator_adapter.set_instructions(instructions);
+        self.update_compatible_machines();
+        Ok(())
+    }
+
+    /// Open the naviz-instructions from `data`
+    pub fn open(&mut self, data: &[u8]) {
+        let input =
+            naviz_parser::input::lexer::lex(str::from_utf8(data).unwrap()).expect("Failed to lex");
+        let input = naviz_parser::input::parser::parse(&input).expect("Failed to parse");
+        let input = naviz_parser::input::concrete::Instructions::new(input)
+            .expect("Failed to convert to instructions");
+        self.animator_adapter.set_instructions(input);
+        self.update_compatible_machines();
+        self.select_compatible_machine();
+    }
+
+    /// Selects any compatible machine for the currently opened machine.
+    /// Returns `true` if a compatible machine could be found and was loaded,
+    /// or `false` otherwise.
+    pub fn select_compatible_machine(&mut self) -> bool {
+        if let Some(instructions) = self.animator_adapter.get_instructions() {
+            if instructions.directives.targets.is_empty() {
+                // No targets specified => no machine is compatible => cannot load any
+                return false;
+            }
+
+            if self
+                .current_machine
+                .compatible_with(&instructions.directives.targets)
+            {
+                // compatible machine already loaded
+                return true;
+            }
+
+            // Machine is not compatible or not set => load compatible machine
+
+            // Find some compatible machine
+            let compatible_machine = instructions
+                .directives
+                .targets
+                .iter()
+                .find(|id| self.machine_repository.has(id));
+            if let Some(id) = compatible_machine {
+                // compatible machine exists => load machine
+                self.set_machine(id.clone().as_str());
+                return true;
+            }
+
+            // failed to find a compatible machine
+            return false;
+        }
+        // No instructions loaded =>cannot set any compatible machine
+        false
+    }
+
+    /// Sets the machine to the one with the specified `id`
+    pub fn set_machine(&mut self, id: impl Into<String>) {
+        let id = id.into();
+        let machine = self.machine_repository.get(&id).expect("Not found");
+        self.set_loaded_machine(Some(id), machine.expect("Failed to load machine"));
+    }
+
+    /// Sets the current machine to `machine` with the optional `id`.
+    /// If `id` is [None], the machine is assumed to be set manually.
+    fn set_loaded_machine(&mut self, id: Option<impl Into<String>>, machine: MachineConfig) {
+        let id = id.map(Into::into);
+        self.current_machine = id
+            .clone()
+            .map(CurrentMachine::Id)
+            .unwrap_or(CurrentMachine::Manual);
+        self.menu_bar.set_selected_machine(id);
+        self.animator_adapter.set_machine_config(machine);
+    }
+
+    /// Set the current machine to the one specified in `data`.
+    pub fn set_machine_manually(&mut self, data: &[u8]) {
+        let machine =
+            naviz_parser::config::lexer::lex(str::from_utf8(data).unwrap()).expect("Failed to lex");
+        let machine = naviz_parser::config::parser::parse(&machine).expect("Failed to parse");
+        let machine: naviz_parser::config::generic::Config = machine.into();
+        let machine: MachineConfig = machine
+            .try_into()
+            .expect("Failed to convert to machine-config");
+        self.set_loaded_machine(None::<String>, machine);
+    }
+
+    /// Sets the style to the one with the specified `id`
+    pub fn set_style(&mut self, id: impl Into<String>) {
+        let id = id.into();
+        let style = self.style_repository.get(&id).expect("Not found");
+        self.set_loaded_style(Some(id), style.expect("Failed to load style"));
+    }
+
+    /// Sets the current style to `style` with the optional `id`.
+    /// If `id` is [None], the style is assumed to be set manually.
+    fn set_loaded_style(&mut self, id: Option<impl Into<String>>, style: VisualConfig) {
+        self.menu_bar.set_selected_style(id.map(Into::into));
+        self.animator_adapter.set_visual_config(style);
+    }
+
+    /// Set the current style to the one specified in `data`.
+    pub fn set_style_manually(&mut self, data: &[u8]) {
+        let visual =
+            naviz_parser::config::lexer::lex(str::from_utf8(data).unwrap()).expect("Failed to lex");
+        let visual = naviz_parser::config::parser::parse(&visual).expect("Failed to parse");
+        let visual: naviz_parser::config::generic::Config = visual.into();
+        let visual: VisualConfig = visual
+            .try_into()
+            .expect("Failed to convert to visual-config");
+        self.set_loaded_style(None::<String>, visual);
     }
 
     /// Update the machines displayed in the menu from the repository
@@ -89,11 +207,16 @@ impl App {
                 .map(|(a, b)| (a.to_owned(), b.to_owned()))
                 .collect(),
         );
+    }
 
-        if let Some(instructions) = self.animator_adapter.get_instructions() {
-            self.menu_bar
-                .set_compatible_machines(&instructions.directives.targets);
-        }
+    /// Update the compatible machines to be the ones specified in the currently loaded instructions
+    fn update_compatible_machines(&mut self) {
+        self.menu_bar.set_compatible_machines(
+            self.animator_adapter
+                .get_instructions()
+                .map(|x| x.directives.targets.as_slice())
+                .unwrap_or(&[]),
+        );
     }
 
     /// Update the styles displayed in the menu from the repository
@@ -114,66 +237,16 @@ impl eframe::App for App {
         if let Ok(event) = self.menu_bar.events().try_recv() {
             match event {
                 MenuEvent::FileOpen(FileType::Instructions, content) => {
-                    let input = naviz_parser::input::lexer::lex(str::from_utf8(&content).unwrap())
-                        .expect("Failed to lex");
-                    let input =
-                        naviz_parser::input::parser::parse(&input).expect("Failed to parse");
-                    let input = naviz_parser::input::concrete::Instructions::new(input)
-                        .expect("Failed to convert to instructions");
-                    // Update machine if not compatible or not set
-                    if !input.directives.targets.is_empty()
-                        && !self
-                            .current_machine
-                            .compatible_with(&input.directives.targets)
-                    {
-                        let compatible_machine = input
-                            .directives
-                            .targets
-                            .iter()
-                            .filter_map(|id| self.machine_repository.get(id).map(|m| (id, m)))
-                            .next();
-                        if let Some((id, compatible_machine)) = compatible_machine {
-                            self.animator_adapter.set_machine_config(
-                                compatible_machine.expect("Failed to load machine"),
-                            );
-                            self.current_machine = CurrentMachine::Id(id.clone());
-                            self.menu_bar.set_selected_machine(Some(id.clone()));
-                        }
-                    }
-                    self.menu_bar
-                        .set_compatible_machines(&input.directives.targets);
-                    self.animator_adapter.set_instructions(input);
+                    self.open(&content);
                 }
                 MenuEvent::FileImport(options, content) => {
-                    self.animator_adapter
-                        .set_instructions(options.import(&content).expect("Failed to import"));
+                    self.import(options, &content).expect("Failed to import");
                 }
                 MenuEvent::FileOpen(FileType::Machine, content) => {
-                    let machine =
-                        naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())
-                            .expect("Failed to lex");
-                    let machine =
-                        naviz_parser::config::parser::parse(&machine).expect("Failed to parse");
-                    let machine: naviz_parser::config::generic::Config = machine.into();
-                    let machine: MachineConfig = machine
-                        .try_into()
-                        .expect("Failed to convert to machine-config");
-                    self.animator_adapter.set_machine_config(machine);
-                    self.current_machine = CurrentMachine::Manual;
-                    self.menu_bar.set_selected_machine(None);
+                    self.set_machine_manually(&content);
                 }
                 MenuEvent::FileOpen(FileType::Style, content) => {
-                    let visual =
-                        naviz_parser::config::lexer::lex(str::from_utf8(&content).unwrap())
-                            .expect("Failed to lex");
-                    let visual =
-                        naviz_parser::config::parser::parse(&visual).expect("Failed to parse");
-                    let visual: naviz_parser::config::generic::Config = visual.into();
-                    let visual: VisualConfig = visual
-                        .try_into()
-                        .expect("Failed to convert to visual-config");
-                    self.animator_adapter.set_visual_config(visual);
-                    self.menu_bar.set_selected_style(None);
+                    self.set_style_manually(&content);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ExportVideo {
@@ -193,23 +266,10 @@ impl eframe::App for App {
                     }
                 }
                 MenuEvent::SetMachine(id) => {
-                    self.animator_adapter.set_machine_config(
-                        self.machine_repository
-                            .get(&id)
-                            .expect("Invalid state: Selected machine does not exist")
-                            .expect("Failed to load machine"),
-                    );
-                    self.current_machine = CurrentMachine::Id(id.clone());
-                    self.menu_bar.set_selected_machine(Some(id));
+                    self.set_machine(id);
                 }
                 MenuEvent::SetStyle(id) => {
-                    self.animator_adapter.set_visual_config(
-                        self.style_repository
-                            .get(&id)
-                            .expect("Invalid state: Selected style does not exist")
-                            .expect("Failed to load style"),
-                    );
-                    self.menu_bar.set_selected_style(Some(id));
+                    self.set_style(id);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ImportMachine(file) => {
