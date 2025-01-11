@@ -176,6 +176,11 @@ impl Repository {
             .collect()
     }
 
+    /// Checks whether the repository has an entry with `id`
+    pub fn has(&self, id: &str) -> bool {
+        self.0.contains_key(id)
+    }
+
     /// Tries to get the raw contents of the entry with the passed `id`.
     ///
     /// Returns:
