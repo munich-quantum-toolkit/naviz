@@ -32,6 +32,17 @@ pub struct App {
     current_machine: CurrentMachine,
 }
 
+#[derive(Default)]
+pub struct InitOptions<'a> {
+    /// The machine-id to load
+    machine: Option<&'a str>,
+    /// The style-id to load
+    style: Option<&'a str>,
+    /// The visualization input to load.
+    /// Pass [Some] [ImportOptions] if the content needs to be imported.
+    input: Option<(Option<ImportOptions>, &'a [u8])>,
+}
+
 impl App {
     /// Create a new instance of the [App]
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
@@ -73,6 +84,27 @@ impl App {
         // Load any style as default (if any style is available)
         if let Some((id, style)) = app.style_repository.try_get_any() {
             app.set_loaded_style(Some(id.to_string()), style);
+        }
+
+        app
+    }
+
+    /// Create a new instance of the [App] with the specified [InitOptions]
+    pub fn new_with_init(cc: &eframe::CreationContext<'_>, init_options: InitOptions<'_>) -> Self {
+        let mut app = Self::new(cc);
+
+        if let Some((import_options, data)) = init_options.input {
+            match import_options {
+                Some(import_options) => app.import(import_options, data).expect("Failed to import"),
+                None => app.open(data),
+            }
+        }
+
+        if let Some(machine_id) = init_options.machine {
+            app.set_machine(machine_id);
+        }
+        if let Some(style_id) = init_options.style {
+            app.set_style(style_id);
         }
 
         app
