@@ -15,4 +15,12 @@ crate-type = ["cdylib"]
 name = "naviz"
 
 [dependencies]
+futures = "0.3.31"
+naviz-animator = {path = "../animator"}
+naviz-import = {path = "../import", features = ["serde"]}
+naviz-parser = {path = "../parser"}
+naviz-repository = {path = "../repository"}
+naviz-video = {path = "../video"}
 pyo3 = "0.23.3"
+serde = "1.0.217"
+serde-pyobject = "0.5.0"
