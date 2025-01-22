@@ -13,3 +13,4 @@ mod menu;
 mod progress_bar;
 mod util;
 pub use app::App;
+pub use import::ImportOptions;

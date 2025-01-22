@@ -68,7 +68,7 @@ impl From<&ImportOptions> for ImportFormat {
 impl ImportOptions {
     /// Draws a settings-ui for these [ImportOptions].
     /// Edits from the ui will be reflected inside `self`.
-    pub fn draw(&mut self, ui: &mut Ui) {
+    pub(crate) fn draw(&mut self, ui: &mut Ui) {
         match self {
             Self::MqtNa(options) => {
                 ui.horizontal(|ui| {
