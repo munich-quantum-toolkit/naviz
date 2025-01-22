@@ -7,14 +7,13 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use egui::{Align2, Button, Grid, ScrollArea, Window};
 use export::ExportMenu;
 use git_version::git_version;
+use naviz_import::{ImportFormat, ImportOptions, IMPORT_FORMATS};
 #[cfg(not(target_arch = "wasm32"))]
 use naviz_video::VideoProgress;
 use rfd::FileHandle;
 
 use crate::{
-    future_helper::{FutureHelper, SendFuture},
-    import::{ImportFormat, ImportOptions, IMPORT_FORMATS},
-    util::WEB,
+    drawable::Drawable, future_helper::{FutureHelper, SendFuture}, util::WEB
 };
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);

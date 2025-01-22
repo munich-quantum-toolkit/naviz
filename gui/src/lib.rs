@@ -5,6 +5,7 @@ mod app;
 mod aspect_panel;
 mod canvas;
 mod current_machine;
+mod drawable;
 #[cfg(not(target_arch = "wasm32"))]
 mod export_dialog;
 mod future_helper;
@@ -13,4 +14,3 @@ mod menu;
 mod progress_bar;
 mod util;
 pub use app::App;
-pub use import::ImportOptions;
