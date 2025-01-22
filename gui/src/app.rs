@@ -4,6 +4,7 @@ use std::{sync::mpsc::channel, thread};
 
 use eframe::egui_wgpu::CallbackTrait;
 use log::error;
+use naviz_import::{ImportError, ImportOptions};
 use naviz_parser::config::{machine::MachineConfig, visual::VisualConfig};
 use naviz_renderer::renderer::Renderer;
 use naviz_repository::Repository;
@@ -17,7 +18,6 @@ use crate::{
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     current_machine::CurrentMachine,
     future_helper::FutureHelper,
-    import::{ImportError, ImportOptions},
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
     util::WEB,
 };

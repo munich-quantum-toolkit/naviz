@@ -11,6 +11,7 @@ use super::format::{Number, Operation, OperationArgs, OperationList, Position};
 
 /// Options for [convert]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ConvertOptions<'a> {
     /// The prefix to name atoms with.
     /// Atoms will be numbered starting from zero and named as `<atom_prefix><number>`
@@ -29,6 +30,7 @@ impl<'a> Default for ConvertOptions<'a> {
 
 /// Names of the zones to use for global operations (i.e., operations that are not targeted)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GlobalZoneNames<'a> {
     pub cz: Cow<'a, str>,
     pub ry: Cow<'a, str>,
