@@ -7,6 +7,7 @@ pub mod separated_display;
 
 /// The available import formats
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ImportFormat {
     /// [mqt::na]
     MqtNa,
@@ -16,6 +17,7 @@ pub enum ImportFormat {
 pub static IMPORT_FORMATS: [ImportFormat; 1] = [ImportFormat::MqtNa];
 
 /// The options for the different import formats
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ImportOptions {
     /// [mqt::na]
     MqtNa(mqt::na::convert::ConvertOptions<'static>),

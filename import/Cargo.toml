@@ -12,4 +12,8 @@ version = "0.0.0"
 [dependencies]
 fraction = "0.15.3"
 naviz-parser = {path = "../parser"}
+serde = {version = "1.0.217", optional = true, features = ["serde_derive"]}
 winnow = "0.6.22"
+
+[features]
+serde = ["dep:serde"]
