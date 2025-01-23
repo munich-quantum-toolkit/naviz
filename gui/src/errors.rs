@@ -43,7 +43,10 @@ impl Error {
 impl Errors {
     /// Adds a new error-window with the `title` and `body`
     pub fn add(&mut self, title: impl Into<Cow<'static, str>>, body: impl ToString) {
-        self.0.push(Error::new(title.into(), body.to_string()));
+        let title = title.into();
+        let body = body.to_string();
+        log::error!("{}:\n{}", title, body);
+        self.0.push(Error::new(title, body));
     }
 
     /// Adds an [Error][crate::error::Error]
