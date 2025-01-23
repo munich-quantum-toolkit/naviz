@@ -6,6 +6,8 @@ mod aspect_panel;
 mod canvas;
 mod current_machine;
 mod drawable;
+mod error;
+mod errors;
 #[cfg(not(target_arch = "wasm32"))]
 mod export_dialog;
 mod future_helper;
