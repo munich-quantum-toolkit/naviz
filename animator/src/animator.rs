@@ -205,6 +205,16 @@ impl Animator {
             }
         }
 
+        // Grow content extent to fit zones
+        for x in machine.zone.iter().flat_map(|z| [z.1.from.0, z.1.to.0]) {
+            content_extent.0 = content_extent.0.min(x);
+            content_extent.2 = content_extent.2.max(x);
+        }
+        for y in machine.zone.iter().flat_map(|z| [z.1.from.1, z.1.to.1]) {
+            content_extent.1 = content_extent.1.min(y);
+            content_extent.3 = content_extent.3.max(y);
+        }
+
         // Add margin to extent
         content_extent.0 -= visual.coordinate.margin;
         content_extent.1 -= visual.coordinate.margin;
