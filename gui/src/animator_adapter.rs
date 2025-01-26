@@ -107,8 +107,35 @@ impl AnimatorAdapter {
 
     /// Gets an [AnimatorState] from this [AnimatorAdapter],
     /// or [None] if not enough inputs were set.
+    /// 
+    /// Will update internal state
+    /// like resetting the `update_full`-state such that full updates only happen if required
+    /// (i.e., whenever new instructions/configs are loaded).
+    /// When the result of this function is unused,
+    /// this may lead to unexpected behavior.
+    /// It is also expected that a single [AnimatorAdapter] only serves one [Animator]
+    /// (or any other [Animator]s use the same states instead of calling [AnimatorAdapter::get]
+    /// for each instance),
+    /// as otherwise not all [Animator]s may get updated fully.
+    /// 
+    /// If the [AnimatorState] should be gotten without changing any internal state,
+    /// use [AnimatorAdapter::peek] instead.
+    #[must_use]
     pub fn get(&mut self) -> Option<AnimatorState> {
-        self.animator.as_mut().map(|animator| AnimatorState {
+        let state = self.peek();
+        self.update_full = false;
+        state
+    }
+
+    /// Gets an [AnimatorState] from this [AnimatorAdapter]
+    /// or [None] if not enough inputs were set.
+    /// 
+    /// Will not do any internal state updates.
+    /// If piping this output directly into an [Animator],
+    /// [AnimatorAdapter::get] should probably used instead
+    /// as this updates internal state to prevent unnecessary updates.
+    pub fn peek(&self) -> Option<AnimatorState> {
+        self.animator.as_ref().map(|animator| AnimatorState {
             update_full: self.update_full,
             config: animator.config(),
             state: animator.state((self.progress_bar.animation_time() as f32).into()),

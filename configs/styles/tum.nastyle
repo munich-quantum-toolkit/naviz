@@ -149,7 +149,7 @@ coordinate {
 			color: #000000
 		}
 	}
-	margin: 20
+	margin: 5
 }
 
 sidebar {
