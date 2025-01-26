@@ -11,3 +11,6 @@ members = [
   "python",
 ]
 resolver = "2"
+
+[workspace.package]
+repository = "https://github.com/cda-tum/mqt-naviz"

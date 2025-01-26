@@ -6,7 +6,7 @@ edition = "2021"
 keywords = ["naviz", "parser"]
 license = "LGPL-3.0-or-later"
 name = "naviz-parser"
-repository = "https://github.com/FloezeTv/NAViz"
+repository.workspace = true
 version = "0.3.0"
 
 [dependencies]

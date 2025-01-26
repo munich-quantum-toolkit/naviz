@@ -18,7 +18,13 @@ fn main() -> eframe::Result {
             .with_title("NAViz")
             .with_app_id("naviz")
             .with_inner_size([400.0, 300.0])
-            .with_min_inner_size([300.0, 220.0]),
+            .with_min_inner_size([300.0, 220.0])
+            .with_icon(
+                eframe::icon_data::from_png_bytes(include_bytes!("../rsc/icon.png"))
+                    // The icon we set is statically included in the binary
+                    // and should therefore always be a valid png
+                    .expect("Failed to load icon; This build is probably corrupt."),
+            ),
         ..Default::default()
     };
     eframe::run_native(

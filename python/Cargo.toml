@@ -6,7 +6,7 @@ edition = "2021"
 keywords = ["naviz", "python"]
 license = "AGPL-3.0-or-later"
 name = "naviz-python"
-repository = "https://github.com/FloezeTv/NAViz"
+repository.workspace = true
 version = "0.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
