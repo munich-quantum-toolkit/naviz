@@ -2,12 +2,15 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-use std::sync::{
-    mpsc::{channel, Receiver, Sender},
-    Arc,
+use std::{
+    path::Path,
+    sync::{
+        mpsc::{channel, Receiver, Sender},
+        Arc,
+    },
 };
 
-use egui::{Align2, Button, DroppedFile, Grid, ScrollArea, Window};
+use egui::{Align2, Button, Grid, ScrollArea, Window};
 use export::ExportMenu;
 use git_version::git_version;
 use naviz_import::{ImportFormat, ImportOptions, IMPORT_FORMATS};
@@ -187,52 +190,82 @@ impl MenuBar {
         &self.event_channel.1
     }
 
-    /// Handles any files dropped onto the application.
-    /// Will decide which file-type was dropped by extension.
+    /// Loads a file while deducing its type by its extension.
     /// Handles the file-types defined in [FileType]
     /// and file-types defined in [IMPORT_FORMATS].
     /// Extension-collisions will simply pick the first match.
-    fn handle_file_drop(&mut self, ctx: &egui::Context) {
-        /// Handle a dropped file.
-        /// Helper-function to allow using `?`-operator.
-        /// Will return [`Some(())`][Some] if the file was consumed
-        /// or [None] otherwise.
-        fn handle_dropped_file(menu_bar: &mut MenuBar, file: DroppedFile) -> Option<()> {
-            // File not empty
-            let file_content = file.bytes?;
-
-            // Extract extension
-            let last_dot = file.name.rfind(".")?;
-            let extension = &file.name[(last_dot + 1)..];
+    fn load_file_by_extension(&mut self, name: &str, contents: Arc<[u8]>) {
+        // Extract extension
+        if let Some(extension) = Path::new(name).extension() {
+            let extension = &*extension.to_string_lossy();
 
             // Internal formats
             for file_type in [FileType::Instructions, FileType::Machine, FileType::Style] {
                 // File extension is known?
                 if file_type.extensions().contains(&extension) {
-                    let _ = menu_bar
+                    let _ = self
                         .event_channel
                         .0
-                        .send(MenuEvent::FileOpen(file_type, file_content));
-                    return Some(());
+                        .send(MenuEvent::FileOpen(file_type, contents));
+                    return;
                 }
             }
 
-            // Import formats
+            // Imported formats
             for import_format in IMPORT_FORMATS {
                 // File extension is known by some import-format?
                 if import_format.file_extensions().contains(&extension) {
-                    menu_bar.current_import_options =
-                        Some((import_format.into(), Some(file_content)));
-                    return Some(());
+                    self.current_import_options = Some((import_format.into(), Some(contents)));
+                    return;
                 }
             }
-
-            None
         }
+    }
 
+    /// Handles any files dropped onto the application.
+    /// Will use [Self::load_file_by_extension] to load the file.
+    fn handle_file_drop(&mut self, ctx: &egui::Context) {
         for file in ctx.input_mut(|input| std::mem::take(&mut input.raw.dropped_files)) {
-            handle_dropped_file(self, file);
+            if let Some(contents) = file.bytes {
+                self.load_file_by_extension(&file.name, contents);
+            }
         }
+    }
+
+    /// Handles any pastes into the application.
+    /// Will try to check if a file was pasted,
+    /// and use [Self::load_file_by_extension] to load the file.
+    /// If text was pasted,
+    /// will load that text as instructions.
+    fn handle_clipboard(&mut self, ctx: &egui::Context) {
+        ctx.input_mut(|i| {
+            i.events.retain_mut(|e| {
+                if let egui::Event::Paste(text) = e {
+                    // egui does not allow listening for file-paste-events directly:
+                    // https://github.com/emilk/egui/issues/1167
+                    // Instead, check if the pasted text is a file-path that exists.
+                    // Don't do this on web, as web will not receive file-pastes this way.
+                    if !WEB && Path::new(text).is_file() {
+                        // A file exists at that path
+                        #[allow(clippy::needless_borrows_for_generic_args)] // borrow is needed
+                        if let Ok(contents) = std::fs::read(&text) {
+                            self.load_file_by_extension(text, contents.into());
+                        } else {
+                            log::error!("Failed to read file");
+                        }
+                    } else {
+                        // Pasted text-content directly
+                        let _ = self.event_channel.0.send(MenuEvent::FileOpen(
+                            FileType::Instructions,
+                            std::mem::take(text).into_bytes().into(),
+                        ));
+                    }
+                    false // event was handled => drop
+                } else {
+                    true // event was not handled => keep
+                }
+            })
+        });
     }
 
     /// Draw the [MenuBar]
@@ -248,6 +281,8 @@ impl MenuBar {
         self.show_import_dialog(future_helper, ctx);
 
         self.handle_file_drop(ctx);
+
+        self.handle_clipboard(ctx);
 
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
