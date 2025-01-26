@@ -2,7 +2,13 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::{
+    path::Path,
+    sync::{
+        mpsc::{channel, Receiver, Sender},
+        Arc,
+    },
+};
 
 use egui::{Align2, Button, Grid, ScrollArea, Window};
 use export::ExportMenu;
@@ -33,16 +39,20 @@ pub struct MenuBar {
     selected_machine: Option<String>,
     /// The currently selected style
     selected_style: Option<String>,
-    current_import_options: Option<ImportOptions>,
+    /// Options to display for the current import (as started by the user).
+    /// Also optionally contains a file if importing first opened a file
+    /// (e.g., by dropping it onto the application).
+    /// If no import is currently happening, this is [None].
+    current_import_options: Option<(ImportOptions, Option<Arc<[u8]>>)>,
 }
 
 /// An event which is triggered on menu navigation.
 /// Higher-Level than just button-clicks.
 pub enum MenuEvent {
     /// A file of the specified [FileType] with the specified content was opened
-    FileOpen(FileType, Vec<u8>),
+    FileOpen(FileType, Arc<[u8]>),
     /// A file should be imported
-    FileImport(ImportOptions, Vec<u8>),
+    FileImport(ImportOptions, Arc<[u8]>),
     /// A video should be exported to the specified path with the specified resolution and fps
     #[cfg(not(target_arch = "wasm32"))]
     ExportVideo {
@@ -67,7 +77,7 @@ pub enum MenuEvent {
 impl MenuEvent {
     /// Creates a [MenuEvent::FileOpen] for [MenuBar::choose_file]
     async fn file_open(file_type: FileType, handle: FileHandle) -> Self {
-        Self::FileOpen(file_type, handle.read().await)
+        Self::FileOpen(file_type, handle.read().await.into())
     }
 
     /// Creates a [MenuEvent::ImportMachine] or [MenuEvent::ImportStyle] for [MenuBar::choose_file]
@@ -180,6 +190,84 @@ impl MenuBar {
         &self.event_channel.1
     }
 
+    /// Loads a file while deducing its type by its extension.
+    /// Handles the file-types defined in [FileType]
+    /// and file-types defined in [IMPORT_FORMATS].
+    /// Extension-collisions will simply pick the first match.
+    fn load_file_by_extension(&mut self, name: &str, contents: Arc<[u8]>) {
+        // Extract extension
+        if let Some(extension) = Path::new(name).extension() {
+            let extension = &*extension.to_string_lossy();
+
+            // Internal formats
+            for file_type in [FileType::Instructions, FileType::Machine, FileType::Style] {
+                // File extension is known?
+                if file_type.extensions().contains(&extension) {
+                    let _ = self
+                        .event_channel
+                        .0
+                        .send(MenuEvent::FileOpen(file_type, contents));
+                    return;
+                }
+            }
+
+            // Imported formats
+            for import_format in IMPORT_FORMATS {
+                // File extension is known by some import-format?
+                if import_format.file_extensions().contains(&extension) {
+                    self.current_import_options = Some((import_format.into(), Some(contents)));
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handles any files dropped onto the application.
+    /// Will use [Self::load_file_by_extension] to load the file.
+    fn handle_file_drop(&mut self, ctx: &egui::Context) {
+        for file in ctx.input_mut(|input| std::mem::take(&mut input.raw.dropped_files)) {
+            if let Some(contents) = file.bytes {
+                self.load_file_by_extension(&file.name, contents);
+            }
+        }
+    }
+
+    /// Handles any pastes into the application.
+    /// Will try to check if a file was pasted,
+    /// and use [Self::load_file_by_extension] to load the file.
+    /// If text was pasted,
+    /// will load that text as instructions.
+    fn handle_clipboard(&mut self, ctx: &egui::Context) {
+        ctx.input_mut(|i| {
+            i.events.retain_mut(|e| {
+                if let egui::Event::Paste(text) = e {
+                    // egui does not allow listening for file-paste-events directly:
+                    // https://github.com/emilk/egui/issues/1167
+                    // Instead, check if the pasted text is a file-path that exists.
+                    // Don't do this on web, as web will not receive file-pastes this way.
+                    if !WEB && Path::new(text).is_file() {
+                        // A file exists at that path
+                        #[allow(clippy::needless_borrows_for_generic_args)] // borrow is needed
+                        if let Ok(contents) = std::fs::read(&text) {
+                            self.load_file_by_extension(text, contents.into());
+                        } else {
+                            log::error!("Failed to read file");
+                        }
+                    } else {
+                        // Pasted text-content directly
+                        let _ = self.event_channel.0.send(MenuEvent::FileOpen(
+                            FileType::Instructions,
+                            std::mem::take(text).into_bytes().into(),
+                        ));
+                    }
+                    false // event was handled => drop
+                } else {
+                    true // event was not handled => keep
+                }
+            })
+        });
+    }
+
     /// Draw the [MenuBar]
     pub fn draw(
         &mut self,
@@ -192,16 +280,21 @@ impl MenuBar {
 
         self.show_import_dialog(future_helper, ctx);
 
+        self.handle_file_drop(ctx);
+
+        self.handle_clipboard(ctx);
+
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open").clicked() {
                     self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
+                    ui.close_menu();
                 }
 
                 ui.menu_button("Import", |ui| {
                     for import_format in IMPORT_FORMATS {
                         if ui.button(import_format.name()).clicked() {
-                            self.current_import_options = Some(import_format.into());
+                            self.current_import_options = Some((import_format.into(), None));
                             ui.close_menu();
                         }
                     }
@@ -214,6 +307,7 @@ impl MenuBar {
                     ui.separator();
                     if ui.button("Quit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                        ui.close_menu();
                     }
                 }
             });
@@ -281,6 +375,7 @@ impl MenuBar {
             ui.menu_button("Help", |ui| {
                 if ui.button("About").clicked() {
                     self.about_open = true;
+                    ui.close_menu();
                 }
             });
         });
@@ -292,7 +387,7 @@ impl MenuBar {
 
     /// Show the import dialog if [MenuBar::current_import_options] is `Some`.
     fn show_import_dialog(&mut self, future_helper: &FutureHelper, ctx: &egui::Context) {
-        if let Some(current_import_options) = self.current_import_options.as_mut() {
+        if let Some((current_import_options, _)) = self.current_import_options.as_mut() {
             let mut open = true; // window open?
             let mut do_import = false; // ok button clicked?
 
@@ -308,12 +403,23 @@ impl MenuBar {
                 });
 
             if do_import {
-                let options = self.current_import_options.take().unwrap(); // Can unwrap because we are inside of `if let Some`
-                self.choose_file(
-                    ImportFormat::from(&options),
-                    future_helper,
-                    |_, file| async move { MenuEvent::FileImport(options, file.read().await) },
-                );
+                let (options, import_file) = self.current_import_options.take().unwrap(); // Can unwrap because we are inside of `if let Some`
+                if let Some(import_file) = import_file {
+                    // An import-file was already opened => import that file
+                    let _ = self
+                        .event_channel
+                        .0
+                        .send(MenuEvent::FileImport(options, import_file));
+                } else {
+                    // No import-file opened => LEt user choose file
+                    self.choose_file(
+                        ImportFormat::from(&options),
+                        future_helper,
+                        |_, file| async move {
+                            MenuEvent::FileImport(options, file.read().await.into())
+                        },
+                    );
+                }
             }
 
             if !open {
@@ -440,6 +546,7 @@ pub mod export {
                 .clicked()
             {
                 self.export_settings.show();
+                ui.close_menu();
             }
         }
 
