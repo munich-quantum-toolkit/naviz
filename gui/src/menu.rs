@@ -19,7 +19,9 @@ use naviz_video::VideoProgress;
 use rfd::FileHandle;
 
 use crate::{
-    drawable::Drawable, future_helper::{FutureHelper, SendFuture}, util::WEB
+    drawable::Drawable,
+    future_helper::{FutureHelper, SendFuture},
+    util::WEB,
 };
 
 type SendReceivePair<T> = (Sender<T>, Receiver<T>);
@@ -467,14 +469,18 @@ impl MenuBar {
             .show(ctx, |ui| {
                 Grid::new("about_window").num_columns(2).show(ui, |ui| {
                     ui.label("Version");
-                    ui.label(env!("CARGO_PKG_VERSION"));
+                    ui.label(VERSION);
                     ui.end_row();
 
                     ui.label("Build");
                     ui.label(git_version!(
-                        args = ["--always", "--dirty=+dev", "--match=naviz-gui@*"],
+                        args = ["--always", "--dirty=+dev", "--match="],
                         fallback = "unknown"
                     ));
+                    ui.end_row();
+
+                    ui.label("GUI-Version");
+                    ui.label(env!("CARGO_PKG_VERSION"));
                     ui.end_row();
 
                     ui.label("License");
@@ -488,6 +494,34 @@ impl MenuBar {
             });
     }
 }
+
+/// The version of the full program, determined at compile-time.
+/// Will end with a `~` if dirty,
+/// a `+` if commits exist after the version,
+/// or a `+~` if both are true.
+const VERSION: &str = {
+    // Get the exact version (if exists)
+    const EXACT_VERSION: &str = git_version!(
+        args = ["--dirty=~", "--abbrev=0", "--match=v*", "--exact"],
+        fallback = ""
+    );
+    // The previous version or "unknown"
+    const LATEST_VERSION: &str = git_version!(args = ["--abbrev=0", "--match=v*"], fallback = "");
+    // Whether the build is dirty
+    const DIRTY: bool = konst::string::ends_with(
+        git_version!(args = ["--dirty=~", "--match=", "--always"], fallback = ""),
+        "~",
+    );
+    // String-representation of `DIRTY`
+    const DIRTY_STR: &str = if DIRTY { "~" } else { "" };
+
+    #[allow(clippy::const_is_empty)] // Only empty without exact version
+    match (EXACT_VERSION.is_empty(), LATEST_VERSION.is_empty()) {
+        (false, _) => EXACT_VERSION,
+        (true, false) => constcat::concat!(LATEST_VERSION, "+", DIRTY_STR),
+        (true, true) => "unknown",
+    }
+};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod export {
