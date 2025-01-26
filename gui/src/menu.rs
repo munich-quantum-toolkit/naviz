@@ -2,9 +2,12 @@
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::{
+    mpsc::{channel, Receiver, Sender},
+    Arc,
+};
 
-use egui::{Align2, Button, Grid, ScrollArea, Window};
+use egui::{Align2, Button, DroppedFile, Grid, ScrollArea, Window};
 use export::ExportMenu;
 use git_version::git_version;
 use naviz_import::{ImportFormat, ImportOptions, IMPORT_FORMATS};
@@ -40,7 +43,7 @@ pub struct MenuBar {
 /// Higher-Level than just button-clicks.
 pub enum MenuEvent {
     /// A file of the specified [FileType] with the specified content was opened
-    FileOpen(FileType, Vec<u8>),
+    FileOpen(FileType, Arc<[u8]>),
     /// A file should be imported
     FileImport(ImportOptions, Vec<u8>),
     /// A video should be exported to the specified path with the specified resolution and fps
@@ -67,7 +70,7 @@ pub enum MenuEvent {
 impl MenuEvent {
     /// Creates a [MenuEvent::FileOpen] for [MenuBar::choose_file]
     async fn file_open(file_type: FileType, handle: FileHandle) -> Self {
-        Self::FileOpen(file_type, handle.read().await)
+        Self::FileOpen(file_type, handle.read().await.into())
     }
 
     /// Creates a [MenuEvent::ImportMachine] or [MenuEvent::ImportStyle] for [MenuBar::choose_file]
@@ -180,6 +183,39 @@ impl MenuBar {
         &self.event_channel.1
     }
 
+    /// Handles any files dropped onto the application.
+    /// Will decide which file-type was dropped by extension.
+    /// Currently only handles the file-types defined in [FileType]
+    /// (i.e., no files that would need to be imported).
+    fn handle_file_drop(&mut self, ctx: &egui::Context) {
+        /// Handle a dropped file.
+        /// Helper-function to allow using `?`-operator.
+        /// Will return [`Some(())`][Some] if the file was consumed
+        /// or [None] otherwise.
+        fn handle_dropped_file(channel: &mut Sender<MenuEvent>, file: DroppedFile) -> Option<()> {
+            // File not empty
+            let file_content = file.bytes?;
+
+            // Extract extension
+            let last_dot = file.name.rfind(".")?;
+            let extension = &file.name[(last_dot + 1)..];
+
+            for file_type in [FileType::Instructions, FileType::Machine, FileType::Style] {
+                // File extension is known?
+                if file_type.extensions().contains(&extension) {
+                    let _ = channel.send(MenuEvent::FileOpen(file_type, file_content));
+                    return Some(());
+                }
+            }
+
+            None
+        }
+
+        for file in ctx.input_mut(|input| std::mem::take(&mut input.raw.dropped_files)) {
+            handle_dropped_file(&mut self.event_channel.0, file);
+        }
+    }
+
     /// Draw the [MenuBar]
     pub fn draw(
         &mut self,
@@ -191,6 +227,8 @@ impl MenuBar {
         self.export_menu.process_events(&mut self.event_channel.0);
 
         self.show_import_dialog(future_helper, ctx);
+
+        self.handle_file_drop(ctx);
 
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
