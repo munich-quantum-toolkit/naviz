@@ -6,7 +6,7 @@ edition = "2021"
 keywords = ["naviz", "repository"]
 license = "AGPL-3.0-or-later"
 name = "naviz-repository"
-repository = "https://github.com/FloezeTv/NAViz"
+repository.workspace = true
 version = "0.0.0"
 
 [dependencies]
