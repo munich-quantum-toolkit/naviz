@@ -44,6 +44,18 @@ After the build is finished,
 the NAViz web-version can be found in `gui/dist`
 and can be deployed to a web-server of choice.
 
+### Web (Docker)
+
+Alternatively,
+a container can be built for the web-version of NAViz
+using the provided [`Dockerfile`](./Dockerfile).
+To build the container,
+simply run `docker build -t naviz .`
+(assuming [`docker`](https://www.docker.com/) is installed).
+
+The docker container can then be run using `docker run -d -p 8080:80 naviz`,
+which will start the web-server on port `8080`.
+
 ## Usage
 
 NAViz allows opening `.naviz` instruction files
