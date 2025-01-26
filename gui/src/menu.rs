@@ -36,7 +36,11 @@ pub struct MenuBar {
     selected_machine: Option<String>,
     /// The currently selected style
     selected_style: Option<String>,
-    current_import_options: Option<ImportOptions>,
+    /// Options to display for the current import (as started by the user).
+    /// Also optionally contains a file if importing first opened a file
+    /// (e.g., by dropping it onto the application).
+    /// If no import is currently happening, this is [None].
+    current_import_options: Option<(ImportOptions, Option<Arc<[u8]>>)>,
 }
 
 /// An event which is triggered on menu navigation.
@@ -45,7 +49,7 @@ pub enum MenuEvent {
     /// A file of the specified [FileType] with the specified content was opened
     FileOpen(FileType, Arc<[u8]>),
     /// A file should be imported
-    FileImport(ImportOptions, Vec<u8>),
+    FileImport(ImportOptions, Arc<[u8]>),
     /// A video should be exported to the specified path with the specified resolution and fps
     #[cfg(not(target_arch = "wasm32"))]
     ExportVideo {
@@ -185,14 +189,15 @@ impl MenuBar {
 
     /// Handles any files dropped onto the application.
     /// Will decide which file-type was dropped by extension.
-    /// Currently only handles the file-types defined in [FileType]
-    /// (i.e., no files that would need to be imported).
+    /// Handles the file-types defined in [FileType]
+    /// and file-types defined in [IMPORT_FORMATS].
+    /// Extension-collisions will simply pick the first match.
     fn handle_file_drop(&mut self, ctx: &egui::Context) {
         /// Handle a dropped file.
         /// Helper-function to allow using `?`-operator.
         /// Will return [`Some(())`][Some] if the file was consumed
         /// or [None] otherwise.
-        fn handle_dropped_file(channel: &mut Sender<MenuEvent>, file: DroppedFile) -> Option<()> {
+        fn handle_dropped_file(menu_bar: &mut MenuBar, file: DroppedFile) -> Option<()> {
             // File not empty
             let file_content = file.bytes?;
 
@@ -200,10 +205,24 @@ impl MenuBar {
             let last_dot = file.name.rfind(".")?;
             let extension = &file.name[(last_dot + 1)..];
 
+            // Internal formats
             for file_type in [FileType::Instructions, FileType::Machine, FileType::Style] {
                 // File extension is known?
                 if file_type.extensions().contains(&extension) {
-                    let _ = channel.send(MenuEvent::FileOpen(file_type, file_content));
+                    let _ = menu_bar
+                        .event_channel
+                        .0
+                        .send(MenuEvent::FileOpen(file_type, file_content));
+                    return Some(());
+                }
+            }
+
+            // Import formats
+            for import_format in IMPORT_FORMATS {
+                // File extension is known by some import-format?
+                if import_format.file_extensions().contains(&extension) {
+                    menu_bar.current_import_options =
+                        Some((import_format.into(), Some(file_content)));
                     return Some(());
                 }
             }
@@ -212,7 +231,7 @@ impl MenuBar {
         }
 
         for file in ctx.input_mut(|input| std::mem::take(&mut input.raw.dropped_files)) {
-            handle_dropped_file(&mut self.event_channel.0, file);
+            handle_dropped_file(self, file);
         }
     }
 
@@ -239,7 +258,7 @@ impl MenuBar {
                 ui.menu_button("Import", |ui| {
                     for import_format in IMPORT_FORMATS {
                         if ui.button(import_format.name()).clicked() {
-                            self.current_import_options = Some(import_format.into());
+                            self.current_import_options = Some((import_format.into(), None));
                             ui.close_menu();
                         }
                     }
@@ -330,7 +349,7 @@ impl MenuBar {
 
     /// Show the import dialog if [MenuBar::current_import_options] is `Some`.
     fn show_import_dialog(&mut self, future_helper: &FutureHelper, ctx: &egui::Context) {
-        if let Some(current_import_options) = self.current_import_options.as_mut() {
+        if let Some((current_import_options, _)) = self.current_import_options.as_mut() {
             let mut open = true; // window open?
             let mut do_import = false; // ok button clicked?
 
@@ -346,12 +365,23 @@ impl MenuBar {
                 });
 
             if do_import {
-                let options = self.current_import_options.take().unwrap(); // Can unwrap because we are inside of `if let Some`
-                self.choose_file(
-                    ImportFormat::from(&options),
-                    future_helper,
-                    |_, file| async move { MenuEvent::FileImport(options, file.read().await) },
-                );
+                let (options, import_file) = self.current_import_options.take().unwrap(); // Can unwrap because we are inside of `if let Some`
+                if let Some(import_file) = import_file {
+                    // An import-file was already opened => import that file
+                    let _ = self
+                        .event_channel
+                        .0
+                        .send(MenuEvent::FileImport(options, import_file));
+                } else {
+                    // No import-file opened => LEt user choose file
+                    self.choose_file(
+                        ImportFormat::from(&options),
+                        future_helper,
+                        |_, file| async move {
+                            MenuEvent::FileImport(options, file.read().await.into())
+                        },
+                    );
+                }
             }
 
             if !open {
