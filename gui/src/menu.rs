@@ -288,6 +288,7 @@ impl MenuBar {
             ui.menu_button("File", |ui| {
                 if ui.button("Open").clicked() {
                     self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
+                    ui.close_menu();
                 }
 
                 ui.menu_button("Import", |ui| {
@@ -306,6 +307,7 @@ impl MenuBar {
                     ui.separator();
                     if ui.button("Quit").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                        ui.close_menu();
                     }
                 }
             });
@@ -373,6 +375,7 @@ impl MenuBar {
             ui.menu_button("Help", |ui| {
                 if ui.button("About").clicked() {
                     self.about_open = true;
+                    ui.close_menu();
                 }
             });
         });
@@ -543,6 +546,7 @@ pub mod export {
                 .clicked()
             {
                 self.export_settings.show();
+                ui.close_menu();
             }
         }
 
