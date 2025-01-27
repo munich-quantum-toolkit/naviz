@@ -7,7 +7,7 @@ keywords = ["naviz", "video", "export"]
 license = "AGPL-3.0-or-later"
 name = "naviz-video"
 repository.workspace = true
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 naviz-animator = {path = "../animator"}

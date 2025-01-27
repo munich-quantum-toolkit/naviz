@@ -7,7 +7,7 @@ keywords = ["naviz", "renderer"]
 license = "AGPL-3.0-or-later"
 name = "naviz-renderer"
 repository.workspace = true
-version = "0.4.0"
+version = "0.5.0"
 
 [dependencies]
 bytemuck = "1.18.0"
