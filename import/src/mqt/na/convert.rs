@@ -173,14 +173,16 @@ pub fn convert_operation(
                 })
                 .collect()
         }
-        OperationArgs::Local { argument, target } => {
-            foo(operation.name, get_id(target, position_cache)?, *argument)
-        }
+        OperationArgs::Local { argument, targets } => targets
+            .iter()
+            .map(|target| foo(operation.name, get_id(target, position_cache)?, *argument))
+            .collect(),
         OperationArgs::Global(argument) => foo(
             operation.name,
             global_zone_options.get(operation.name)?.to_string(),
             *argument,
-        ),
+        )
+        .map(|i| [i].into()),
     }
 }
 
@@ -188,8 +190,8 @@ fn foo(
     name: &str,
     target: String,
     argument: Option<Number>,
-) -> Result<Vec<TimedInstruction>, OperationConversionError> {
-    Ok(vec![match name {
+) -> Result<TimedInstruction, OperationConversionError> {
+    Ok(match name {
         "cz" => {
             if argument.is_some() {
                 return Err(OperationConversionError::SuperfluousArgument);
@@ -217,7 +219,7 @@ fn foo(
             }
         }
         _ => return Err(OperationConversionError::InvalidName),
-    }])
+    })
 }
 
 impl From<Position> for (Fraction, Fraction) {
