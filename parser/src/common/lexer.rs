@@ -68,7 +68,10 @@ pub mod value {
     pub fn regex<I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>>(
         input: &mut I,
     ) -> PResult<Value<<I as Stream>::Slice>> {
-        delimited_by("^", "$").map(Value::Regex).parse_next(input)
+        delimited_by("^", "$")
+            .take()
+            .map(Value::Regex)
+            .parse_next(input)
     }
 
     /// Tries to parse a number.

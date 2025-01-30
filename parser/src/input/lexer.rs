@@ -269,7 +269,7 @@ mod test {
             Token::Identifier("instruction"),
             Token::Identifier("argument"),
             Token::Value(Value::String("argument")),
-            Token::Value(Value::Regex("argument")),
+            Token::Value(Value::Regex("^argument$")),
             Token::Separator,
             Token::TimeSymbol(TimeSpec::Absolute),
             Token::Value(Value::Number("0")),
