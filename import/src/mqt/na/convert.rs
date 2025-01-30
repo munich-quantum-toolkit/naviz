@@ -284,11 +284,15 @@ fn assert_same_lengths<A, B>(a: &[A], b: &[B]) -> Result<(), OperationConversion
 
 #[cfg(test)]
 mod test {
-    use naviz_parser::input::concrete::Instructions;
+    use std::sync::Arc;
+
+    use naviz_parser::input::concrete::{
+        InstructionGroup, Instructions, SetupInstruction, TimedInstruction,
+    };
 
     use crate::mqt::na::{
         convert::{ConvertOptions, GlobalZoneNames},
-        format::parse,
+        format::{parse, Operation, OperationArgs, Position},
     };
 
     use super::convert;
@@ -324,6 +328,112 @@ mod test {
         assert_eq!(
             converted, expected,
             "Conversion did not produce expected result"
+        );
+    }
+
+    #[test]
+    fn instruction_position_list() {
+        let atoms: Arc<[_]> = [
+            Position {
+                x: 9.into(),
+                y: 8.into(),
+            },
+            Position {
+                x: 1.into(),
+                y: 2.into(),
+            },
+            Position {
+                x: 8.into(),
+                y: 8.into(),
+            },
+            Position {
+                x: 0.into(),
+                y: 0.into(),
+            },
+        ]
+        .into();
+
+        let input = [
+            Operation {
+                name: "init",
+                args: OperationArgs::Init(atoms.clone()),
+            },
+            Operation {
+                name: "ry",
+                args: OperationArgs::Local {
+                    argument: Some(57.into()),
+                    targets: atoms,
+                },
+            },
+        ]
+        .into();
+
+        let converted = convert(
+            &input,
+            ConvertOptions {
+                atom_prefix: "atom".into(),
+                global_zones: GlobalZoneNames {
+                    cz: "global_cz".into(),
+                    ry: "global_ry".into(),
+                    rz: "global_rz".into(),
+                },
+            },
+        )
+        .expect("Failed to convert");
+
+        let expected = Instructions {
+            setup: vec![
+                SetupInstruction::Atom {
+                    position: (9.into(), 8.into()),
+                    id: "atom0".to_string(),
+                },
+                SetupInstruction::Atom {
+                    position: (1.into(), 2.into()),
+                    id: "atom1".to_string(),
+                },
+                SetupInstruction::Atom {
+                    position: (8.into(), 8.into()),
+                    id: "atom2".to_string(),
+                },
+                SetupInstruction::Atom {
+                    position: (0.into(), 0.into()),
+                    id: "atom3".to_string(),
+                },
+            ],
+            instructions: vec![(
+                0.into(),
+                vec![(
+                    false,
+                    0.into(),
+                    InstructionGroup {
+                        variable: false,
+                        instructions: vec![
+                            TimedInstruction::Ry {
+                                value: 57.into(),
+                                id: "atom0".to_string(),
+                            },
+                            TimedInstruction::Ry {
+                                value: 57.into(),
+                                id: "atom1".to_string(),
+                            },
+                            TimedInstruction::Ry {
+                                value: 57.into(),
+                                id: "atom2".to_string(),
+                            },
+                            TimedInstruction::Ry {
+                                value: 57.into(),
+                                id: "atom3".to_string(),
+                            },
+                        ],
+                    },
+                )],
+            )],
+            ..Default::default()
+        };
+
+        assert_eq!(
+            converted, expected,
+            "Instruction with position list incorrectly converted."
         );
     }
 }
