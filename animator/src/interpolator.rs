@@ -43,12 +43,55 @@ pub trait InterpolationFunction<A, T> {
 
 /// Constant interpolation
 ///
-/// Will always be the `to`-value
+/// Will switch from `from` to `to` at the specified point.
+/// The time can be specified by the argument:
+/// - [()]: Will jump at start of the interpolation (i.e., always be `true`).
+/// - [ConstantTransitionPoint]: Will use the [ConstantTransitionPoint] to decide.
+/// - [Time]: Will jump at the specified [Time].
 #[derive(Default)]
 pub struct Constant();
+
 impl<T> InterpolationFunction<(), T> for Constant {
     fn interpolate(&self, _fraction: Time, _argument: (), _from: T, to: T) -> T {
         to
+    }
+}
+
+/// Optional argument for [Constant] to describe when the constant jump should happen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConstantTransitionPoint {
+    /// Jump at start of interpolation
+    Start,
+    /// Jump at end of interpolation
+    End,
+}
+
+impl<T> InterpolationFunction<ConstantTransitionPoint, T> for Constant {
+    fn interpolate(
+        &self,
+        _fraction: Time,
+        transition: ConstantTransitionPoint,
+        from: T,
+        to: T,
+    ) -> T {
+        // Depending on transition point, keep the relevant value.
+        // When fraction >= 1, the interpolation should not be called anymore,
+        // but instead assumes the endpoint, which will always be `to`.
+        match transition {
+            ConstantTransitionPoint::Start => to,
+            ConstantTransitionPoint::End => from,
+        }
+    }
+}
+
+impl<T> InterpolationFunction<Time, T> for Constant {
+    fn interpolate(&self, fraction: Time, transition: Time, from: T, to: T) -> T {
+        // Change at the specified transition point.
+        if fraction >= transition {
+            to
+        } else {
+            from
+        }
     }
 }
 
