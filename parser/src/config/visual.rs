@@ -642,7 +642,7 @@ mod test {
                     },
                 },
                 legend: AtomLegendConfig {
-                    name: vec![(Regex::new(".*").unwrap(), "$0".to_string())],
+                    name: vec![(Regex::new("^.*$").unwrap(), "$0".to_string())],
                     font: FontConfig {
                         family: "Nice Font".to_string(),
                         size: Fraction::new(14u64, 1u64),
@@ -659,7 +659,7 @@ mod test {
             zone: ZoneConfig {
                 config: vec![
                     (
-                        Regex::new("zone.*").unwrap(),
+                        Regex::new("^zone.*$").unwrap(),
                         ZoneConfigConfig {
                             color: Color {
                                 r: 0,
@@ -678,7 +678,7 @@ mod test {
                         },
                     ),
                     (
-                        Regex::new(".*").unwrap(),
+                        Regex::new("^.*$").unwrap(),
                         ZoneConfigConfig {
                             color: Color {
                                 r: 0,

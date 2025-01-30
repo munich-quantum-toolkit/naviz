@@ -175,7 +175,7 @@ mod test {
             Token::Identifier("property2"),
             Token::Separator,
             Token::Value(Value::Number("1.2")),
-            Token::Value(Value::Regex("regex")),
+            Token::Value(Value::Regex("^regex$")),
             Token::Comment(" comment "),
             Token::Separator,
             Token::Identifier("identifier"),
