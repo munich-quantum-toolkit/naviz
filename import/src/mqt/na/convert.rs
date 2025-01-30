@@ -175,9 +175,15 @@ pub fn convert_operation(
         }
         OperationArgs::Local { argument, targets } => targets
             .iter()
-            .map(|target| foo(operation.name, get_id(target, position_cache)?, *argument))
+            .map(|target| {
+                convert_operation_instruction(
+                    operation.name,
+                    get_id(target, position_cache)?,
+                    *argument,
+                )
+            })
             .collect(),
-        OperationArgs::Global(argument) => foo(
+        OperationArgs::Global(argument) => convert_operation_instruction(
             operation.name,
             global_zone_options.get(operation.name)?.to_string(),
             *argument,
@@ -186,7 +192,9 @@ pub fn convert_operation(
     }
 }
 
-fn foo(
+/// Converts a single [OperationArgs::Local] or [OperationArgs::Global] operation
+/// to an instruction.
+fn convert_operation_instruction(
     name: &str,
     target: String,
     argument: Option<Number>,
