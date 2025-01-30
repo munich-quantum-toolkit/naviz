@@ -41,7 +41,7 @@ pub enum OperationArgs {
     /// `<name>(<number>) at <positions>` / `<name> at <positions>`
     Local {
         argument: Option<Number>,
-        target: Position,
+        targets: PositionList,
     },
     /// `<name>(<number>)` / `<name>`
     Global(Option<Number>),
@@ -59,11 +59,11 @@ impl Display for OperationArgs {
                     SeparatedDisplay::comma(to)
                 )
             }
-            Self::Local { argument, target } => {
+            Self::Local { argument, targets } => {
                 if let Some(argument) = argument {
                     write!(f, "({})", Decimal::from_fraction(*argument))?;
                 }
-                write!(f, " at {target}")
+                write!(f, " at {}", SeparatedDisplay::comma(targets))
             }
             Self::Global(argument) => {
                 if let Some(argument) = argument {
@@ -221,7 +221,7 @@ pub mod operation {
     };
 
     use super::{
-        parts::{number, position, position_list},
+        parts::{number, position_list},
         Number, Operation, OperationArgs,
     };
 
@@ -307,12 +307,12 @@ pub mod operation {
                 multispace0,
             )),
             terminated("at", multispace0),
-            terminated(position, multispace0),
+            terminated(position_list, multispace0),
             ";",
         )
-            .map(|(name, argument, _, target, _)| Operation {
+            .map(|(name, argument, _, targets, _)| Operation {
                 name,
-                args: OperationArgs::Local { argument, target },
+                args: OperationArgs::Local { argument, targets },
             })
             .parse_next(input)
     }
@@ -370,7 +370,10 @@ pub mod operation {
 
 #[cfg(test)]
 mod test {
-    use crate::separated_display::SeparatedDisplay;
+    use crate::{
+        mqt::na::format::{Operation, OperationArgs, Position},
+        separated_display::SeparatedDisplay,
+    };
 
     use super::parse;
 
@@ -394,6 +397,83 @@ mod test {
         assert_eq!(
             parsed, parsed_again,
             "Round-Trip failed to produce same deserialized result"
+        );
+    }
+
+    #[test]
+    fn instruction_position_list_parse() {
+        let input = "ry(42) at (0, 0), (1, 1), (2, 2), (3, 3);";
+
+        let parsed = parse(input).expect("Failed to parse!");
+
+        let expected = [Operation {
+            name: "ry",
+            args: OperationArgs::Local {
+                argument: Some(42.into()),
+                targets: [
+                    Position {
+                        x: 0.into(),
+                        y: 0.into(),
+                    },
+                    Position {
+                        x: 1.into(),
+                        y: 1.into(),
+                    },
+                    Position {
+                        x: 2.into(),
+                        y: 2.into(),
+                    },
+                    Position {
+                        x: 3.into(),
+                        y: 3.into(),
+                    },
+                ]
+                .into(),
+            },
+        }]
+        .into();
+
+        assert_eq!(
+            parsed, expected,
+            "Wrongly parsed instruction with position list"
+        );
+    }
+
+    #[test]
+    fn instruction_position_list_stringify() {
+        let input = Operation {
+            name: "ry",
+            args: OperationArgs::Local {
+                argument: Some(1337.into()),
+                targets: [
+                    Position {
+                        x: 4.into(),
+                        y: 4.into(),
+                    },
+                    Position {
+                        x: 3.into(),
+                        y: 3.into(),
+                    },
+                    Position {
+                        x: 2.into(),
+                        y: 2.into(),
+                    },
+                    Position {
+                        x: 1.into(),
+                        y: 1.into(),
+                    },
+                ]
+                .into(),
+            },
+        };
+
+        let exported = input.to_string();
+
+        let expected = "ry(1337) at (4, 4), (3, 3), (2, 2), (1, 1);";
+
+        assert_eq!(
+            exported, expected,
+            "Wrongly stringified instruction with position list"
         );
     }
 }
