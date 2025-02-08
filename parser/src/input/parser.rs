@@ -83,10 +83,7 @@ pub fn instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
     (
         terminated(opt(time), ignore_comments),
         terminated(identifier, ignore_comments),
-        repeat(
-            0..,
-            terminated(value_or_identifier_or_tuple, ignore_comments),
-        ),
+        repeat(0.., terminated(any_value, ignore_comments)),
         separator,
     )
         .map(|(time, name, args, _)| InstructionOrDirective::Instruction { time, name, args })
@@ -99,10 +96,7 @@ pub fn directive<S: TryIntoValue + Clone + Debug + PartialEq>(
 ) -> PResult<InstructionOrDirective> {
     (
         terminated(token::directive, ignore_comments),
-        repeat(
-            0..,
-            terminated(value_or_identifier_or_tuple, ignore_comments),
-        ),
+        repeat(0.., terminated(any_value, ignore_comments)),
         separator,
     )
         .map(|(name, args, _)| InstructionOrDirective::Directive { name, args })
@@ -127,10 +121,7 @@ pub fn grouped_time<S: TryIntoValue + Clone + Debug + PartialEq>(
     let grouped_instruction = terminated(
         (
             terminated(identifier, ignore_comments),
-            repeat(
-                0..,
-                terminated(value_or_identifier_or_tuple, ignore_comments),
-            ),
+            repeat(0.., terminated(any_value, ignore_comments)),
         ),
         separator,
     );
@@ -162,10 +153,7 @@ pub fn grouped_instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
 ) -> PResult<InstructionOrDirective> {
     let grouped_value = terminated(
-        repeat(
-            0..,
-            terminated(value_or_identifier_or_tuple, ignore_comments),
-        ),
+        repeat(0.., terminated(any_value, ignore_comments)),
         separator,
     );
 

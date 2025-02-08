@@ -66,14 +66,14 @@ pub enum TimedInstruction {
     },
     Rz {
         value: Fraction,
-        id: String,
+        targets: Vec<String>,
     },
     Ry {
         value: Fraction,
-        id: String,
+        targets: Vec<String>,
     },
     Cz {
-        id: String,
+        targets: Vec<String>,
     },
 }
 
@@ -298,16 +298,16 @@ fn parse_instruction(
             TimedInstruction::Move { position, id }.into()
         }
         "rz" => {
-            let (value, id) = number_id(args, "rz")?;
-            TimedInstruction::Rz { value, id }.into()
+            let (value, targets) = number_target(args, "rz")?;
+            TimedInstruction::Rz { value, targets }.into()
         }
         "ry" => {
-            let (value, id) = number_id(args, "ry")?;
-            TimedInstruction::Ry { value, id }.into()
+            let (value, targets) = number_target(args, "ry")?;
+            TimedInstruction::Ry { value, targets }.into()
         }
         "cz" => {
-            let id = id(args, "cz")?;
-            TimedInstruction::Cz { id }.into()
+            let targets = target(args, "cz")?;
+            TimedInstruction::Cz { targets }.into()
         }
         _ => Err(ParseInstructionsError::UnknownInstruction {
             name: name.into_owned(),
@@ -441,20 +441,20 @@ fn maybe_position_id(
     }
 }
 
-/// Tries to parse the arguments into a number and an id.
+/// Tries to parse the arguments into a number and a target.
 /// Returns a [ParseInstructionsError] if there is a wrong number of arguments
 /// or they have wrong types.
-fn number_id(
+fn number_target(
     args: Vec<Value>,
     name: &'static str,
-) -> Result<(Fraction, String), ParseInstructionsError> {
+) -> Result<(Fraction, Vec<String>), ParseInstructionsError> {
     let error = || ParseInstructionsError::WrongTypeOfArgument {
         name,
         expected: &[&["number", "id"]],
     };
 
     match n_args(args, name, &[2])? {
-        [Value::Number(n), Value::Identifier(id)] => Ok((n, id)),
+        [Value::Number(n), target] => Ok((n, value_to_target(target, error)?)),
         _ => Err(error()),
     }
 }
@@ -472,6 +472,38 @@ fn id(args: Vec<Value>, name: &'static str) -> Result<String, ParseInstructionsE
         [Value::Identifier(id)] => Ok(id),
         _ => Err(error()),
     }
+}
+
+/// Tries to parse the arguments into any target.
+/// Returns a [ParseInstructionsError] if there is a wrong number of arguments
+/// or they have wrong types.
+fn target(args: Vec<Value>, name: &'static str) -> Result<Vec<String>, ParseInstructionsError> {
+    let error = || ParseInstructionsError::WrongTypeOfArgument {
+        name,
+        expected: &[&["target"]],
+    };
+
+    let [target] = n_args(args, name, &[1])?;
+    value_to_target(target, error)
+}
+
+/// Tries to convert a [Value] to a target (list of IDs).
+/// Will return the `error` if the [Value] contains anything
+/// apart from [Set][Value::Set]s and [Identifier][Value::Identifier]s.
+fn value_to_target(
+    target: Value,
+    error: impl Fn() -> ParseInstructionsError,
+) -> Result<Vec<String>, ParseInstructionsError> {
+    target
+        .flatten_sets()
+        .map(|v| {
+            if let Value::Identifier(id) = v {
+                Ok(id)
+            } else {
+                Err(error())
+            }
+        })
+        .collect()
 }
 
 /// Returns a slice of length `N` if the passed vector has length `N`,
@@ -601,7 +633,7 @@ mod test {
                             variable: false,
                             instructions: vec![TimedInstruction::Rz {
                                 value: Fraction::new(3141u64, 1000u64),
-                                id: "atom0".to_string(),
+                                targets: vec!["atom0".to_string()],
                             }],
                         },
                     ),
@@ -612,7 +644,7 @@ mod test {
                             variable: false,
                             instructions: vec![TimedInstruction::Ry {
                                 value: Fraction::new(3141u64, 1000u64),
-                                id: "atom1".to_string(),
+                                targets: vec!["atom1".to_string()],
                             }],
                         },
                     ),
@@ -622,7 +654,7 @@ mod test {
                         InstructionGroup {
                             variable: false,
                             instructions: vec![TimedInstruction::Cz {
-                                id: "zone0".to_string(),
+                                targets: vec!["zone0".to_string()],
                             }],
                         },
                     ),
@@ -633,11 +665,11 @@ mod test {
                             variable: true,
                             instructions: vec![
                                 TimedInstruction::Cz {
-                                    id: "zone1".to_string(),
+                                    targets: vec!["zone1".to_string()],
                                 },
                                 TimedInstruction::Ry {
                                     value: Fraction::new(3141u64, 1000u64),
-                                    id: "atom0".to_string(),
+                                    targets: vec!["atom0".to_string()],
                                 },
                             ],
                         },

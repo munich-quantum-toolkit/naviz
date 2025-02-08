@@ -10,6 +10,7 @@
 | `color`                | Hex-color in `#RRGGBBAA` format; alpha is optional           | `#1eb69dcc`, `#ac52f6`            |
 | `string`               | A string; Must be enclosed in double-quotes                  | `"Hello World!"`, `"Some string"` |
 | `tuple(<a>, <b>, ...)` | A tuple; element-types are specified in parentheses          | `(5, 2)`                          |
+| `set(<type>)`          | A set; element-type is specified in parentheses              | `{ atom0, atom1 }`                |
 | `regex`                | A regex; Must be enclosed in `^`, `$`                        | `^atom.*$`, `^Foo:Bar$`           |
 | `boolean`              | A boolean (`true`/`false`) value                             | `true`, `false`                   |
 
@@ -18,6 +19,7 @@
 | Alias      | Type                    | Description                                                                     |
 | ---------- | ----------------------- | ------------------------------------------------------------------------------- |
 | `position` | `tuple(number, number)` | A position                                                                      |
+| `target`   | `id \| set(target)`     | A target (i.e., a zone, an atom, or a set containing multiple targets)          |
 | `time`     | `number`                | A time; can also be one of the [relative times](#automatic-time--relative-time) |
 
 ## Machine Configuration
@@ -380,26 +382,26 @@ An atom can be moved to a new position using the `move`-command.
 
 #### `rz`-operation
 
-The `rz`-operation can be applied to a zone or atom using the `rz`-command.
+The `rz`-operation can be applied to a target using the `rz`-command.
 
 ```
-@<time> rz <number> <id>
+@<time> rz <number> <target>
 ```
 
 #### `ry`-operation
 
-The `ry`-operation can be applied to a zone or atom using the `ry`-command.
+The `ry`-operation can be applied to a target using the `ry`-command.
 
 ```
-@<time> ry <number> <id>
+@<time> ry <number> <target>
 ```
 
 #### `cz`-operation
 
-The `cz`-operation can be applied to a zone or atom using the `cz`-command.
+The `cz`-operation can be applied to a target using the `cz`-command.
 
 ```
-@<time> cz <id>
+@<time> cz <target>
 ```
 
 ### Syntactic Sugar

@@ -17,10 +17,10 @@ pub use common::lexer::*;
 /// A token of the config format
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token<T> {
-    /// Opening-symbol for a block
-    BlockOpen,
-    /// Closing-symbol for a block
-    BlockClose,
+    /// Opening-symbol for a block or a set (overloaded due to same symbol)
+    BlockOrSetOpen,
+    /// Closing-symbol for a block or a set (overloaded due to same symbol)
+    BlockOrSetClose,
     /// An identifier
     Identifier(T),
     /// A property-separator
@@ -45,6 +45,9 @@ impl<T> From<GenericToken<T>> for Token<T> {
             GenericToken::Comment(c) => Self::Comment(c),
             GenericToken::TupleOpen => Self::TupleOpen,
             GenericToken::TupleClose => Self::TupleClose,
+            // convert to overloaded tokens
+            GenericToken::SetOpen => Self::BlockOrSetOpen,
+            GenericToken::SetClose => Self::BlockOrSetClose,
             GenericToken::ElementSeparator => Self::ElementSeparator,
         }
     }
@@ -58,6 +61,9 @@ impl<T> From<Token<T>> for Option<GenericToken<T>> {
             Token::Comment(c) => Some(GenericToken::Comment(c)),
             Token::TupleOpen => Some(GenericToken::TupleOpen),
             Token::TupleClose => Some(GenericToken::TupleClose),
+            // also convert from overloaded tokens
+            Token::BlockOrSetOpen => Some(GenericToken::SetOpen),
+            Token::BlockOrSetClose => Some(GenericToken::SetClose),
             Token::ElementSeparator => Some(GenericToken::ElementSeparator),
             _ => None,
         }
@@ -98,18 +104,18 @@ pub mod token {
 
     pub use common::lexer::token::*;
 
-    /// Tries to parse a [Token::BlockOpen].
-    pub fn block_open<I: Stream + StreamIsPartial + Compare<&'static str>>(
+    /// Tries to parse a [Token::BlockOrSetOpen].
+    pub fn block_or_set_open<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
     ) -> PResult<Token<<I as Stream>::Slice>> {
-        "{".map(|_| Token::BlockOpen).parse_next(input)
+        "{".map(|_| Token::BlockOrSetOpen).parse_next(input)
     }
 
     /// Tries to parse a [Token::BlockClose].
-    pub fn block_close<I: Stream + StreamIsPartial + Compare<&'static str>>(
+    pub fn block_or_set_close<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
     ) -> PResult<Token<<I as Stream>::Slice>> {
-        "}".map(|_| Token::BlockClose).parse_next(input)
+        "}".map(|_| Token::BlockOrSetClose).parse_next(input)
     }
 
     /// Tries to parse a [Token::Separator].
@@ -135,8 +141,8 @@ pub mod token {
         I::Slice: SliceLen,
     {
         alt((
-            block_open,
-            block_close,
+            block_or_set_open,
+            block_or_set_close,
             separator,
             tuple_open,
             tuple_close,
@@ -181,19 +187,19 @@ mod test {
             Token::Identifier("identifier"),
             Token::Comment(" other comment"),
             Token::Identifier("block"),
-            Token::BlockOpen,
+            Token::BlockOrSetOpen,
             Token::Identifier("named_block"),
             Token::Value(Value::String("name")),
-            Token::BlockOpen,
+            Token::BlockOrSetOpen,
             Token::Identifier("prop"),
             Token::Separator,
             Token::Value(Value::Color("c01032")),
             Token::Value(Value::Number("42")),
             Token::Separator,
             Token::Value(Value::Boolean("true")),
-            Token::BlockClose,
+            Token::BlockOrSetClose,
             Token::Comment(" }"),
-            Token::BlockClose,
+            Token::BlockOrSetClose,
         ];
 
         let lexed = lex(input).expect("Failed to lex");

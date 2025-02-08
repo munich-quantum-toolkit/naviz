@@ -19,7 +19,7 @@ pub enum TimeSpec {
     Relative { from_start: bool, positive: bool },
 }
 
-/// A token of the config format
+/// A token of the input format
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token<T> {
     /// An identifier
@@ -39,6 +39,10 @@ pub enum Token<T> {
     },
     /// Closing-symbol for a group
     GroupClose,
+    // Opening-symbol for a set of values
+    SetOpen,
+    // Closing-symbol for a set of values
+    SetClose,
     /// A separator between elements (e.g., in tuples)
     ElementSeparator,
     /// The symbol to denote the starting-time
@@ -57,6 +61,8 @@ impl<T> From<GenericToken<T>> for Token<T> {
             GenericToken::Comment(c) => Self::Comment(c),
             GenericToken::TupleOpen => Self::TupleOpen,
             GenericToken::TupleClose => Self::TupleClose,
+            GenericToken::SetOpen => Self::SetOpen,
+            GenericToken::SetClose => Self::SetClose,
             GenericToken::ElementSeparator => Self::ElementSeparator,
         }
     }
@@ -70,6 +76,8 @@ impl<T> From<Token<T>> for Option<GenericToken<T>> {
             Token::Comment(c) => Some(GenericToken::Comment(c)),
             Token::TupleOpen => Some(GenericToken::TupleOpen),
             Token::TupleClose => Some(GenericToken::TupleClose),
+            Token::SetOpen => Some(GenericToken::SetOpen),
+            Token::SetClose => Some(GenericToken::SetClose),
             Token::ElementSeparator => Some(GenericToken::ElementSeparator),
             _ => None,
         }
@@ -227,6 +235,8 @@ pub mod token {
             tuple_close,
             group_open,
             group_close,
+            set_open,
+            set_close,
             element_separator,
             time_symbol,
             directive,

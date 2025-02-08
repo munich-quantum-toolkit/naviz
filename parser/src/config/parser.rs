@@ -54,9 +54,9 @@ pub fn property<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
 ) -> PResult<ConfigItem> {
     (
-        terminated(value_or_identifier_or_tuple, ignore_comments),
+        terminated(any_value, ignore_comments),
         terminated(separator, ignore_comments),
-        value_or_identifier_or_tuple,
+        any_value,
     )
         .map(|(k, _, v)| ConfigItem::Property(k, v))
         .parse_next(input)
@@ -82,7 +82,7 @@ pub fn named_block<S: TryIntoValue + Clone + Debug + PartialEq>(
 ) -> PResult<ConfigItem> {
     (
         terminated(identifier, ignore_comments),
-        terminated(value_or_identifier_or_tuple, ignore_comments),
+        terminated(any_value, ignore_comments),
         terminated(block_open, ignore_comments),
         terminated(config, ignore_comments),
         block_close,
@@ -99,14 +99,14 @@ pub mod token {
     // Re-export the common token-parsers
     pub use common::parser::token::*;
 
-    /// Try to parse a single [Token::BlockOpen].
+    /// Try to parse a single [Token::BlockOrSetOpen] for opening a block.
     pub fn block_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        one_of([Token::BlockOpen]).void().parse_next(input)
+        one_of([Token::BlockOrSetOpen]).void().parse_next(input)
     }
 
-    /// Try to parse a single [Token::BlockClose].
+    /// Try to parse a single [Token::BlockOrSetClose] for closing a block.
     pub fn block_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
-        one_of([Token::BlockClose]).void().parse_next(input)
+        one_of([Token::BlockOrSetClose]).void().parse_next(input)
     }
 
     /// Try to parse a single [Token::Separator].
@@ -170,19 +170,19 @@ mod test {
             Token::Identifier("identifier"),
             Token::Comment(" other comment"),
             Token::Identifier("block"),
-            Token::BlockOpen,
+            Token::BlockOrSetOpen,
             Token::Identifier("named_block"),
             Token::Value(lexer::Value::String("name")),
-            Token::BlockOpen,
+            Token::BlockOrSetOpen,
             Token::Identifier("prop"),
             Token::Separator,
             Token::Value(lexer::Value::Color("c01032")),
             Token::Value(lexer::Value::Number("42")),
             Token::Separator,
             Token::Value(lexer::Value::Boolean("true")),
-            Token::BlockClose,
+            Token::BlockOrSetClose,
             Token::Comment(" }"),
-            Token::BlockClose,
+            Token::BlockOrSetClose,
         ];
 
         let expected = vec![

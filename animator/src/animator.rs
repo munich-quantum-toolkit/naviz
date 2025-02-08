@@ -518,67 +518,78 @@ fn targeted<'a>(
     machine: &'a MachineConfig,
 ) -> impl Iterator<Item = &'a mut Atom> {
     enum Match<'a> {
-        Id(&'a str),
-        IdOrZone {
-            id: &'a str,
-            zone: &'a naviz_parser::config::machine::ZoneConfig,
+        /// Match a single atom by ID
+        Atom(&'a str),
+        /// Match multiple atoms by id or zones by config
+        AtomsOrZones {
+            atoms: Vec<&'a str>,
+            zones: Vec<&'a naviz_parser::config::machine::ZoneConfig>,
         },
+        /// Match by index
         Index(Vec<usize>),
-        None,
     }
     let m = match instruction {
         // Instructions that only target individual atoms
         TimedInstruction::Load { id, .. }
         | TimedInstruction::Store { id, .. }
-        | TimedInstruction::Move { id, .. } => Match::Id(id),
-        // Instructions that target atoms and zones
-        TimedInstruction::Rz { id, .. } | TimedInstruction::Ry { id, .. } => machine
-            .zone
-            .get(id)
-            .map_or_else(|| Match::Id(id), |zone| Match::IdOrZone { id, zone }),
-        // Instructions that target zones and require interaction distance
-        TimedInstruction::Cz { id, .. } => {
-            if let Some(zone) = machine.zone.get(id) {
-                // Get the position for each atom (identified by index) that is in the zone at the start_time
-                let in_zone: Vec<_> = atoms
+        | TimedInstruction::Move { id, .. } => Match::Atom(id),
+        // Instructions that target arbitrary targets
+        TimedInstruction::Rz { targets, .. } | TimedInstruction::Ry { targets, .. } => {
+            Match::AtomsOrZones {
+                zones: targets
                     .iter()
-                    .enumerate()
-                    .filter(|(_, a)| is_in_zone(a, zone, start_time))
-                    .map(|(idx, a)| (idx, a.timelines.position.get(start_time.f32().into())))
-                    .collect();
+                    .filter_map(|id| machine.zone.get(id))
+                    .collect(),
+                atoms: targets.iter().map(AsRef::as_ref).collect(),
+            }
+        }
+        // Instructions that target arbitrary targets and require interaction distance
+        TimedInstruction::Cz { targets, .. } => {
+            let zones: Vec<_> = targets
+                .iter()
+                .filter_map(|id| machine.zone.get(id))
+                .collect();
 
-                // Generate the targeted atom indices using nested loop.
-                // Assuming that at any time only clusters of two atoms exist,
-                // at most all atoms will be added to this vector
-                // as no atom will be added multiple times in the below loop.
-                // Therefore, we preallocate this size
-                let mut targeted = Vec::with_capacity(in_zone.len());
-                for a in 0..in_zone.len() {
-                    for b in (a + 1)..in_zone.len() {
-                        let (a, a_pos) = &in_zone[a];
-                        let (b, b_pos) = &in_zone[b];
-                        // Two atoms are close -> add both
-                        if is_close(a_pos, b_pos, machine.distance.interaction) {
-                            targeted.push(*a);
-                            targeted.push(*b);
-                        }
+            // Get the position for each atom (identified by index) that is targeted at the start_time
+            let in_zone: Vec<_> = atoms
+                .iter()
+                .enumerate()
+                .filter(|(_, a)| {
+                    targets.contains(&a.id)
+                        || zones.iter().any(|zone| is_in_zone(a, zone, start_time))
+                })
+                .map(|(idx, a)| (idx, a.timelines.position.get(start_time.f32().into())))
+                .collect();
+
+            // Generate the targeted atom indices using nested loop.
+            // Assuming that at any time only clusters of two atoms exist,
+            // at most all atoms will be added to this vector
+            // as no atom will be added multiple times in the below loop.
+            // Therefore, we preallocate this size
+            let mut targeted = Vec::with_capacity(in_zone.len());
+            for a in 0..in_zone.len() {
+                for b in (a + 1)..in_zone.len() {
+                    let (a, a_pos) = &in_zone[a];
+                    let (b, b_pos) = &in_zone[b];
+                    // Two atoms are close -> add both
+                    if is_close(a_pos, b_pos, machine.distance.interaction) {
+                        targeted.push(*a);
+                        targeted.push(*b);
                     }
                 }
-                Match::Index(targeted)
-            } else {
-                // Targeted zone does not exist
-                Match::None
             }
+            Match::Index(targeted)
         }
     };
     atoms
         .iter_mut()
         .enumerate()
         .filter(move |(idx, a)| match &m {
-            Match::Id(id) => &a.id == id,
-            Match::IdOrZone { id, zone } => &a.id == id || is_in_zone(a, zone, start_time),
+            Match::Atom(id) => &a.id == id,
+            Match::AtomsOrZones { atoms, zones } => {
+                atoms.contains(&&*a.id) || zones.iter().any(|zone| is_in_zone(a, zone, start_time))
+            }
             Match::Index(indices) => indices.contains(idx),
-            Match::None => false,
         })
         .map(|(_, a)| a)
 }

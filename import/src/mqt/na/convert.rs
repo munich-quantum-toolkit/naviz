@@ -175,17 +175,13 @@ pub fn convert_operation(
         }
         OperationArgs::Local { argument, targets } => targets
             .iter()
-            .map(|target| {
-                convert_operation_instruction(
-                    operation.name,
-                    get_id(target, position_cache)?,
-                    *argument,
-                )
-            })
-            .collect(),
+            .map(|target| get_id(target, position_cache))
+            .collect::<Result<_, _>>()
+            .and_then(|targets| convert_operation_instruction(operation.name, targets, *argument))
+            .map(|i| vec![i]),
         OperationArgs::Global(argument) => convert_operation_instruction(
             operation.name,
-            global_zone_options.get(operation.name)?.to_string(),
+            vec![global_zone_options.get(operation.name)?.to_string()],
             *argument,
         )
         .map(|i| [i].into()),
@@ -196,7 +192,7 @@ pub fn convert_operation(
 /// to an instruction.
 fn convert_operation_instruction(
     name: &str,
-    target: String,
+    targets: Vec<String>,
     argument: Option<Number>,
 ) -> Result<TimedInstruction, OperationConversionError> {
     Ok(match name {
@@ -204,13 +200,13 @@ fn convert_operation_instruction(
             if argument.is_some() {
                 return Err(OperationConversionError::SuperfluousArgument);
             }
-            TimedInstruction::Cz { id: target }
+            TimedInstruction::Cz { targets }
         }
         "ry" => {
             if let Some(argument) = argument {
                 TimedInstruction::Ry {
                     value: argument,
-                    id: target,
+                    targets,
                 }
             } else {
                 return Err(OperationConversionError::MissingArgument);
@@ -220,7 +216,7 @@ fn convert_operation_instruction(
             if let Some(argument) = argument {
                 TimedInstruction::Rz {
                     value: argument,
-                    id: target,
+                    targets,
                 }
             } else {
                 return Err(OperationConversionError::MissingArgument);
@@ -415,24 +411,15 @@ mod test {
                     0.into(),
                     InstructionGroup {
                         variable: false,
-                        instructions: vec![
-                            TimedInstruction::Ry {
-                                value: 57.into(),
-                                id: "atom0".to_string(),
-                            },
-                            TimedInstruction::Ry {
-                                value: 57.into(),
-                                id: "atom1".to_string(),
-                            },
-                            TimedInstruction::Ry {
-                                value: 57.into(),
-                                id: "atom2".to_string(),
-                            },
-                            TimedInstruction::Ry {
-                                value: 57.into(),
-                                id: "atom3".to_string(),
-                            },
-                        ],
+                        instructions: vec![TimedInstruction::Ry {
+                            value: 57.into(),
+                            targets: vec![
+                                "atom0".to_string(),
+                                "atom1".to_string(),
+                                "atom2".to_string(),
+                                "atom3".to_string(),
+                            ],
+                        }],
                     },
                 )],
             )],

@@ -8,7 +8,10 @@ use super::{color::Color, lexer::GenericToken, percentage::Percentage};
 use fraction::Fraction;
 use regex::Regex;
 use std::fmt::Debug;
-use token::{element_separator, ignore_comments, tuple_close, tuple_open, value_or_identifier};
+use token::{
+    element_separator, ignore_comments, set_close, set_open, tuple_close, tuple_open,
+    value_or_identifier,
+};
 use try_into_value::TryIntoValue;
 use winnow::{
     combinator::{alt, separated, terminated},
@@ -36,6 +39,8 @@ pub enum Value {
     Color(Color),
     /// An identifier
     Identifier(String),
+    /// A set of values
+    Set(Vec<Value>),
     /// A tuple
     Tuple(Vec<Value>),
 }
@@ -58,45 +63,72 @@ impl PartialEq for Value {
     }
 }
 
-/// Create a parser to a [Value::Tuple] from the passed token-parsers.
-pub fn tuple_custom<I: Stream + StreamIsPartial, E: ParserError<I>, TO, ES, TC, IG>(
-    tuple_open: impl Parser<I, TO, E>,
+impl Value {
+    /// Recursively flattens all [Set][Value::Set]s contained in this [Value].
+    /// Will only flatten and recurse into [Set][Value::Set]s
+    /// (i.e., will not flatten or recurse into e.g., [Tuple][Value::Tuple]s).
+    pub fn flatten_sets(self) -> Box<dyn Iterator<Item = Self>> {
+        match self {
+            Self::Set(v) => Box::new(v.into_iter().flat_map(Value::flatten_sets)),
+            value => Box::new(std::iter::once(value)),
+        }
+    }
+}
+
+/// Create a parser to a list-like [Value] (e.g., tuples or sets) using the passed parameters.
+pub fn list_like<I: Stream + StreamIsPartial, E: ParserError<I>, TO, ES, TC, IG>(
+    open: impl Parser<I, TO, E>,
     element_separator: impl Parser<I, ES, E>,
-    tuple_close: impl Parser<I, TC, E>,
+    close: impl Parser<I, TC, E>,
     value: impl Parser<I, Value, E>,
     ignore: impl Parser<I, IG, E> + Copy,
+    output: impl Fn(Vec<Value>) -> Value + 'static,
 ) -> impl Parser<I, Value, E> {
     (
-        terminated(tuple_open, ignore),
+        terminated(open, ignore),
         terminated(separated(0.., value, element_separator), ignore),
-        tuple_close,
+        close,
     )
-        .map(|(_, t, _)| Value::Tuple(t))
+        .map(move |(_, values, _)| output(values))
 }
 
 /// Try to parse a [Value::Tuple] from a stream of tokens which are a superset of [GenericToken].
 pub fn tuple<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
     input: &mut &[Tok],
 ) -> PResult<Value> {
-    tuple_custom(
+    list_like(
         tuple_open,
         element_separator,
         tuple_close,
-        value_or_identifier_or_tuple,
+        any_value,
         ignore_comments,
+        Value::Tuple,
     )
     .parse_next(input)
 }
 
-/// Try to parse a single [GenericToken::Identifier], [GenericToken::Value], or [Value::Tuple]
-/// using [value_or_identifier] and [tuple()] respectively.
-pub fn value_or_identifier_or_tuple<
-    Tok: Into<Option<GenericToken<S>>> + Clone + Debug,
-    S: TryIntoValue,
->(
+/// Try to parse a [Value::Set] from a stream of tokens which are a superset of [GenericToken].
+pub fn set<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
     input: &mut &[Tok],
 ) -> PResult<Value> {
-    alt((value_or_identifier, tuple)).parse_next(input)
+    list_like(
+        set_open,
+        element_separator,
+        set_close,
+        any_value,
+        ignore_comments,
+        Value::Set,
+    )
+    .parse_next(input)
+}
+
+/// Try to parse any [Value] from the stream.
+/// Does not only parse single-token values like [value_or_identifier],
+/// but also parses composite values such as sets or tuples.
+pub fn any_value<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
+    input: &mut &[Tok],
+) -> PResult<Value> {
+    alt((value_or_identifier, tuple, set)).parse_next(input)
 }
 
 pub mod token {
@@ -187,6 +219,24 @@ pub mod token {
         input: &mut &[Tok],
     ) -> PResult<()> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::TupleClose)))
+            .void()
+            .parse_next(input)
+    }
+
+    /// Try to parse a single [GenericToken::SetOpen].
+    pub fn set_open<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
+        input: &mut &[Tok],
+    ) -> PResult<()> {
+        one_of(|t: Tok| matches!(t.into(), Some(GenericToken::SetOpen)))
+            .void()
+            .parse_next(input)
+    }
+
+    /// Try to parse a single [GenericToken::SetClose].
+    pub fn set_close<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
+        input: &mut &[Tok],
+    ) -> PResult<()> {
+        one_of(|t: Tok| matches!(t.into(), Some(GenericToken::SetClose)))
             .void()
             .parse_next(input)
     }
