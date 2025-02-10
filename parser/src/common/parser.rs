@@ -58,6 +58,8 @@ impl PartialEq for Value {
             (Value::Boolean(a), Value::Boolean(b)) => a == b,
             (Value::Color(a), Value::Color(b)) => a == b,
             (Value::Identifier(a), Value::Identifier(b)) => a == b,
+            (Value::Set(a), Value::Set(b)) => a == b,
+            (Value::Tuple(a), Value::Tuple(b)) => a == b,
             _ => false,
         }
     }
