@@ -255,3 +255,37 @@ pub mod token {
             .parse_next(input)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::Value;
+
+    #[test]
+    fn set_flatten() {
+        let input = Value::Set(vec![
+            Value::Identifier("i1".to_string()),
+            Value::Set(vec![Value::Identifier("i2".to_string())]),
+            Value::Set(vec![
+                Value::Identifier("i3".to_string()),
+                Value::Set(vec![
+                    Value::Identifier("i4".to_string()),
+                    Value::Set(vec![Value::Identifier("i5".to_string())]),
+                ]),
+            ]),
+        ]);
+
+        let expected = vec![
+            Value::Identifier("i1".to_string()),
+            Value::Identifier("i2".to_string()),
+            Value::Identifier("i3".to_string()),
+            Value::Identifier("i4".to_string()),
+            Value::Identifier("i5".to_string()),
+        ];
+
+        assert_eq!(
+            input.flatten_sets().collect::<Vec<_>>(),
+            expected,
+            "Set was incorrectly flattened"
+        );
+    }
+}

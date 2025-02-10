@@ -331,4 +331,35 @@ mod test {
 
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn identifier_set() {
+        let input = r#"
+        @0 timed_instruction { t1, t2, { t3 }, { t4 }}
+        "#;
+
+        let expected = vec![
+            Token::TimeSymbol(TimeSpec::Absolute),
+            Token::Value(Value::Number("0")),
+            Token::Identifier("timed_instruction"),
+            Token::SetOpen,
+            Token::Identifier("t1"),
+            Token::ElementSeparator,
+            Token::Identifier("t2"),
+            Token::ElementSeparator,
+            Token::SetOpen,
+            Token::Identifier("t3"),
+            Token::SetClose,
+            Token::ElementSeparator,
+            Token::SetOpen,
+            Token::Identifier("t4"),
+            Token::SetClose,
+            Token::SetClose,
+            Token::Separator,
+        ];
+
+        let actual = lex(input).expect("Failed to lex");
+
+        assert_eq!(actual, expected);
+    }
 }

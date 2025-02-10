@@ -285,7 +285,7 @@ impl<T: PartialEq, const LEN: usize> winnow::stream::ContainsToken<Token<T>> for
 mod test {
     use super::*;
     use crate::common::lexer;
-    use fraction::Fraction;
+    use fraction::{ConstZero, Fraction};
     use regex::Regex;
 
     #[test]
@@ -482,5 +482,89 @@ mod test {
         let actual = parse(&input).expect("Failed to parse");
 
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn valid_set_identifiers() {
+        let input = vec![
+            Token::TimeSymbol(TimeSpec::Absolute),
+            Token::Value(lexer::Value::Number("0")),
+            Token::Identifier("timed_instruction"),
+            Token::SetOpen,
+            Token::Identifier("t1"),
+            Token::ElementSeparator,
+            Token::Identifier("t2"),
+            Token::ElementSeparator,
+            Token::SetOpen,
+            Token::Identifier("t3"),
+            Token::SetClose,
+            Token::ElementSeparator,
+            Token::SetOpen,
+            Token::SetOpen,
+            Token::Identifier("t4"),
+            Token::SetClose,
+            Token::SetClose,
+            Token::SetClose,
+            Token::Separator,
+        ];
+
+        let expected = vec![InstructionOrDirective::Instruction {
+            time: Some((TimeSpec::Absolute, Fraction::ZERO)),
+            name: "timed_instruction".to_string(),
+            args: vec![Value::Set(vec![
+                Value::Identifier("t1".to_string()),
+                Value::Identifier("t2".to_string()),
+                Value::Set(vec![Value::Identifier("t3".to_string())]),
+                Value::Set(vec![Value::Set(vec![Value::Identifier("t4".to_string())])]),
+            ])],
+        }];
+
+        let actual = parse(&input).expect("Failed to parse");
+
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn invalid_set_identifier_missing_close() {
+        let input = vec![
+            Token::TimeSymbol(TimeSpec::Absolute),
+            Token::Value(lexer::Value::Number("0")),
+            Token::Identifier("timed_instruction"),
+            Token::SetOpen,
+            Token::Identifier("t1"),
+            Token::Separator,
+        ];
+
+        parse(&input).expect_err("Invalid input was parsed without error");
+    }
+
+    #[test]
+    fn invalid_set_identifier_missing_open() {
+        let input = vec![
+            Token::TimeSymbol(TimeSpec::Absolute),
+            Token::Value(lexer::Value::Number("0")),
+            Token::Identifier("timed_instruction"),
+            Token::Identifier("t1"),
+            Token::SetClose,
+            Token::Separator,
+        ];
+
+        parse(&input).expect_err("Invalid input was parsed without error");
+    }
+
+    #[test]
+    fn invalid_set_identifier_missing_separator() {
+        let input = vec![
+            Token::TimeSymbol(TimeSpec::Absolute),
+            Token::Value(lexer::Value::Number("0")),
+            Token::Identifier("timed_instruction"),
+            Token::SetOpen,
+            Token::Identifier("t1"),
+            Token::Identifier("t2"),
+            Token::SetClose,
+            Token::Separator,
+        ];
+
+        parse(&input).expect_err("Invalid input was parsed without error");
     }
 }
