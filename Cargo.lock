@@ -2364,7 +2364,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-animator"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fraction",
  "naviz-parser",
@@ -2375,7 +2375,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-gui"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "constcat",
  "eframe",
@@ -2401,7 +2401,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-import"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fraction",
  "naviz-parser",
@@ -2411,7 +2411,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-parser"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "fraction",
  "itertools",
@@ -2421,7 +2421,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-python"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "futures",
  "naviz-animator",
@@ -2436,7 +2436,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-renderer"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "bytemuck",
  "glam",
@@ -2450,7 +2450,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-repository"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "directories",
  "include_dir",
@@ -2463,7 +2463,7 @@ version = "0.5.0"
 
 [[package]]
 name = "naviz-video"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "naviz-animator",
  "naviz-renderer",

@@ -7,7 +7,7 @@ keywords = ["naviz", "repository"]
 license = "AGPL-3.0-or-later"
 name = "naviz-repository"
 repository.workspace = true
-version = "0.1.0"
+version = "0.1.1"
 
 [dependencies]
 directories = "5.0.1"
