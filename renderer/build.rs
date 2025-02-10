@@ -24,7 +24,10 @@ fn download_default_font() -> Result<(), Box<dyn Error>> {
 
     if !font_out.exists() {
         let font = ureq::get(DEFAULT_FONT_URL).call()?;
-        io::copy(&mut font.into_reader(), &mut File::create(&font_out)?)?;
+        io::copy(
+            &mut font.into_body().into_reader(),
+            &mut File::create(&font_out)?,
+        )?;
     }
 
     println!(
