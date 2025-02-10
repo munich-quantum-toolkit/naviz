@@ -28,6 +28,7 @@ pub struct Maps {
     pub boolean: HashMap<bool, Value>,
     pub color: HashMap<Color, Value>,
     pub tuple: Vec<(Vec<Value>, Value)>,
+    pub set: Vec<(Vec<Value>, Value)>,
 }
 
 /// A [ConfigItem] representing either a [Value][ConfigItem::Value], a [Struct][ConfigItem::Struct],
@@ -66,6 +67,10 @@ impl Config {
                 parser::Value::Color(c) => maps.color.insert(c, value).map(ConfigItem::Value),
                 parser::Value::Tuple(t) => {
                     maps.tuple.push((t, value));
+                    None
+                }
+                parser::Value::Set(s) => {
+                    maps.set.push((s, value));
                     None
                 }
             },

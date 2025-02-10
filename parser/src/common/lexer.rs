@@ -178,6 +178,10 @@ pub enum GenericToken<T> {
     TupleOpen,
     /// Closing-symbol for a tuple
     TupleClose,
+    // Opening-symbol for a set of values
+    SetOpen,
+    // Closing-symbol for a set of values
+    SetClose,
     /// A separator between elements (e.g., in tuples)
     ElementSeparator,
 }
@@ -302,6 +306,30 @@ pub mod token {
         GenericToken<I::Slice>: Into<Tok>,
     {
         ")".map(|_| GenericToken::TupleClose)
+            .output_into()
+            .parse_next(input)
+    }
+
+    /// Tries to parse a [GenericToken::SetOpen].
+    pub fn set_open<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Tok>
+    where
+        GenericToken<I::Slice>: Into<Tok>,
+    {
+        "{".map(|_| GenericToken::SetOpen)
+            .output_into()
+            .parse_next(input)
+    }
+
+    /// Tries to parse a [GenericToken::SetClose].
+    pub fn set_close<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
+        input: &mut I,
+    ) -> PResult<Tok>
+    where
+        GenericToken<I::Slice>: Into<Tok>,
+    {
+        "}".map(|_| GenericToken::SetClose)
             .output_into()
             .parse_next(input)
     }
