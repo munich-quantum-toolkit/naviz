@@ -59,6 +59,11 @@ impl ProgressBar {
     fn update_time(&mut self, delta: f32) {
         if !self.paused {
             self.animation_time += self.speed * delta as f64;
+
+            if self.animation_time >= self.duration {
+                // pause on end
+                self.paused = true;
+            }
         }
     }
 
