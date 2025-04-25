@@ -12,6 +12,8 @@ const SPEED_WIDTH: f32 = BAR_HEIGHT * 2.;
 const PLAY_ICON: &str = "\u{25B6}";
 /// Pause icon (unicode)
 const PAUSE_ICON: &str = "\u{23F8}";
+/// Replay icon (unicode)
+const REPLAY_ICON: &str = "\u{27F2}";
 
 /// Maximum speed
 const MAX_SPEED: f64 = 5.;
@@ -70,21 +72,35 @@ impl ProgressBar {
         if !self.paused {
             self.animation_time += self.speed * delta as f64;
 
-            if self.animation_time >= self.duration {
+            if self.is_end() {
                 // pause on end
                 self.paused = true;
             }
         }
     }
 
+    /// Returns `true` when the playback has reached the end
+    fn is_end(&self) -> bool {
+        self.animation_time >= self.duration
+    }
+
     /// Draws the play/pause button
     fn draw_pause(&mut self, ui: &mut Ui) {
-        let icon = if self.paused { PLAY_ICON } else { PAUSE_ICON };
+        let icon = match (self.paused, self.is_end()) {
+            (true, false) => PLAY_ICON,
+            (true, true) => REPLAY_ICON,
+            (false, _) => PAUSE_ICON,
+        };
         if ui
             .add_sized([PLAY_PAUSE_WIDTH, BAR_HEIGHT], Button::new(icon))
             .clicked()
         {
             self.paused = !self.paused;
+
+            if self.is_end() {
+                // replay when pressing play on end
+                self.animation_time = 0.;
+            }
         }
     }
 
