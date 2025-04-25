@@ -47,12 +47,22 @@ impl Default for ProgressBar {
 impl ProgressBar {
     /// Creates a new progress-bar with the specified `duration`
     pub fn new(duration: f64) -> Self {
+        Self::new_with_speed(duration, 1.)
+    }
+
+    /// Creates a new progress-bar with the specified `duration` and `speed`
+    pub fn new_with_speed(duration: f64, speed: f64) -> Self {
         Self {
             animation_time: 0.,
-            speed: 1.,
+            speed,
             duration,
             paused: false,
         }
+    }
+
+    /// Gets the currently set speed
+    pub fn get_speed(&self) -> f64 {
+        self.speed
     }
 
     /// Updates the `animation_time` respecting `paused` and `speed`.
