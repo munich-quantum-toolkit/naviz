@@ -23,7 +23,7 @@ use crate::{
     },
     errors::{ErrorEmitter, Errors},
     future_helper::FutureHelper,
-    init::InitOptions,
+    init::{IdOrManual, InitOptions},
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
     util::WEB,
 };
@@ -124,11 +124,19 @@ impl App {
             .pipe_void(&mut app.errors)
         }
 
-        if let Some(machine_id) = init_options.machine {
-            app.set_machine(machine_id).pipe_void(&mut app.errors);
+        if let Some(machine) = init_options.machine {
+            match machine {
+                IdOrManual::Id(machine_id) => app.set_machine(machine_id),
+                IdOrManual::Manual(data) => app.set_machine_manually(data),
+            }
+            .pipe_void(&mut app.errors)
         }
-        if let Some(style_id) = init_options.style {
-            app.set_style(style_id).pipe_void(&mut app.errors);
+        if let Some(style) = init_options.style {
+            match style {
+                IdOrManual::Id(style_id) => app.set_style(style_id),
+                IdOrManual::Manual(data) => app.set_style_manually(data),
+            }
+            .pipe_void(&mut app.errors)
         }
 
         app
