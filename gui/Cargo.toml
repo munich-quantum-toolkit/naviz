@@ -18,6 +18,7 @@ constcat = "0.5.1"
 eframe = {version = "0.31.1", default-features = false, features = [
   "accesskit", # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
   "default_fonts", # Embed the default egui fonts.
+  "persistence", # Persist some data across starts
   "wgpu", # Use the wgpu rendering backend.
   "wayland",
   "x11",
@@ -34,6 +35,7 @@ naviz-renderer = {workspace = true}
 naviz-repository = {workspace = true}
 naviz-state = {workspace = true}
 rfd = "0.15.0"
+serde = {version = "1.0", features = ["derive"]}
 wgpu = {version = "24", features = ["webgl"]}# Enable webgl-support in wgpu
 
 # native:

@@ -23,7 +23,7 @@ use crate::{
     },
     errors::{ErrorEmitter, Errors},
     future_helper::FutureHelper,
-    init::{IdOrManual, InitOptions},
+    init::{IdOrManual, InitOptions, Persistence},
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
     util::WEB,
 };
@@ -37,6 +37,7 @@ pub struct App {
     style_repository: Repository,
     current_machine: CurrentMachine,
     errors: Errors,
+    persistence: Persistence,
 }
 
 impl App {
@@ -95,6 +96,7 @@ impl App {
             style_repository,
             current_machine: Default::default(),
             errors,
+            persistence: Default::default(),
         };
 
         app.update_machines();
@@ -140,6 +142,22 @@ impl App {
         }
 
         app
+    }
+
+    /// Create a new instance of the [App] with the specified [InitOptions]
+    /// and loading the last persisted state.
+    /// The passed [InitOptions] will overwrite any persisted options.
+    pub fn new_with_init_and_persistence(
+        cc: &eframe::CreationContext<'_>,
+        init_options: InitOptions<'_>,
+    ) -> Self {
+        if let Some(persistence) = Persistence::load(cc) {
+            let persisted: InitOptions<'_> = (&persistence).into();
+            Self::new_with_init(cc, persisted.merge(init_options))
+        } else {
+            // Nothing previously persisted
+            Self::new_with_init(cc, init_options)
+        }
     }
 
     /// Import the instructions from `data` using the specified [ImportOptions]
@@ -222,7 +240,9 @@ impl App {
                 ConfigFormat::Machine,
             ))?
             .map_err(|e| Error::Repository(RepositoryError::Open(e), ConfigFormat::Machine))?;
-        self.set_loaded_machine(Some(id), machine);
+        self.set_loaded_machine(Some(id.clone()), machine);
+        // keep machine in persistence
+        self.persistence.machine = Some(IdOrManual::Id(id));
         Ok(())
     }
 
@@ -266,6 +286,8 @@ impl App {
             ))
         })?;
         self.set_loaded_machine(None::<String>, machine);
+        // keep machine in persistence
+        self.persistence.machine = Some(IdOrManual::Manual(data.into()));
         Ok(())
     }
 
@@ -280,7 +302,9 @@ impl App {
                 ConfigFormat::Style,
             ))?
             .map_err(|e| Error::Repository(RepositoryError::Open(e), ConfigFormat::Style))?;
-        self.set_loaded_style(Some(id), style);
+        self.set_loaded_style(Some(id.clone()), style);
+        // keep style in persistence
+        self.persistence.style = Some(IdOrManual::Id(id));
         Ok(())
     }
 
@@ -316,6 +340,8 @@ impl App {
             ))
         })?;
         self.set_loaded_style(None::<String>, visual);
+        // keep style in persistence
+        self.persistence.style = Some(IdOrManual::Manual(data.into()));
         Ok(())
     }
 
@@ -465,6 +491,10 @@ impl eframe::App for App {
         });
 
         self.errors.draw(ctx);
+    }
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, &self.persistence);
     }
 }
 
