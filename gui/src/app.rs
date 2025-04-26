@@ -23,6 +23,7 @@ use crate::{
     },
     errors::{ErrorEmitter, Errors},
     future_helper::FutureHelper,
+    init::InitOptions,
     menu::{FileType, MenuBar, MenuConfig, MenuEvent},
     util::WEB,
 };
@@ -36,17 +37,6 @@ pub struct App {
     style_repository: Repository,
     current_machine: CurrentMachine,
     errors: Errors,
-}
-
-#[derive(Default)]
-pub struct InitOptions<'a> {
-    /// The machine-id to load
-    machine: Option<&'a str>,
-    /// The style-id to load
-    style: Option<&'a str>,
-    /// The visualization input to load.
-    /// Pass [Some] [ImportOptions] if the content needs to be imported.
-    input: Option<(Option<ImportOptions>, &'a [u8])>,
 }
 
 impl App {
