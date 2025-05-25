@@ -1,4 +1,10 @@
 name: Docker Web Build
+
+# This workflow builds the docker container for the web-version of naviz.
+# It builds both an `amd64` and `arm64` version.
+# The two images are combined into a single manifest following the docker docs:
+# https://docs.docker.com/build/ci/github-actions/multi-platform/#distribute-build-across-multiple-runners
+
 on:
   push:
     tags:
@@ -7,17 +13,91 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/naviz-web
+  CACHE_KEY: container_naviz-web
+  PLATFORM_ID: unknown # Will be overwritten to platform by build job
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{ matrix.builder }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - builder: ubuntu-latest
+            platform: linux/amd64
+          - builder: ubuntu-24.04-arm
+            platform: linux/arm64
     steps:
-      - name: Login to Docker Hub
+      - name: Prepare
+        run: |
+          # Replace slashes in platform with dashes
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_ID=${platform//\//-}" >> $GITHUB_ENV
+          # convert image name to lowercase
+          image_name=${{ env.IMAGE_NAME }}
+          echo "IMAGE_NAME=${image_name,,}" >> $GITHUB_ENV
+      - name: Login to GitHub container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set metadata (tag, label) for docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          platforms: ${{ matrix.platform }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            BUILDKIT_CONTEXT_KEEP_GIT_DIR=true
+          cache-from: type=gha,scope=${{ env.CACHE_KEY }}_${{ env.PLATFORM_ID }}
+          cache-to: type=gha,scope=${{ env.CACHE_KEY }}_${{ env.PLATFORM_ID }},mode=max
+      - name: Export digest
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_ID }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Prepare
+        run: |
+          # convert image name to lowercase
+          image_name=${{ env.IMAGE_NAME }}
+          echo "IMAGE_NAME=${image_name,,}" >> $GITHUB_ENV
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+      - name: Login to GitHub container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Set metadata (tag, label) for docker
         id: meta
         uses: docker/metadata-action@v5
@@ -26,13 +106,9 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            BUILDKIT_CONTEXT_KEEP_GIT_DIR=true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
