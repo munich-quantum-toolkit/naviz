@@ -60,56 +60,26 @@ Once installed, you can check if the installation was successful by running:
 
 <!-- todo: adapt the following code -->
 ```console
-(.venv) $ python -c "import mqt.naviz; print(mqt.core.__version__)"
+(.venv) $ python -c "import mqt.naviz; print(mqt.naviz.__version__)"
 ```
 
 which should print the installed version of the library.
 
 ## Building from source for performance
 
-To build NAViz, an installation of [Rust](https://www.rust-lang.org/learn/get-started) is needed.
-The library is continuously tested under Linux, MacOS, and Windows using the [latest available system versions for GitHub Actions](https://github.com/actions/virtual-environments).
-In order to access the latest build logs, visit the [GitHub Actions page](https://github.com/cda-tum/mqt-naviz/actions/workflows/ci.yml).
-
-### Native
-
-To build the native version of NAViz, `cargo build --release` can be executed in the project root, which will build a release version.
-After the build is finished, the NAViz binary can be found in `target/release/naviz-gui`.
-
-### Python
-
-This package uses [`maturin`](https://github.com/PyO3/maturin) to export this crate as a python wheel.
-The wheel can be built using `maturin build` or alternatively `maturin develop` for faster development-build.
-For more information on [`maturin`](https://github.com/PyO3/maturin) and the difference between the build commands, see [`maturin`'s README](https://github.com/PyO3/maturin?tab=readme-ov-file#maturin).
-
-### Web
-
-To build the web version of NAViz, the rust compiler for the `wasm32-unknown-unknown`-target needs to be installed.
-If Rust was installed using [rustup](https://rustup.rs/), this can be achieved by running `rustup target add wasm32-unknown-unknown`.
-Afterward, [`trunk`](https://trunkrs.dev/) needs to be installed using `cargo install trunk.`
-
-After all build tools and compilers are installed, the web version of NAViz can be built by running `trunk build --release`
-in [`gui`](./gui).
-After the build is finished, the NAViz web version can be found in `gui/dist` and can be deployed to a web server of choice.
-
-### Web (Docker)
-
-Alternatively, a container can be built for the web version of NAViz using the provided [`Dockerfile`](./Dockerfile).
-To build the container, simply run `docker build -t naviz .` (assuming [`docker`](https://www.docker.com/) is installed).
-
-The docker container can then be run using `docker run -d -p 8080:80 naviz`, which will start the web server on port `8080`.
+For building MQT NAViz from the source, take a look at the {doc}`Development Guide <development_guide>`.
 
 ## Integrating MQT NAViz into your project
 
-If you want to use the MQT Core Python package in your own project, you can simply add it as a dependency in your `pyproject.toml` or `setup.py` file.
-This will automatically install the MQT Core package when your project is installed.
+If you want to use the MQT Naviz Python package in your own project, you can simply add it as a dependency in your `pyproject.toml` or `setup.py` file.
+This will automatically install the MQT Naviz package when your project is installed.
 
 ::::{tab-set}
 
 :::{tab-item} uv _(recommended)_
 
 ```console
-$ uv add mqt.core
+$ uv add mqt.naviz
 ```
 
 :::
@@ -119,7 +89,7 @@ $ uv add mqt.core
 ```toml
 [project]
 # ...
-dependencies = ["mqt.core>=3.0.0"]
+dependencies = ["mqt.naviz>=0.1.1"]
 # ...
 ```
 
@@ -132,7 +102,7 @@ from setuptools import setup
 
 setup(
     # ...
-    install_requires=["mqt.core>=3.0.0"],
+    install_requires=["mqt.naviz>=0.1.1"],
     # ...
 )
 ```

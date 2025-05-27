@@ -27,10 +27,10 @@ ROOT = Path(__file__).parent.parent.resolve()
 
 
 try:
-    from mqt.qmap import __version__ as version
+    from mqt.naviz import __version__ as version
 except ModuleNotFoundError:
     try:
-        version = metadata.version("mqt.qmap")
+        version = metadata.version("mqt.naviz")
     except ModuleNotFoundError:
         msg = (
             "Package should be installed to produce documentation! "
@@ -45,7 +45,7 @@ except ModuleNotFoundError:
 # Filter git details from version
 release = version.split("+")[0]
 
-project = "MQT QMAP"
+project = "MQT NAViz"
 author = "Chair for Design Automation, TUM & Munich Quantum Software Company"
 language = "en"
 project_copyright = "2023 - 2025 Chair for Design Automation, TUM & 2025 Munich Quantum Software Company"
@@ -138,7 +138,7 @@ copybutton_prompt_text = r"(?:\(\.?venv\) )?(?:\[.*\] )?\$ "
 copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\\"
 
-modindex_common_prefix = ["mqt.qmap."]
+modindex_common_prefix = ["mqt.naviz."]
 
 autoapi_dirs = ["../python/mqt"]
 autoapi_python_use_implicit_namespaces = True
@@ -171,20 +171,20 @@ html_css_files = [
 html_theme_options = {
     "light_logo": "mqt_dark.png",
     "dark_logo": "mqt_light.png",
-    "source_repository": "https://github.com/munich-quantum-toolkit/qmap/",
+    "source_repository": "https://github.com/cda-tum/mqt-naviz/",
     "source_branch": "main",
     "source_directory": "docs/",
     "navigation_with_keys": True,
     "footer_icons": [
         {
             "name": "GitHub",
-            "url": "https://github.com/munich-quantum-toolkit/qmap/",
+            "url": "https://github.com/cda-tum/mqt-naviz/",
             "html": "",
             "class": "fa-brands fa-solid fa-github fa-2x",
         },
         {
             "name": "PyPI",
-            "url": "https://pypi.org/project/mqt-qmap/",
+            "url": "https://pypi.org/project/mqt-naviz/",
             "html": "",
             "class": "fa-brands fa-solid fa-python fa-2x",
         },
@@ -202,8 +202,8 @@ latex_engine = "pdflatex"
 latex_documents = [
     (
         master_doc,
-        "mqt_qmap.tex",
-        r"MQT QMAP\\{\Large A tool for Mapping Quantum Circuits to various Hardware Technologies}",
+        "mqt_naviz.tex",
+        r"MQT NAViz\\{\Large A tool for Mapping Quantum Circuits to various Hardware Technologies}",
         r"""Chair for Design Automation\\ Technical University of Munich, Germany\\
         \href{mailto:quantum.cda@xcit.tum.de}{quantum.cda@xcit.tum.de}\\
         Munich Quantum Software Company GmbH\\Garching near Munich, Germany""",
