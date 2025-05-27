@@ -11,7 +11,7 @@ This documentation provides a comprehensive guide to the MQT NAViz library, incl
 The source code of MQT NAViz is publicly available on GitHub at [cda-tum/mqt-naviz](https://github.com/cda-tum/mqt-naviz), while pre-built binaries are available via [PyPI](https://pypi.org/project/mqt.naviz/) for all major operating systems and all modern Python versions.
 
 We recommend you to start with the {doc}`installation instructions <installation>`.
-Then proceed to the {doc}`usage page <usage>` and read the {doc}`reference documentation <api/mqt/naviz/index>`.
+Then proceed to the {doc}`usage page <usage>` or {doc}`file format page <file_format>` and read the {doc}`reference documentation <api/mqt/naviz/index>`.
 
 We appreciate any feedback and contributions to the project. If you want to contribute, you can find more information in the {doc}`contribution guide <contributing>`.
 If you are having trouble with the installation or the usage of NAViz, please let us know at our {doc}`support page <support>` or by reaching out to us at [quantum.cda@xcit.tum.de](mailto:quantum.cda@xcit.tum.de).
