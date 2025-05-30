@@ -148,3 +148,12 @@ repos:
             "--trailing-commas",
             "--remove-empty-fields",
           ]
+
+  # Format Rust files
+  - repo: local
+    hooks:
+      - id: rustfmt
+        name: rustfmt
+        entry: rustfmt
+        language: system
+        types: [rust]

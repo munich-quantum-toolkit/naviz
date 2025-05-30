@@ -20,8 +20,8 @@ An example can be seen below:
 from naviz import *
 
 # Get machine and style from repository:
-machine = Repository.machines().get('example')
-style = Repository.machines().get('tum')
+machine = Repository.machines().get("example")
+style = Repository.machines().get("tum")
 
 # Alternatively, you can also use manual configurations:
 machine = "<...>"
@@ -31,5 +31,13 @@ style = "<...>"
 export_video("<naviz instructions>", "out.mp4", (1920, 1080), 60, machine, style)
 
 # Render mqt na output to `out.mp4` at 1080p60 with the default import options:
-export_video("<mqt na instructions>", "out.mp4", (1920, 1080), 60, machine, style, default_import_settings("MqtNa")) # Alternatively substitute the call to `default_import_settings` with your custom import settings
+export_video(
+    "<mqt na instructions>",
+    "out.mp4",
+    (1920, 1080),
+    60,
+    machine,
+    style,
+    default_import_settings("MqtNa"),
+)  # Alternatively substitute the call to `default_import_settings` with your custom import settings
 ```

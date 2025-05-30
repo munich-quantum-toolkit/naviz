@@ -59,6 +59,7 @@ In most practical cases (under 64-bit Linux, MacOS incl. Apple Silicon, and Wind
 Once installed, you can check if the installation was successful by running:
 
 <!-- todo: adapt the following code -->
+
 ```console
 (.venv) $ python -c "import mqt.naviz; print(mqt.naviz.__version__)"
 ```

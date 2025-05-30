@@ -1,4 +1,5 @@
 <!-- [![PyPI](https://img.shields.io/pypi/v/mqt.naviz?logo=pypi&style=flat-square)](https://pypi.org/project/mqt.naviz/) -->
+
 ![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![CI](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-naviz/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/cda-tum/mqt-naviz/actions/workflows/ci.yml)
@@ -68,6 +69,7 @@ Thank you to all the contributors who have helped make MQT NAViz a reality!
 The following code gives an example of the usage:
 
 <!-- todo: Fill in example code below -->
+
 ```python3
 from mqt.naviz import ???
 ```
