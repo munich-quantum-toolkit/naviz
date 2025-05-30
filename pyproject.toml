@@ -19,7 +19,7 @@ name = "mqt.naviz"
 description = "A Visualizer for Neutral Atom Quantum Computers"
 readme = "README.md"
 authors = [
-    { name = "Nico Petzendorfer", email = "nico.petzendorfer.tum.de" },
+    { name = "Nico Petzendorfer", email = "nico.petzendorfer@tum.de" },
     { name = "Yannick Stade", email = "yannick.stade@tum.de" },
 ]
 keywords = ["MQT", "quantum-computing", "design-automation", "compiler", "visualization", "neutral-atoms"]
@@ -32,6 +32,12 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/cda-tum/mqt-naviz"
+Documentation = "https://mqt.readthedocs.io/projects/naviz"
+Issues = "https://github.com/cda-tum/mqt-naviz/issues"
+Discussions = "https://github.com/cda-tum/mqt-naviz/discussions"
 
 
 [tool.maturin]

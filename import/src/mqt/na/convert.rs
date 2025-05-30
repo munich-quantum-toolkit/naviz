@@ -27,7 +27,7 @@ pub struct ConvertOptions<'a> {
     pub global_zones: GlobalZoneNames<'a>,
 }
 
-impl<'a> Default for ConvertOptions<'a> {
+impl Default for ConvertOptions<'_> {
     fn default() -> Self {
         Self {
             atom_prefix: "atom".into(),
@@ -45,7 +45,7 @@ pub struct GlobalZoneNames<'a> {
     pub rz: Cow<'a, str>,
 }
 
-impl<'a> Default for GlobalZoneNames<'a> {
+impl Default for GlobalZoneNames<'_> {
     fn default() -> Self {
         Self {
             cz: "zone_cz".into(),

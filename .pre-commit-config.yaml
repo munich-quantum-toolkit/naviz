@@ -11,7 +11,7 @@ ci:
   autoupdate_commit_msg: "⬆️🪝 update pre-commit hooks"
   autoupdate_schedule: quarterly
   autofix_commit_msg: "🎨 pre-commit fixes"
-  skip: [mypy]
+  skip: [mypy, cargo-clippy]
 
 repos:
   # Standard hooks
@@ -70,6 +70,7 @@ repos:
     rev: v1.15.0
     hooks:
       - id: mypy
+        files: ^(python/mqt|test/python|noxfile.py)
         args: []
         additional_dependencies:
           - nox
@@ -152,17 +153,19 @@ repos:
   # Format Rust files
   - repo: local
     hooks:
-      - id: rustfmt
-        name: rustfmt
-        entry: rustfmt
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt
         language: system
         types: [rust]
+        pass_filenames: false # Running it on the whole project makes it a lot faster
 
   # Lint Rust files
   - repo: local
     hooks:
-      - id: clippy
+      - id: cargo-clippy
         name: cargo clippy
         entry: cargo clippy -- -D warnings
         language: system
         types: [rust]
+        pass_filenames: false # Must be run for the whole project
