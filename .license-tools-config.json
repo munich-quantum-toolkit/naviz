@@ -38,7 +38,7 @@
     ".*\\.naviz",
     ".*\\.na",
     ".*\\.profile",
-    "uv\\.lock",
+    ".*\\.lock",
     "py\\.typed",
     ".*build.*",
     "LICENSE.*"
