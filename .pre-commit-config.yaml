@@ -132,24 +132,6 @@ repos:
     hooks:
       - id: validate-pyproject
 
-  # Tidy up BibTeX files
-  - repo: https://github.com/FlamingTempura/bibtex-tidy
-    rev: v1.14.0
-    hooks:
-      - id: bibtex-tidy
-        args:
-          [
-            "--align=20",
-            "--curly",
-            "--months",
-            "--blank-lines",
-            "--sort",
-            "--strip-enclosing-braces",
-            "--sort-fields",
-            "--trailing-commas",
-            "--remove-empty-fields",
-          ]
-
   # Format Rust files
   - repo: local
     hooks:

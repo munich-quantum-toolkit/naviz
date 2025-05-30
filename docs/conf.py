@@ -56,7 +56,6 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx.ext.viewcode",
     "sphinxcontrib.inkscapeconverter",
-    "sphinxcontrib.bibtex",
 ]
 
 source_suffix = [".rst", ".md"]
