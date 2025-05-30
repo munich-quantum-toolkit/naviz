@@ -38,6 +38,6 @@ export_video(
     60,
     machine,
     style,
-    default_import_settings("MqtNa"),
+    default_import_settings("MQTNA"),
 )  # Alternatively substitute the call to `default_import_settings` with your custom import settings
 ```

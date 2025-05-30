@@ -1,3 +1,11 @@
+// Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
+// Copyright (c) 2025 Munich Quantum Software Company GmbH
+// All rights reserved.
+//
+// SPDX-License-Identifier: MIT
+//
+// Licensed under the MIT License
+
 //! A concrete format for the `.naviz`-format.
 //! Collects parsed instructions and directives into an [Instructions]-object.
 //! [TimedInstruction]s are collected into an [AbsoluteTimeline],

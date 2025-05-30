@@ -1,0 +1,34 @@
+# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
+# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+# Licensed under the MIT License
+
+[package]
+authors = ["FloezeTv <floeze@floeze.tv>"]
+categories = []
+description = "Python-interface for naviz"
+edition = "2021"
+keywords = ["naviz", "python"]
+license = "AGPL-3.0-or-later"
+name = "naviz-python"
+repository.workspace = true
+version = "0.1.1"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
+name = "naviz"
+
+[dependencies]
+futures = "0.3.31"
+naviz-animator = {path = "../animator"}
+naviz-import = {path = "../import", features = ["serde"]}
+naviz-parser = {path = "../parser"}
+naviz-repository = {path = "../repository"}
+naviz-video = {path = "../video"}
+pyo3 = "0.23.3"
+serde = "1.0.217"
+serde-pyobject = "0.5.0"

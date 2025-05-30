@@ -1,0 +1,152 @@
+# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
+# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+# Licensed under the MIT License
+
+[build-system]
+requires = [
+    "maturin>=1.8,<2.0",
+    "setuptools-scm>=8.3.1",
+]
+build-backend = "maturin"
+
+
+[project]
+name = "mqt.naviz"
+description = "A Visualizer for Neutral Atom Quantum Computers"
+readme = "README.md"
+authors = [
+    { name = "Nico Petzendorfer", email = "nico.petzendorfer.tum.de" },
+    { name = "Yannick Stade", email = "yannick.stade@tum.de" },
+]
+keywords = ["MQT", "quantum-computing", "design-automation", "compiler", "visualization", "neutral-atoms"]
+license = "MIT"
+license-files = ["LICENSE.md"]
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+
+
+[tool.maturin]
+module-name = "mqt.naviz"
+python-source = "python"
+manifest-path = "bindings/Cargo.toml"
+features = ["pyo3/extension-module"]
+
+
+[tool.mypy]
+files = ["python/mqt", "test/python", "noxfile.py"]
+mypy_path = ["$MYPY_CONFIG_FILE_DIR/python"]
+python_version = "3.9"
+warn_unused_configs = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+strict = true
+disallow_untyped_defs = false
+explicit_package_bases = true
+warn_unreachable = true
+
+
+[tool.ruff]
+line-length = 120
+preview = true
+unsafe-fixes = true
+src = ["python"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "C90", # <...> too complex
+    "COM812", # Conflicts with formatter
+    "CPY001", # Missing copyright notice at top of file
+    "ISC001", # Conflicts with formatter
+    "PLR09", # Too many <...>
+    "PLR2004", # Magic value used in comparison
+    "PLC0415", # Import should be at top of file
+    "S101", # Use of assert detected
+    "S404", # `subprocess` module is possibly insecure
+    "TID252"   # Prefer absolute imports over relative imports from parent modules
+]
+isort.required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.Callable".msg = "Use collections.abc.Callable instead."
+"typing.Iterator".msg = "Use collections.abc.Iterator instead."
+"typing.Mapping".msg = "Use collections.abc.Mapping instead."
+"typing.Sequence".msg = "Use collections.abc.Sequence instead."
+"typing.Set".msg = "Use collections.abc.Set instead."
+"typing.assert_never".msg = "Use mqt.core._compat.typing.assert_never instead."
+
+[tool.ruff.lint.per-file-ignores]
+"docs/**" = ["INP001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+
+[tool.pytest.ini_options]
+minversion = "7.2"
+testpaths = ["test/python"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--showlocals"]
+log_cli_level = "INFO"
+xfail_strict = true
+filterwarnings = [
+    "error",
+]
+
+
+[tool.coverage]
+run.source = ["mqt.naviz"]
+report.exclude_also = [
+    '\.\.\.',
+    'if TYPE_CHECKING:',
+    'raise AssertionError',
+    'raise NotImplementedError',
+    'def __dir__()',  # Ignore __dir__ method that exists mainly for better IDE support
+    '@overload'  # Overloads are only for static typing
+]
+
+
+[tool.uv]
+required-version = ">=0.5.20"
+reinstall-package = ["mqt.maviz"]
+
+[tool.uv.sources]
+mqt-naviz = { workspace = true }
+
+
+[dependency-groups]
+build = [
+    "maturin>=1.8,<2.0",
+    "setuptools-scm>=8.3.1",
+]
+docs = [
+    "ipywidgets>=8.1.7",
+    "furo>=2024.8.6",
+    "setuptools-scm>=8.3.1",
+    "sphinx-autoapi>=3.6.0",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-design>=0.6.1",
+    "sphinxcontrib-bibtex>=2.6.3",
+    "sphinxcontrib-svg2pdfconverter>=1.3.0",
+    "sphinxext-opengraph>=0.10.0",
+    "myst-nb>=1.2.0",
+    "sphinx>=7.4.7",
+    "sphinx>=8.1.3; python_version >= '3.10'",
+    "sphinx>=8.2.3; python_version >= '3.11'",
+]
+test = [
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+]
+dev = [
+    {include-group = "build"},
+    {include-group = "docs"},
+    {include-group = "test"},
+]

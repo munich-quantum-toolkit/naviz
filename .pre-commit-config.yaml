@@ -157,3 +157,12 @@ repos:
         entry: rustfmt
         language: system
         types: [rust]
+
+  # Lint Rust files
+  - repo: local
+    hooks:
+      - id: clippy
+        name: cargo clippy
+        entry: cargo clippy -- -D warnings
+        language: system
+        types: [rust]

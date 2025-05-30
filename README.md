@@ -71,7 +71,7 @@ The following code gives an example of the usage:
 <!-- todo: Fill in example code below -->
 
 ```python3
-from mqt.naviz import ???
+from mqt.naviz import Repository, export_video
 ```
 
 **Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/naviz).**

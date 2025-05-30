@@ -13,15 +13,6 @@ from __future__ import annotations
 import warnings
 from importlib import metadata
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-import pybtex.plugin
-from pybtex.style.formatting.unsrt import Style as UnsrtStyle
-from pybtex.style.template import field, href
-
-if TYPE_CHECKING:
-    from pybtex.database import Entry
-    from pybtex.richtext import HRef
 
 ROOT = Path(__file__).parent.parent.resolve()
 
@@ -115,24 +106,6 @@ nb_mime_priority_overrides = [
     ("latex", "image/svg+xml", 15),
 ]
 
-
-class CDAStyle(UnsrtStyle):
-    """Custom style for including PDF links."""
-
-    def format_url(self, _e: Entry) -> HRef:  # noqa: PLR6301
-        """Format URL field as a link to the PDF.
-
-        Returns:
-            The formatted URL field.
-        """
-        url = field("url", raw=True)
-        return href()[url, "[PDF]"]
-
-
-pybtex.plugin.register_plugin("pybtex.style.formatting", "cda_style", CDAStyle)
-
-bibtex_bibfiles = ["lit_header.bib", "refs.bib"]
-bibtex_default_style = "cda_style"
 
 copybutton_prompt_text = r"(?:\(\.?venv\) )?(?:\[.*\] )?\$ "
 copybutton_prompt_is_regexp = True
