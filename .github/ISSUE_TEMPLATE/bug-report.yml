@@ -25,7 +25,7 @@ body:
       placeholder: |
         - Operating System (including version):
         - MQT NAViz version:
-        - Python/C++ compiler version (if applicable):
+        - Python/Rust compiler version (if applicable):
         - Any relevant dependencies and their versions:
     validations:
       required: true

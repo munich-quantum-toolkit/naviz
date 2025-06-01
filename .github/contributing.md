@@ -62,12 +62,11 @@ Nevertheless, please try to follow the guidelines below as well as you can to he
 
 Here are some tips for finding the cause of certain failures:
 
-- If any of the `CI / 🇨‌ Test` checks fail, this indicates build errors or test failures in the C++ part of the code base. Look through the respective logs on GitHub for any error or failure messages.
+- If any of the `CI / 🦀 Test` checks fail, this indicates build errors or test failures in the Rust part of the code base. Look through the respective logs on GitHub for any error or failure messages.
 - If any of the `CI / 🐍 Test` checks fail, this indicates build errors or test failures in the Python part of the code base. Look through the respective logs on GitHub for any error or failure messages.
 - If any of the `codecov/\*` checks fail, this means that your changes are not appropriately covered by tests or that the overall project coverage decreased too much. Ensure that you include tests for all your changes in the PR.
-- If `cpp-linter` comments on your PR with a list of warnings, these have been raised by `clang-tidy` when checking the C++ part of your changes for warnings or style guideline violations. The individual messages frequently provide helpful suggestions on how to fix the warnings. If you don't see any messages, but the `🇨‌ Lint / 🚨 Lint` check is red, click on the `Details` link to see the full log of the check and a step summary.
-- If the `pre-commit.ci` check fails, some of the `pre-commit` checks failed and could not be fixed automatically by the _pre-commit.ci_ bot. Such failures are most likely related to the Python part of the code base. The individual log messages frequently provide helpful suggestions on how to fix the warnings.
-- If the `docs/readthedocs.org:\*` check fails, the documentation could not be built properly. Inspect the corresponding log file for any errors.
+- If the `pre-commit.ci` check fails, some of the `pre-commit` checks have failed and could not be fixed automatically by the _pre-commit.ci_ bot. Such failures are most likely related to the Python part of the code base. The individual log messages frequently provide helpful suggestions on how to fix the warnings.
+- If the `docs/readthedocs.org:\*` check fails, the documentation cannot be built properly. Inspect the corresponding log file for any errors.
 
 ---
 

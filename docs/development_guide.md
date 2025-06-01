@@ -162,25 +162,48 @@ The docker container can then be run using `docker run -d -p 8080:80 naviz`, whi
 
 ### Rust Testing and Code Coverage
 
-<!-- todo -->
+All tests are contained in the {code}`test` directory, which is further divided into subdirectories for different parts of the library.
+You are expected to write tests for any new features you implement and ensure that all tests pass.
+Our CI pipeline on GitHub will also run the tests and check for any failures.
+It will also collect code coverage information and upload it to [Codecov](https://codecov.io/gh/munich-quantum-toolkit/core).
+Our goal is to have new contributions at least maintain the current code coverage level, while striving for covering as much of the code as possible.
+Try to write meaningful tests that actually test the correctness of the code and not just exercise the code paths.
 
-### C++ Code Formatting and Linting
+To run the tests, call
 
-<!-- todo -->
+```console
+$ cargo test
+```
 
-Our pre-commit configuration also includes clang-format.
-If you have installed pre-commit, it will automatically run clang-format on your code before each commit.
-If you do not have pre-commit setup, the [pre-commit.ci](https://pre-commit.ci) bot will run clang-format on your code
+from the main project directory after building the project (as described above).
+
+### Rust Code Formatting and Linting
+
+To ensure the quality of the code and that it conforms to these guidelines, we use
+
+- [rustfmt](https://rust-lang.github.io/rustfmt) -- a tool that automatically formats Rust code according to a given style guide, and
+- [clippy](https://doc.rust-lang.org/clippy/l) -- a static analysis tool that checks for common mistakes in Rust code
+
+:::{note}
+You can run rustfmt on the entire project by calling
+
+```console
+$ cargo fmt
+```
+
+from the root directory of the project.
+:::
+
+Our pre-commit configuration also includes rustfmt.
+If you have installed pre-commit, it will automatically run cargo fmt on your code before each commit.
+If you do not have pre-commit setup, the [pre-commit.ci](https://pre-commit.ci) bot will run cargo fmt on your code
 and automatically format it according to the style guide.
 
 :::{tip}
 Remember to pull the changes back into your local repository after the bot has formatted your code to avoid merge conflicts.
 :::
 
-Our CI pipeline will also run clang-tidy over the changes in your pull request and report any issues it finds.
-Due to technical limitations, the workflow can only post pull request comments if the changes are not coming from a fork.
-If you are working on a fork, you can still see the clang-tidy results either in the GitHub Actions logs,
-on the workflow summary page, or in the "Files changed" tab of the pull request.
+Our CI pipeline will also run clippy over the changes in your pull request and report any issues it finds.
 
 ### Rust Documentation
 
@@ -198,8 +221,39 @@ For more information on [`maturin`](https://github.com/PyO3/maturin) and the dif
 
 The Python part of the code base is tested by unit tests using the [pytest](https://docs.pytest.org/en/latest/) framework.
 The corresponding test files can be found in the {code}`test/python` directory.
+A {code}`nox` session is provided to conveniently run the Python tests.
 
-<!-- todo -->
+```console
+$ nox -s tests
+```
+
+The above command will automatically build the project and run the tests on all supported Python versions.
+For each Python version, it will create a virtual environment (in the {code}`.nox` directory) and install the project into it.
+We take extra care to install the project without build isolation so that rebuilds are typically very fast.
+
+If you only want to run the tests on a specific Python version, you can pass the desired Python version to the {code}`nox` command.
+
+```console
+$ nox -s tests-3.12
+```
+
+:::{note}
+If you don't want to use {code}`nox`, you can also run the tests directly using {code}`pytest`.
+
+```console
+(.venv) $ pytest test/python
+```
+
+This requires that you have the project installed in the virtual environment and the test dependency group installed.
+:::
+
+We provide an additional nox session {code}`minimums` that makes use of `uv`'s `--resolution=lowest-direct` flag to
+install the lowest possible versions of the direct dependencies.
+This ensures that the project can still be built and the tests pass with the minimum required versions of the dependencies.
+
+```console
+$ nox -s minimums
+```
 
 ### Python Code Formatting and Linting
 

@@ -45,7 +45,7 @@ jobs:
       enable-windows2025-debug: false
       enable-windows11-arm-debug: false
 
-  # run extensive C++ tests whenever this is on a PR and the PR has the `extensive-rust-ci` label
+  # run extensive Rust tests whenever this is on a PR and the PR has the `extensive-rust-ci` label
   rust-tests-extensive:
     name: 🦀 Test (Extensive)
     needs: change-detection
