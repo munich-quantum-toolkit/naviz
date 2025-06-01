@@ -127,6 +127,11 @@ reinstall-package = ["mqt.maviz"]
 mqt-naviz = { workspace = true }
 
 
+[tool.repo-review]
+# we do not have a .github/dependabot.yml file because we use renovate for dependency management
+ignore = ["GH200"]
+
+
 [dependency-groups]
 build = [
     "maturin>=1.8,<2.0",

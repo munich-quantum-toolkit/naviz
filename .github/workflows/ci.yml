@@ -1,0 +1,229 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  change-detection:
+    name: 🔍 Change
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-change-detection.yml@v1.9
+
+  rust-tests:
+    name: 🦀 Test
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-rust-tests)
+    uses: ./.github/workflows/reusable-rust-ci.yml
+    with:
+      # Runs to enable
+      enable-ubuntu2404-release: true
+      enable-ubuntu2404-arm-release: true
+      enable-macos13-release: true
+      enable-macos14-release: true
+      enable-windows2022-release: true
+      enable-windows11-arm-release: true
+      # Runs to disable
+      enable-ubuntu2404-debug: false
+      enable-ubuntu2204-release: false
+      enable-ubuntu2204-debug: false
+      enable-ubuntu2404-arm-debug: false
+      enable-ubuntu2204-arm-release: false
+      enable-ubuntu2204-arm-debug: false
+      enable-macos13-debug: false
+      enable-macos14-debug: false
+      enable-macos15-release: false
+      enable-macos15-debug: false
+      enable-windows2022-debug: false
+      enable-windows2025-release: false
+      enable-windows2025-debug: false
+      enable-windows11-arm-debug: false
+
+  # run extensive C++ tests whenever this is on a PR and the PR has the `extensive-rust-ci` label
+  rust-tests-extensive:
+    name: 🦀 Test (Extensive)
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-rust-tests) && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'extensive-rust-ci')
+    uses: ./.github/workflows/reusable-rust-ci.yml
+    with:
+      # Runs to enable
+      enable-ubuntu2404-debug: true
+      enable-ubuntu2204-release: true
+      enable-ubuntu2204-debug: true
+      enable-ubuntu2404-arm-debug: true
+      enable-ubuntu2204-arm-release: true
+      enable-ubuntu2204-arm-debug: true
+      enable-macos13-debug: true
+      enable-macos14-debug: true
+      enable-macos15-release: true
+      enable-macos15-debug: true
+      enable-windows2022-debug: true
+      enable-windows2025-release: true
+      enable-windows2025-debug: true
+      enable-windows11-arm-debug: true
+      # Runs to disable (these are already enabled in the non-extensive run)
+      enable-ubuntu2404-release: false
+      enable-ubuntu2404-arm-release: false
+      enable-macos13-release: false
+      enable-macos14-release: false
+      enable-windows2022-release: false
+      enable-windows11-arm-release: false
+
+  rust-coverage:
+    name: 🦀 Coverage
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-rust-tests)
+    uses: ./.github/workflows/reusable-rust-coverage.yml
+    permissions:
+      contents: read
+      id-token: write
+
+  rust-linter:
+    name: 🦀 Lint
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-rust-linter)
+    uses: ./.github/workflows/reusable-rust-linter.yml
+    with:
+      build-project: true
+
+  python-tests:
+    name: 🐍 Test
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-python-tests)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-ci.yml@v1.9
+    with:
+      # Runs to enable
+      enable-ubuntu2404: true
+      enable-ubuntu2404-arm: true
+      enable-macos13: true
+      enable-macos14: true
+      enable-windows2022: true
+      # Runs to disable
+      enable-ubuntu2204: false
+      enable-ubuntu2204-arm: false
+      enable-macos15: false
+      enable-windows2025: false
+      # Testing on Windows 11 ARM is not supported yet
+      enable-windows11-arm: false
+    permissions:
+      contents: read
+      id-token: write
+
+  # run extensive Python tests whenever this is on a PR and the PR has the `extensive-python-ci` label
+  python-tests-extensive:
+    name: 🐍 Test (Extensive)
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-python-tests) && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'extensive-python-ci')
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-ci.yml@v1.9
+    with:
+      # Runs to enable
+      enable-ubuntu2204: true
+      enable-ubuntu2204-arm: true
+      enable-macos15: true
+      enable-windows2025: true
+      # Runs to disable (these are already enabled in the non-extensive run)
+      enable-ubuntu2404: false
+      enable-ubuntu2404-arm: false
+      enable-macos13: false
+      enable-macos14: false
+      enable-windows2022: false
+      # Testing on Windows 11 ARM is not supported yet
+      enable-windows11-arm: false
+    permissions:
+      contents: read
+      id-token: write
+
+  python-linter:
+    name: 🐍 Lint
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-python-tests)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@v1.9
+
+  code-ql:
+    name: 📝 CodeQL
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-code-ql)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql.yml@v1.9
+
+  cd:
+    name: 🚀 CD
+    needs: change-detection
+    if: fromJSON(needs.change-detection.outputs.run-cd)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-packaging.yml@v1.9
+    with:
+      # Runs to enable
+      enable-ubuntu2404: true
+      enable-ubuntu2404-arm: true
+      enable-macos13: true
+      enable-macos14: true
+      enable-windows2022: true
+      enable-windows11-arm: true
+      # Runs to disable
+      enable-ubuntu2204: false
+      enable-ubuntu2204-arm: false
+      enable-macos15: false
+      enable-windows2025: false
+
+  required-checks-pass: # This job does nothing and is only used for branch protection
+    name: 🚦 Check
+    if: always()
+    needs:
+      - change-detection
+      - rust-tests
+      - rust-tests-extensive
+      - rust-coverage
+      - rust-linter
+      - python-tests
+      - python-tests-extensive
+      - python-linter
+      - code-ql
+      - cd
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          allowed-skips: >-
+            ${{
+              fromJSON(needs.change-detection.outputs.run-rust-tests)
+              && '' || 'rust-tests,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-rust-tests) && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'extensive-rust-ci')
+              && '' || 'rust-tests-extensive,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-rust-tests)
+              && '' || 'rust-coverage,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-rust-linter)
+              && '' || 'rust-linter,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-python-tests)
+              && '' || 'python-tests,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-python-tests) && github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'extensive-python-ci')
+              && '' || 'python-tests-extensive,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-python-tests)
+              && '' || 'python-linter,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-code-ql)
+              && '' || 'code-ql,'
+            }}
+            ${{
+              fromJSON(needs.change-detection.outputs.run-cd)
+              && '' || 'cd,'
+            }}
+          jobs: ${{ toJSON(needs) }}

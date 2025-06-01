@@ -1,0 +1,38 @@
+# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
+# Copyright (c) 2025 Munich Quantum Software Company GmbH
+# All rights reserved.
+#
+# SPDX-License-Identifier: MIT
+#
+# Licensed under the MIT License
+
+name: 🦀 • Lint
+on:
+  workflow_call:
+    inputs:
+      files-changed-only:
+        description: "Whether to only lint files that have changed"
+        default: true
+        type: boolean
+      build-project:
+        description: "Whether to build the project"
+        default: false
+        type: boolean
+
+jobs:
+  lint:
+    name: 🚨 Lint
+    runs-on: ubuntu-latest
+    steps:
+      # check out the repository (including submodules)
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      # build the project, if configured to do so
+      - if: ${{ inputs.build-project }}
+        name: Build
+        run: cargo build --verbose
+      # runs the linter
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features

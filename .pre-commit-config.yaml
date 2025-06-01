@@ -11,7 +11,7 @@ ci:
   autoupdate_commit_msg: "⬆️🪝 update pre-commit hooks"
   autoupdate_schedule: quarterly
   autofix_commit_msg: "🎨 pre-commit fixes"
-  skip: [mypy, cargo-clippy]
+  skip: [mypy]
 
 repos:
   # Standard hooks
@@ -141,13 +141,3 @@ repos:
         language: system
         types: [rust]
         pass_filenames: false # Running it on the whole project makes it a lot faster
-
-  # Lint Rust files
-  - repo: local
-    hooks:
-      - id: cargo-clippy
-        name: cargo clippy
-        entry: cargo clippy -- -D warnings
-        language: system
-        types: [rust]
-        pass_filenames: false # Must be run for the whole project
