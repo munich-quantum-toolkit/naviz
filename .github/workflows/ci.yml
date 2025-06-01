@@ -14,7 +14,7 @@ concurrency:
 jobs:
   change-detection:
     name: 🔍 Change
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-change-detection.yml@v1.9
+    uses: ./.github/workflows/reusable-change-detection.yml
 
   rust-tests:
     name: 🦀 Test
