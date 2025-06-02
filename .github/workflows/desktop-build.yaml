@@ -1,0 +1,96 @@
+name: Build Releases
+
+# This workflow builds the released desktop-version of naviz and drafts a new release.
+
+on:
+  push:
+    tags:
+      - "v*" # Build whenever a full version of naviz is released
+
+env:
+  CACHE_KEY: naviz-desktop
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            image: macos-latest
+          - target: x86_64-apple-darwin
+            image: macos-latest
+          - target: aarch64-unknown-linux-gnu
+            image: ubuntu-latest
+            prepare: sudo apt install -y gcc-aarch64-linux-gnu
+            env:
+              CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          - target: i686-unknown-linux-gnu
+            image: ubuntu-latest
+            prepare: sudo apt install -y gcc-i686-linux-gnu
+            env:
+              CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER: i686-linux-gnu-gcc
+          - target: x86_64-unknown-linux-gnu
+            image: ubuntu-latest
+          - target: aarch64-pc-windows-msvc
+            image: windows-latest
+            app-suffix: .exe
+          - target: i686-pc-windows-msvc
+            image: windows-latest
+            app-suffix: .exe
+          - target: x86_64-pc-windows-msvc
+            image: windows-latest
+            app-suffix: .exe
+      fail-fast: false
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.image }}
+    env: ${{ matrix.env || fromJSON('{}')}}
+    steps:
+      - name: Prepare
+        run: ${{ matrix.prepare }}
+        if: ${{ matrix.prepare }}
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # fetch full history with tags
+          fetch-depth: 0
+          # but only history (treeless)
+          filter: "tree:0"
+          # https://github.com/actions/checkout/issues/882#issuecomment-2153087319
+          ref: ${{ github.ref }}
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --target ${{ matrix.target }}
+      - name: Build
+        working-directory: gui
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: |
+            ./target/${{ matrix.target }}/release/naviz-gui${{ matrix.app-suffix }}
+          name: naviz-${{ matrix.target }}
+  release:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Rename binaries
+        working-directory: artifacts
+        run: |
+          mkdir ../bin
+          for release in */
+          do
+            mv "${release}"* "../bin/${release%/}"
+          done
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: bin/*
