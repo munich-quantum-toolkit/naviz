@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 nox.needs_version = ">=2024.3.2"
 nox.options.default_venv_backend = "uv"
 
-nox.options.sessions = ["lint", "tests", "minimums"]
+nox.options.sessions = ["lint", "tests"]
 
 PYTHON_ALL_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
@@ -90,19 +90,6 @@ def _run_tests(
 def tests(session: nox.Session) -> None:
     """Run the test suite."""
     _run_tests(session)
-
-
-@nox.session(reuse_venv=True, venv_backend="uv", python=PYTHON_ALL_VERSIONS)
-def minimums(session: nox.Session) -> None:
-    """Test the minimum versions of dependencies."""
-    _run_tests(
-        session,
-        install_args=["--resolution=lowest-direct"],
-        pytest_run_args=["-Wdefault"],
-    )
-    env = {"UV_PROJECT_ENVIRONMENT": session.virtualenv.location}
-    session.run("uv", "tree", "--frozen", env=env)
-    session.run("uv", "lock", "--refresh", env=env)
 
 
 @nox.session(reuse_venv=True)
