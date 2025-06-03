@@ -39,7 +39,8 @@ Nevertheless, please try to follow the guidelines below as well as you can to he
 ## Core Guidelines
 
 - ["Commit early and push often"](https://www.worklytics.co/blog/commit-early-push-often).
-- Write meaningful commit messages, preferably using [gitmoji](https://gitmoji.dev) for additional context.
+- Follow the branch naming `<type>/<issue-number>-<short-description>`.
+- Write meaningful commit messages following [conventional commits](https://www.conventionalcommits.org/).
 - Focus on a single feature or bug at a time and only touch relevant files. Split multiple features into separate contributions.
 - Add tests for new features to ensure they work as intended.
 - Document new features appropriately. For user-facing changes, add an entry to the `CHANGELOG.md` file. In case of breaking changes, please also update the `UPGRADING.md` file.
