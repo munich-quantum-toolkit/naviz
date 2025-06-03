@@ -30,6 +30,15 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
+  # Lint commit messages
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: commitlint
+        entry: npx commitlint --edit $COMMIT_EDITMSG
+        language: system
+        stages: [commit-msg]
+
   # Clean jupyter notebooks
   - repo: https://github.com/srstevenson/nb-clean
     rev: 4.0.1
