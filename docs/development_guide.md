@@ -113,7 +113,7 @@ Ready to contribute to the project? This guide will get you started.
    Afterwards, you can install the pre-commit hooks with
 
    ```console
-   $ pre-commit install
+   $ pre-commit install && pre-commit install --hook-type commit-msg
    ```
 
 ## Working on the Rust library
@@ -267,7 +267,7 @@ There are two ways of using these hooks:
 - You can install the hooks manually by running
 
   ```console
-  $ pre-commit install
+  $ pre-commit install && pre-commit install --hook-type commit-msg
   ```
 
   in the project root directory.

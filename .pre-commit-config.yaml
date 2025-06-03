@@ -4,7 +4,7 @@
 #
 # To install pre-commit hooks that run every time you commit:
 #
-#     pre-commit install
+#     pre-commit install && pre-commit install --hook-type commit-msg
 #
 
 ci:
@@ -31,13 +31,10 @@ repos:
       - id: trailing-whitespace
 
   # Lint commit messages
-  - repo: local
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.2
     hooks:
-      - id: commitlint
-        name: commitlint
-        entry: npx commitlint --edit $COMMIT_EDITMSG
-        language: system
-        stages: [commit-msg]
+      - id: commitizen
 
   # Clean jupyter notebooks
   - repo: https://github.com/srstevenson/nb-clean
