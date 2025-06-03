@@ -94,6 +94,9 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml, markdown, html, css, scss, javascript, json]
+        # Exclude
+        # - gui/index.html and gui/assets/sw.js, which are part of a template
+        exclude: ^gui/(index\.html|assets/sw\.js)$
 
   # Check for spelling
   - repo: https://github.com/crate-ci/typos

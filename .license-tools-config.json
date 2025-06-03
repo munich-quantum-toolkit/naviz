@@ -41,6 +41,8 @@
     ".*\\.lock",
     "py\\.typed",
     ".*build.*",
-    "LICENSE.*"
+    "LICENSE.*",
+    "gui/assets/sw.js",
+    "gui/index.html"
   ]
 }
