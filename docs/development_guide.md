@@ -37,7 +37,7 @@ Ready to contribute to the project? This guide will get you started.
 3. Create a branch for local development
 
    ```console
-   $ git checkout -b name-of-your-bugfix-or-feature
+   $ git checkout -b <type>/<issue-number>-<short-description>
    ```
 
    Now you can make your changes locally.
@@ -162,11 +162,10 @@ The docker container can then be run using `docker run -d -p 8080:80 naviz`, whi
 
 ### Rust Testing and Code Coverage
 
-All tests are contained in the {code}`test` directory, which is further divided into subdirectories for different parts of the library.
 You are expected to write tests for any new features you implement and ensure that all tests pass.
 Our CI pipeline on GitHub will also run the tests and check for any failures.
 It will also collect code coverage information and upload it to [Codecov](https://codecov.io/gh/munich-quantum-toolkit/core).
-Our goal is to have new contributions at least maintain the current code coverage level, while striving for covering as much of the code as possible.
+Our goal is to have new contributions and at least maintain the current code coverage level while striving to cover as much of the code as possible.
 Try to write meaningful tests that actually test the correctness of the code and not just exercise the code paths.
 
 To run the tests, call
