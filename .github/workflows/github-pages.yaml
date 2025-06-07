@@ -12,6 +12,11 @@ on:
     branches:
       - main
 
+# Cancel any old builds when starting a new build
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 env:
   CACHE_KEY: gh-pages_naviz-web
 
