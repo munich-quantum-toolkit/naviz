@@ -1,11 +1,3 @@
-# Copyright (c) 2023 - 2025 Chair for Design Automation, TUM
-# Copyright (c) 2025 Munich Quantum Software Company GmbH
-# All rights reserved.
-#
-# SPDX-License-Identifier: MIT
-#
-# Licensed under the MIT License
-
 # The `change-detection` job determines which CI workflows to run based on the changes in a pull request or push.
 # The outputs of the `change-detection` job can then be used to conditionally run other jobs in the workflow.
 
