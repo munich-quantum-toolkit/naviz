@@ -1,5 +1,5 @@
 # Base image with build tools
-FROM --platform=$BUILDPLATFORM rust:1.84-alpine AS base
+FROM --platform=$BUILDPLATFORM rust:1.87-alpine AS base
 
 # Dependencies:
 # bash, curl: Installing cargo-binstall
@@ -9,6 +9,9 @@ RUN apk add bash curl git musl-dev
 
 # `wasm-bindgen-cli` for `aarch64` only compiled for glibc; install `gcompat`
 RUN if [[ "$(uname -m)" == "aarch64" ]]; then apk add gcompat; fi
+
+# Copy rust-toolchain to install and use the specified toolchain
+COPY rust-toolchain.toml ./
 
 # Rust toolchain for wasm
 RUN rustup target add wasm32-unknown-unknown

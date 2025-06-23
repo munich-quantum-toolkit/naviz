@@ -57,12 +57,11 @@ jobs:
           filter: "tree:0"
           # https://github.com/actions/checkout/issues/882#issuecomment-2153087319
           ref: ${{ github.ref }}
-      - name: Restore cache
-        uses: Swatinem/rust-cache@v2
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
-      - name: Install Rust toolchain
-        run: rustup toolchain install stable --target ${{ matrix.target }}
+          cache-key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
+          target: ${{ matrix.target }}
       - name: Build
         working-directory: gui
         run: cargo build --release --target ${{ matrix.target }}

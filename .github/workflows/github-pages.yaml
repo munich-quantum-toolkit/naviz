@@ -31,17 +31,13 @@ jobs:
           fetch-depth: 0
           # but only history (treeless)
           filter: "tree:0"
-      - name: Restore cache
-        uses: Swatinem/rust-cache@v2
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          key: ${{ env.CACHE_KEY }}
-      - name: Install Rust toolchain
-        run: rustup target add wasm32-unknown-unknown
-      - name: Setup cargo binstall
-        uses: cargo-bins/cargo-binstall@main
+          cache-key: ${{ env.CACHE_KEY }}
+          target: wasm32-unknown-unknown
       - name: Install trunk
-        # `--force`: https://github.com/Swatinem/rust-cache/issues/204
-        run: cargo binstall trunk --force
+        run: cargo install trunk
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
