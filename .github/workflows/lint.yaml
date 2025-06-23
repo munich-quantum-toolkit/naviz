@@ -1,0 +1,35 @@
+name: Lint
+
+# This workflow lints the code and uploads new findings to GitHub.
+# Newly introduced findings will be added to pull requests as review comments.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  CACHE_KEY: lint
+
+jobs:
+  lint:
+    name: Run Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup Rust Toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy
+          cache-key: ${{ env.CACHE_KEY }}
+          rustflags: "" # Don't report warnings as errors
+      - name: Install tools
+        run: cargo install clippy-sarif sarif-fmt
+      - name: Run Clippy
+        run: cargo clippy --all-features --all-targets --keep-going --message-format=json | sort -u | clippy-sarif | tee clippy.sarif | sarif-fmt --color=always
+      - name: Upload Findings
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: clippy.sarif
