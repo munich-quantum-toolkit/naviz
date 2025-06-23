@@ -33,6 +33,7 @@ share/python-wheels/
 # Sphinx documentation
 docs/_build/
 docs/api/
+docs/crates/
 
 # Environments
 .env*

@@ -150,12 +150,12 @@ If Rust was installed using [rustup](https://rustup.rs/), this can be achieved b
 Afterward, [`trunk`](https://trunkrs.dev/) needs to be installed using `cargo install trunk.`
 
 After all build tools and compilers are installed, the web version of NAViz can be built by running `trunk build --release`
-in [`gui`](./gui).
+in [`gui`](../gui/index.html).
 After the build is finished, the NAViz web version can be found in `gui/dist` and can be deployed to a web server of choice.
 
 #### Web (Docker)
 
-Alternatively, a container can be built for the web version of NAViz using the provided [`Dockerfile`](./Dockerfile).
+Alternatively, a container can be built for the web version of NAViz using the provided [`Dockerfile`](../Dockerfile).
 To build the container, simply run `docker build -t naviz .` (assuming [`docker`](https://www.docker.com/) is installed).
 
 The docker container can then be run using `docker run -d -p 8080:80 naviz`, which will start the web server on port `8080`.
@@ -206,7 +206,8 @@ Our CI pipeline will also run clippy over the changes in your pull request and r
 
 ### Rust Documentation
 
-<!-- todo -->
+The Rust API documentation is integrated into the overall documentation that we host on ReadTheDocs using the
+[`sphinxcontrib-rust`](https://sphinxcontrib-rust.readthedocs.io/en/stable/) extension for Sphinx.
 
 ## Working on the Python package
 

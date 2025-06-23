@@ -48,6 +48,7 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx.ext.viewcode",
     "sphinxcontrib.inkscapeconverter",
+    "sphinxcontrib_rust",
 ]
 
 source_suffix = [".rst", ".md"]
@@ -124,6 +125,7 @@ napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 
 # -- Options for HTML output -------------------------------------------------
+
 html_theme = "furo"
 html_static_path = ["_static"]
 html_css_files = [
@@ -219,3 +221,16 @@ latex_domain_indices = False
 latex_docclass = {
     "howto": "IEEEtran",
 }
+
+# -- Options for Rust output -------------------------------------------------
+
+rust_crates = {
+    "animator": "animator",
+    "bindings": "bindings",
+    "renderer": "renderer",
+    "repository": "repository",
+    "state": "state",
+    "video": "video",
+}
+rust_doc_dir = "docs/crates"
+rust_rustdoc_fmt = "md"

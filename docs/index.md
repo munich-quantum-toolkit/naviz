@@ -67,4 +67,10 @@ development_guide
 :caption: API Reference
 
 api/mqt/naviz/index
+crates/animator/lib
+crates/bindings/lib
+crates/renderer/lib
+crates/repository/lib
+crates/state/lib
+crates/video/lib
 ```
