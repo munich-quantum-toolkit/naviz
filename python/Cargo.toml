@@ -21,6 +21,6 @@ naviz-import = {path = "../import", features = ["serde"]}
 naviz-parser = {path = "../parser"}
 naviz-repository = {path = "../repository"}
 naviz-video = {path = "../video"}
-pyo3 = "0.23.3"
+pyo3 = "0.24.2"
 serde = "1.0.217"
-serde-pyobject = "0.5.0"
+serde-pyobject = "0.6.2"
