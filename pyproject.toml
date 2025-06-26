@@ -7,7 +7,7 @@ build-backend = "maturin"
 
 
 [project]
-name = "mqt.naviz"
+name = "mqt-naviz"
 description = "A Visualizer for Neutral Atom Quantum Computers"
 readme = "README.md"
 authors = [
@@ -33,10 +33,29 @@ Discussions = "https://github.com/cda-tum/mqt-naviz/discussions"
 
 
 [tool.maturin]
-module-name = "mqt.naviz"
+module-name = "mqt.naviz.naviz"
 python-source = "python"
 manifest-path = "bindings/Cargo.toml"
 features = ["pyo3/extension-module"]
+
+
+[tool.check-sdist]
+sdist-only = ["python/mqt/naviz/_version.py"]
+git-only = [
+    "configs/*",
+    "docs/*",
+    "gui/*",
+    ".commitlintrc.yml",
+    ".dockerignore",
+    ".gitignore",
+    ".readthedocs.yaml",
+    "CHANGELOG.md",
+    "Dockerfile",
+    "LICENSE",
+    "UPGRADING.md",
+    "rust-toolchain.toml",
+    "uv.lock",
+]
 
 
 [tool.mypy]
@@ -97,7 +116,7 @@ convention = "google"
 
 [tool.uv]
 required-version = ">=0.5.20"
-reinstall-package = ["mqt.naviz"]
+reinstall-package = ["mqt-naviz"]
 
 [tool.uv.sources]
 mqt-naviz = { workspace = true }
