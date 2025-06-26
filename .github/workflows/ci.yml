@@ -28,16 +28,16 @@ jobs:
           sudo apt update
           curl -fsSL https://deb.nodesource.com/setup_22.x | sudo bash -
           sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs
+      - name: Install commitlint
+        run: |
+          npm install conventional-changelog-conventionalcommits
+          npm install npm install commitlint@latest @commitlint/config-conventional @commitlint/cli 
       - name: Print versions
         run: |
           git --version
           node --version
           npm --version
           npx commitlint --version
-      - name: Install commitlint
-        run: |
-          npm install conventional-changelog-conventionalcommits
-          npm install commitlint@latest
       - name: Validate current commit (last commit) with commitlint
         if: github.event_name == 'push'
         run: npx commitlint --last --verbose
