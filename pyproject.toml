@@ -40,7 +40,7 @@ features = ["pyo3/extension-module"]
 
 
 [tool.mypy]
-files = ["python/mqt", "test/python", "noxfile.py"]
+files = ["python/mqt", "noxfile.py"]
 mypy_path = ["$MYPY_CONFIG_FILE_DIR/python"]
 python_version = "3.9"
 warn_unused_configs = true
@@ -89,38 +89,23 @@ convention = "google"
 
 
 [tool.pytest.ini_options]
-minversion = "7.2"
-testpaths = ["test/python"]
-addopts = ["-ra", "--strict-markers", "--strict-config", "--showlocals"]
-log_cli_level = "INFO"
-xfail_strict = true
-filterwarnings = [
-    "error",
-]
+# We do not have tests yet
 
 
 [tool.coverage]
-run.source = ["mqt.naviz"]
-report.exclude_also = [
-    '\.\.\.',
-    'if TYPE_CHECKING:',
-    'raise AssertionError',
-    'raise NotImplementedError',
-    'def __dir__()',  # Ignore __dir__ method that exists mainly for better IDE support
-    '@overload'  # Overloads are only for static typing
-]
+# We do not have tests yet
 
 
 [tool.uv]
 required-version = ">=0.5.20"
-reinstall-package = ["mqt.maviz"]
+reinstall-package = ["mqt.naviz"]
 
 [tool.uv.sources]
 mqt-naviz = { workspace = true }
 
 
 [tool.repo-review]
-# we do not have a .github/dependabot.yml file because we use renovate for dependency management
+# We do not have a .github/dependabot.yml file because we use renovate for dependency management
 ignore = ["GH200"]
 
 
@@ -144,10 +129,7 @@ docs = [
     "sphinx>=8.2.3; python_version >= '3.11'",
     "sphinxcontrib-rust>=1.0.0",
 ]
-test = [
-    "pytest>=8.3.5",
-    "pytest-cov>=6.1.1",
-]
+test = []
 dev = [
     {include-group = "build"},
     {include-group = "docs"},
