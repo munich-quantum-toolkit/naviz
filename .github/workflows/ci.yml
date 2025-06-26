@@ -67,25 +67,6 @@ jobs:
     with:
       enable-cpp: false
 
-  cd:
-    name: 🚀 CD
-    needs: change-detection
-    if: fromJSON(needs.change-detection.outputs.run-cd)
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-packaging.yml@v1.11
-    with:
-      # Runs to enable
-      enable-ubuntu2404: true
-      enable-ubuntu2404-arm: true
-      enable-macos13: true
-      enable-macos14: true
-      enable-windows2022: true
-      enable-windows11-arm: true
-      # Runs to disable
-      enable-ubuntu2204: false
-      enable-ubuntu2204-arm: false
-      enable-macos15: false
-      enable-windows2025: false
-
   required-checks-pass: # This job does nothing and is only used for branch protection
     name: 🚦 Check
     if: always()
@@ -94,7 +75,6 @@ jobs:
       - rust-linter
       - python-linter
       - code-ql
-      - cd
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
@@ -108,9 +88,5 @@ jobs:
             ${{
               fromJSON(needs.change-detection.outputs.run-code-ql)
               && '' || 'code-ql,'
-            }}
-            ${{
-              fromJSON(needs.change-detection.outputs.run-cd)
-              && '' || 'cd,'
             }}
           jobs: ${{ toJSON(needs) }}
