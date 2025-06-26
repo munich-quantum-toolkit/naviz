@@ -1,6 +1,6 @@
 # Support
 
-If you are stuck with a problem using MQT Core or have questions, please get in touch at our [Issues](https://github.com/cda-tum/mqt-naviz/issues) or [Discussions](https://github.com/cda-tum/mqt-naviz/discussions). We'd love to help.
+If you are stuck with a problem using MQT NAViz or have questions, please get in touch at our [Issues](https://github.com/cda-tum/mqt-naviz/issues) or [Discussions](https://github.com/cda-tum/mqt-naviz/discussions). We'd love to help.
 
 You can save time by following this procedure when reporting a problem:
 

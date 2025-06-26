@@ -164,7 +164,7 @@ The docker container can then be run using `docker run -d -p 8080:80 naviz`, whi
 
 You are expected to write tests for any new features you implement and ensure that all tests pass.
 Our CI pipeline on GitHub will also run the tests and check for any failures.
-It will also collect code coverage information and upload it to [Codecov](https://codecov.io/gh/munich-quantum-toolkit/core).
+It will also collect code coverage information and upload it to [Codecov](https://codecov.io/gh/cda-tum/mqt-naviz/).
 Our goal is to have new contributions and at least maintain the current code coverage level while striving to cover as much of the code as possible.
 Try to write meaningful tests that actually test the correctness of the code and not just exercise the code paths.
 
@@ -297,7 +297,7 @@ Every public function, class, and module should have a docstring that explains w
 Ruff will check for missing docstrings and will explicitly warn you if you forget to add one.
 
 We heavily rely on [type hints](https://docs.python.org/3/library/typing.html) to document the expected types of function arguments and return values.
-For the compiled parts of the code base, we provide type hints in the form of stub files in the {code}`src/mqt/core` directory.
+For the compiled parts of the code base, we provide type hints in the form of stub files in the {code}`python` directory.
 
 The Python API documentation is integrated into the overall documentation that we host on ReadTheDocs using the
 [sphinx-autoapi](https://sphinx-autoapi.readthedocs.io/en/latest/) extension for Sphinx.
