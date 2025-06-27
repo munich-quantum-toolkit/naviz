@@ -15,7 +15,7 @@ glam = {version = "0.29.0", features = ["bytemuck"]}
 glyphon = "0.8"
 log = "0.4.22"
 naga_oil = "0.17"
-naviz-state = {path = "../state"}
+naviz-state = {workspace = true}
 wgpu = {version = "24", default-features = false, features = ["wgsl", "naga-ir"]}
 
 [build-dependencies]
