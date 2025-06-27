@@ -15,15 +15,15 @@ targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [dependencies]
 constcat = "0.5.1"
-eframe = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141fab20002554442c8b69aa", default-features = false, features = [
+eframe = {version = "0.31.1", default-features = false, features = [
   "accesskit", # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
   "default_fonts", # Embed the default egui fonts.
   "wgpu", # Use the wgpu rendering backend.
   "wayland",
   "x11",
 ]}
-egui = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141fab20002554442c8b69aa"}
-egui_extras = {git = "https://github.com/emilk/egui.git", rev = "f4ed394a85fdce6a141fab20002554442c8b69aa"}
+egui = "0.31.1"
+egui_extras = "0.31.1"
 git-version = "0.3.9"
 konst = "0.3.16"
 log = "0.4"
@@ -34,7 +34,7 @@ naviz-renderer = {path = "../renderer"}
 naviz-repository = {path = "../repository"}
 naviz-state = {path = "../state"}
 rfd = "0.15.0"
-wgpu = {version = "*", features = ["webgl"]}# Enable webgl-support in wgpu
+wgpu = {version = "24", features = ["webgl"]}# Enable webgl-support in wgpu
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
