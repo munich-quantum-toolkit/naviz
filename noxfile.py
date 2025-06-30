@@ -3,14 +3,8 @@
 from __future__ import annotations
 
 import argparse
-import os
-import shutil
-from typing import TYPE_CHECKING
 
 import nox
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 nox.needs_version = ">=2024.3.2"
 nox.options.default_venv_backend = "uv"

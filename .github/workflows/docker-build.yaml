@@ -1,5 +1,4 @@
 name: Docker Web Build
-
 on:
   push:
     tags:
