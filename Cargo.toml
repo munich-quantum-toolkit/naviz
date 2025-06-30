@@ -8,7 +8,7 @@ members = [
   "video",
   "repository",
   "import",
-  "bindings",
+  "python",
 ]
 resolver = "2"
 
