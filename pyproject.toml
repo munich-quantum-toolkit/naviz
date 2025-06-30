@@ -46,7 +46,6 @@ git-only = [
     "configs/*",
     "docs/*",
     "gui/*",
-    ".commitlintrc.yml",
     ".dockerignore",
     ".gitignore",
     ".readthedocs.yaml",
