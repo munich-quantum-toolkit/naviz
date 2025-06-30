@@ -3,7 +3,6 @@ on:
   push:
     tags:
       - "v*" # Build whenever a full version of naviz is released
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
