@@ -15,18 +15,19 @@ An example can be seen below:
 ```python
 from naviz import *
 
-# Get machine and style from repository:
+# Get machine and style from repository
 machine = Repository.machines().get("example")
 style = Repository.machines().get("tum")
 
-# Alternatively, you can also use manual configurations:
+# Alternatively, you can also use manual configurations
 machine = "<...>"
 style = "<...>"
 
-# Render `naviz` instructions to `out.mp4` at 1080p60:
+# Render `naviz` instructions to `out.mp4` at 1080p60
 export_video("<naviz instructions>", "out.mp4", (1920, 1080), 60, machine, style)
 
-# Render mqt na output to `out.mp4` at 1080p60 with the default import options:
+# Render `mqt na` instructions to `out.mp4` at 1080p60 with the default import options
+# Alternatively, substitute the call to `default_import_settings` with your custom import settings
 export_video(
     "<mqt na instructions>",
     "out.mp4",
@@ -34,6 +35,6 @@ export_video(
     60,
     machine,
     style,
-    default_import_settings("MQTNa"),
-)  # Alternatively substitute the call to `default_import_settings` with your custom import settings
+    default_import_settings("MqtNa"),
+)  
 ```

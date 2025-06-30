@@ -10,17 +10,17 @@ pub mod separated_display;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ImportFormat {
     /// [mqt::na]
-    MQTNa,
+    MqtNa,
 }
 
 /// List of all import-formats (all entries of [ImportFormat]).
-pub static IMPORT_FORMATS: [ImportFormat; 1] = [ImportFormat::MQTNa];
+pub static IMPORT_FORMATS: [ImportFormat; 1] = [ImportFormat::MqtNa];
 
 /// The options for the different import formats
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ImportOptions {
     /// [mqt::na]
-    MQTNa(mqt::na::convert::ConvertOptions<'static>),
+    MqtNa(mqt::na::convert::ConvertOptions<'static>),
 }
 
 /// An error that can occur during import
@@ -29,23 +29,23 @@ pub enum ImportError {
     /// Something was not valid UTF-8
     InvalidUtf8(Utf8Error),
     /// An error occurred while parsing [mqt::na]
-    MQTNqParse(mqt::na::format::ParseErrorInner),
+    MqtNqParse(mqt::na::format::ParseErrorInner),
     /// An error occurred while converting [mqt::na]
-    MQTNqConvert(mqt::na::convert::OperationConversionError),
+    MqtNqConvert(mqt::na::convert::OperationConversionError),
 }
 
 impl ImportFormat {
     /// A human-readable name of this [ImportFormat]
     pub fn name(&self) -> &'static str {
         match self {
-            Self::MQTNa => "mqt na",
+            Self::MqtNa => "mqt na",
         }
     }
 
     /// A list of file-extensions commonly used by this [ImportFormat]
     pub fn file_extensions(&self) -> &'static [&'static str] {
         match self {
-            Self::MQTNa => &["na"],
+            Self::MqtNa => &["na"],
         }
     }
 }
@@ -53,7 +53,7 @@ impl ImportFormat {
 impl From<ImportFormat> for ImportOptions {
     fn from(value: ImportFormat) -> Self {
         match value {
-            ImportFormat::MQTNa => ImportOptions::MQTNa(Default::default()),
+            ImportFormat::MqtNa => ImportOptions::MqtNa(Default::default()),
         }
     }
 }
@@ -61,7 +61,7 @@ impl From<ImportFormat> for ImportOptions {
 impl From<&ImportOptions> for ImportFormat {
     fn from(value: &ImportOptions) -> Self {
         match value {
-            &ImportOptions::MQTNa(_) => ImportFormat::MQTNa,
+            &ImportOptions::MqtNa(_) => ImportFormat::MqtNa,
         }
     }
 }
@@ -70,15 +70,15 @@ impl ImportOptions {
     /// Imports the `data` using the options in `self`
     pub fn import(self, data: &[u8]) -> Result<Instructions, ImportError> {
         match self {
-            Self::MQTNa(options) => mqt::na::convert::convert(
+            Self::MqtNa(options) => mqt::na::convert::convert(
                 &mqt::na::format::parse(
                     std::str::from_utf8(data).map_err(ImportError::InvalidUtf8)?,
                 )
                 .map_err(|e| e.into_inner())
-                .map_err(ImportError::MQTNqParse)?,
+                .map_err(ImportError::MqtNqParse)?,
                 options,
             )
-            .map_err(ImportError::MQTNqConvert),
+            .map_err(ImportError::MqtNqConvert),
         }
     }
 }

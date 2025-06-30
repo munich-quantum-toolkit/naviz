@@ -20,7 +20,7 @@ impl Drawable for &mut ImportOptions {
     /// Edits from the ui will be reflected inside `self`.
     fn draw(self, ui: &mut Ui) {
         match self {
-            ImportOptions::MQTNa(options) => {
+            ImportOptions::MqtNa(options) => {
                 ui.horizontal(|ui| {
                     ui.label("Atom prefix");
                     ui.add(
