@@ -16,8 +16,6 @@ nox.needs_version = ">=2024.3.2"
 nox.options.default_venv_backend = "uv"
 
 
-
-
 @nox.session(reuse_venv=True)
 def docs(session: nox.Session) -> None:
     """Build the docs. Use "--non-interactive" to avoid serving. Pass "-b linkcheck" to check links."""
