@@ -26,11 +26,7 @@ build:
       - git fetch --unshallow --tags
     pre_build:
       # Install sphinx-rustdocgen
-      - cargo install sphinx-rustdocgen
-      - export PATH="$HOME/.cargo/bin:$PATH"
-      - echo "PATH is $PATH"
-      - ls -l $HOME/.cargo/bin
-      - which sphinx-rustdocgen || { echo "sphinx-rustdocgen not found in PATH!"; exit 1; }
+      - cargo install --force --root /home/docs/.asdf sphinx-rustdocgen
       # Set up uv
       - asdf plugin add uv
       - asdf install uv latest
