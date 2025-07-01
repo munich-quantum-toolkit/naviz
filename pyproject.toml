@@ -13,6 +13,7 @@ readme = "README.md"
 authors = [
     { name = "Nico Petzendorfer", email = "nico.petzendorfer@tum.de" },
     { name = "Yannick Stade", email = "yannick.stade@tum.de" },
+    { name = "Daniel Haag", email = "daniel.haag@tum.de" },
 ]
 keywords = ["MQT", "quantum-computing", "design-automation", "compiler", "visualization", "neutral-atoms"]
 license = "MIT"
