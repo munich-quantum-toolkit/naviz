@@ -25,6 +25,8 @@ build:
       # Unshallow the git clone and fetch tags to get proper version information
       - git fetch --unshallow --tags
     pre_build:
+      # Install sphinx-rustdocgen
+      - cargo install sphinx-rustdocgen
       # Set up uv
       - asdf plugin add uv
       - asdf install uv latest
