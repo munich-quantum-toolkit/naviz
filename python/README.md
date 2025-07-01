@@ -12,7 +12,7 @@ see [`maturin`'s README](https://github.com/PyO3/maturin?tab=readme-ov-file#matu
 The python-library currently only exports a simple functionality to export a visualization as a video.
 An example can be seen below:
 ```python
-from mqt.naviz.pynaviz import *
+from naviz import *
 
 # Get machine and style from repository:
 machine = Repository.machines().get('example')
