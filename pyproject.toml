@@ -36,9 +36,7 @@ Discussions = "https://github.com/cda-tum/mqt-naviz/discussions"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 manifest-path = "python/Cargo.toml"
-python-source = "python"
-python-packages = ["mqt/naviz"]
-module-name = "mqt.naviz.naviz"
+module-name = "mqt.naviz.pynaviz"
 
 
 [tool.uv]
