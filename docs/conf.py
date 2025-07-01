@@ -2,30 +2,10 @@
 
 from __future__ import annotations
 
-import warnings
 from importlib import metadata
-from pathlib import Path
-
-ROOT = Path(__file__).parent.parent.resolve()
-
-
-try:
-    from mqt.naviz import __version__ as version
-except ModuleNotFoundError:
-    try:
-        version = metadata.version("mqt.naviz")
-    except ModuleNotFoundError:
-        msg = (
-            "Package should be installed to produce documentation! "
-            "Assuming a modern git archive was used for version discovery."
-        )
-        warnings.warn(msg, stacklevel=1)
-
-        from setuptools_scm import get_version
-
-        version = get_version(root=str(ROOT), fallback_root=ROOT)
 
 # Filter git details from version
+version = metadata.version("mqt.naviz")
 release = version.split("+")[0]
 
 project = "MQT NAViz"
@@ -109,9 +89,6 @@ autoapi_dirs = ["../python/mqt"]
 autoapi_python_use_implicit_namespaces = True
 autoapi_root = "api"
 autoapi_add_toctree_entry = False
-autoapi_ignore = [
-    "*/**/_version.py",
-]
 autoapi_options = [
     "members",
     "show-inheritance",
@@ -226,6 +203,7 @@ latex_docclass = {
 
 rust_crates = {
     "animator": "animator",
+    "python": "python",
     "renderer": "renderer",
     "repository": "repository",
     "state": "state",
