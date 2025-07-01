@@ -27,6 +27,7 @@ build:
     pre_build:
       # Install sphinx-rustdocgen
       - cargo install sphinx-rustdocgen
+      - export PATH="$HOME/.cargo/bin:$PATH"
       # Set up uv
       - asdf plugin add uv
       - asdf install uv latest
