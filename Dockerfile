@@ -1,5 +1,5 @@
 # Base image with build tools
-FROM --platform=$BUILDPLATFORM rust:1.87-alpine AS base
+FROM --platform=$BUILDPLATFORM rust:1.88-alpine AS base
 
 # Dependencies:
 # bash, curl: Installing cargo-binstall

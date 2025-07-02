@@ -107,7 +107,7 @@ impl<Spec: bytemuck::NoUninit> Component<Spec> {
             shader_path,
             Default::default(),
         )
-        .unwrap_or_else(|_| panic!("Failed to load shader: {}", shader_path));
+        .unwrap_or_else(|_| panic!("Failed to load shader: {shader_path}"));
 
         let uniform = uniform.unwrap_or_default();
 

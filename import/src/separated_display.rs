@@ -7,7 +7,7 @@ impl<T: Display> Display for SeparatedDisplay<'_, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut iterator = self.1.iter();
         if let Some(value) = iterator.next() {
-            write!(f, "{}", value)?;
+            write!(f, "{value}")?;
         }
         for value in iterator {
             write!(f, "{}{}", self.0, value)?;
