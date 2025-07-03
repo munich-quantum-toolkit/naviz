@@ -115,8 +115,6 @@ mqt-naviz = { workspace = true }
 
 [tool.repo-review]
 ignore = [
-    "GH102", # We do not have workflow with auto cancel yet
-    "GH103", # We do not have workflow with manual dispatch yet
     "GH200", # We do not have a .github/dependabot.yml file because we use renovate for dependency management
 ]
 

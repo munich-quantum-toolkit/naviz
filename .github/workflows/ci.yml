@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  python-linter:
+    name: 🐍 Lint
+    if: fromJSON(needs.change-detection.outputs.run-python-tests)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@v1.11
+
+  code-ql:
+    name: 📝 CodeQL
+    if: fromJSON(needs.change-detection.outputs.run-code-ql)
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql.yml@v1.11
+    with:
+      enable-cpp: false
+
+  required-checks-pass: # This job does nothing and is only used for branch protection
+    name: 🚦 Check
+    if: always()
+    needs:
+      - python-linter
+      - code-ql
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          allowed-skips: >-
+            ${{
+              fromJSON(needs.change-detection.outputs.run-code-ql)
+              && '' || 'code-ql,'
+            }}
+          jobs: ${{ toJSON(needs) }}
+        
