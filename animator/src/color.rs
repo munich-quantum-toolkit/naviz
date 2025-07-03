@@ -25,24 +25,28 @@ impl Color {
         const BLUE: usize = 2;
         const ALPHA: usize = 3;
 
-        let sr: u32 = self[RED] as u32;
-        let sg: u32 = self[GREEN] as u32;
-        let sb: u32 = self[BLUE] as u32;
-        let sa: u32 = self[ALPHA] as u32;
-        let br: u32 = base[RED] as u32;
-        let bg: u32 = base[GREEN] as u32;
-        let bb: u32 = base[BLUE] as u32;
-        let ba: u32 = base[ALPHA] as u32;
+        let self_red: u32 = self[RED] as u32;
+        let self_green: u32 = self[GREEN] as u32;
+        let self_blue: u32 = self[BLUE] as u32;
+        let self_alpha: u32 = self[ALPHA] as u32;
+        let base_red: u32 = base[RED] as u32;
+        let base_green: u32 = base[GREEN] as u32;
+        let base_blue: u32 = base[BLUE] as u32;
+        let base_alpha: u32 = base[ALPHA] as u32;
 
-        let a = sa + (ba * (255 - sa) / 255);
-        if a == 0 {
+        let alpha = self_alpha + (base_alpha * (255 - self_alpha) / 255);
+        if alpha == 0 {
             return Self([0, 0, 0, 0]);
         }
-        let r = (sr * sa + br * ba * (255 - sa) / 255) / a;
-        let g = (sg * sa + bg * ba * (255 - sa) / 255) / a;
-        let b = (sb * sa + bb * ba * (255 - sa) / 255) / a;
 
-        Self([r as u8, g as u8, b as u8, a as u8])
+        let red =
+            (self_red * self_alpha + base_red * base_alpha * (255 - self_alpha) / 255) / alpha;
+        let green =
+            (self_green * self_alpha + base_green * base_alpha * (255 - self_alpha) / 255) / alpha;
+        let blue =
+            (self_blue * self_alpha + base_blue * base_alpha * (255 - self_alpha) / 255) / alpha;
+
+        Self([red as u8, green as u8, blue as u8, alpha as u8])
     }
 }
 

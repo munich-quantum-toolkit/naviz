@@ -11,20 +11,30 @@ see [`maturin`'s README](https://github.com/PyO3/maturin?tab=readme-ov-file#matu
 
 The python-library currently only exports a simple functionality to export a visualization as a video.
 An example can be seen below:
+
 ```python
 from naviz import *
 
-# Get machine and style from repository:
-machine = Repository.machines().get('example')
-style = Repository.machines().get('tum')
+# Get machine and style from repository
+machine = Repository.machines().get("example")
+style = Repository.machines().get("tum")
 
-# Alternatively, you can also use manual configurations:
+# Alternatively, you can also use manual configurations
 machine = "<...>"
 style = "<...>"
 
-# Render `naviz` instructions to `out.mp4` at 1080p60:
+# Render `naviz` instructions to `out.mp4` at 1080p60
 export_video("<naviz instructions>", "out.mp4", (1920, 1080), 60, machine, style)
 
-# Render mqt na output to `out.mp4` at 1080p60 with the default import options:
-export_video("<mqt na instructions>", "out.mp4", (1920, 1080), 60, machine, style, default_import_settings("MqtNa")) # Alternatively substitute the call to `default_import_settings` with your custom import settings
+# Render `mqt na` instructions to `out.mp4` at 1080p60 with the default import options
+# Alternatively, substitute the call to `default_import_settings` with your custom import settings
+export_video(
+    "<mqt na instructions>",
+    "out.mp4",
+    (1920, 1080),
+    60,
+    machine,
+    style,
+    default_import_settings("MqtNa"),
+)
 ```
