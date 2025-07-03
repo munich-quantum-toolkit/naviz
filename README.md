@@ -3,6 +3,7 @@
 <!-- [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT) -->
 <!-- [![CI](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-naviz/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/cda-tum/mqt-naviz/actions/workflows/ci.yml) -->
 <!-- [![CD](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-naviz/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/cda-tum/mqt-naviz/actions/workflows/cd.yml) -->
+
 [![Documentation](https://img.shields.io/readthedocs/mqt-naviz?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/naviz)
 
 <p align="center">
