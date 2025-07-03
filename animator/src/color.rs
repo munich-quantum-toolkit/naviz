@@ -39,15 +39,12 @@ impl Color {
             return Self([0, 0, 0, 0]);
         }
 
-        let red = (self_red * self_alpha
-            + base_red * base_alpha * (255 - self_alpha) / 255)
-            / alpha;
-        let green = (self_green * self_alpha
-            + base_green * base_alpha * (255 - self_alpha) / 255)
-            / alpha;
-        let blue = (self_blue * self_alpha
-            + base_blue * base_alpha * (255 - self_alpha) / 255)
-            / alpha;
+        let red =
+            (self_red * self_alpha + base_red * base_alpha * (255 - self_alpha) / 255) / alpha;
+        let green =
+            (self_green * self_alpha + base_green * base_alpha * (255 - self_alpha) / 255) / alpha;
+        let blue =
+            (self_blue * self_alpha + base_blue * base_alpha * (255 - self_alpha) / 255) / alpha;
 
         Self([red as u8, green as u8, blue as u8, alpha as u8])
     }
