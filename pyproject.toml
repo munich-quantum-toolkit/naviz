@@ -41,15 +41,15 @@ manifest-path = "python/Cargo.toml"
 [tool.check-sdist]
 git-only = [
     "configs/*",
+    "doc/*",
     "docs/*",
     "gui/*",
+    "test/*",
     ".dockerignore",
     ".gitignore",
     ".readthedocs.yaml",
-    "CHANGELOG.md",
     "Dockerfile",
     "LICENSE",
-    "UPGRADING.md",
     "rust-toolchain.toml",
     "uv.lock",
 ]
