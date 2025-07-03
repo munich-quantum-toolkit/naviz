@@ -14,12 +14,10 @@ concurrency:
 jobs:
   python-linter:
     name: 🐍 Lint
-    if: fromJSON(needs.change-detection.outputs.run-python-tests)
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@v1.11
 
   code-ql:
     name: 📝 CodeQL
-    if: fromJSON(needs.change-detection.outputs.run-code-ql)
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql.yml@v1.11
     with:
       enable-cpp: false
