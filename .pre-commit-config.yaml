@@ -30,12 +30,6 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
-  # Lint commit messages
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.8.2
-    hooks:
-      - id: commitizen
-
   # Clean jupyter notebooks
   - repo: https://github.com/srstevenson/nb-clean
     rev: 4.0.1
