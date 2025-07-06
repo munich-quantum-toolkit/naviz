@@ -3,9 +3,9 @@ name: Publish Crates
 # This workflow publishes all crates in this repository
 
 on:
-  push:
-    tags:
-      - "v*" # Publish whenever a full version of naviz is released
+  release:
+    types: [published]
+  workflow_dispatch:
 
 env:
   CACHE_KEY: publish
