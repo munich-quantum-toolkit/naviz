@@ -14,6 +14,11 @@ on:
         description: "Publish the release"
         required: false
         default: false
+      allPlatforms:
+        type: boolean
+        description: "Build for all platforms"
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -26,9 +31,11 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - name: Build Matrix
+        env:
+          FULL: ${{ inputs.allPlatforms }}
         id: matrix
         run: |
-          echo matrix=$(jq -rc 'map([.arch=.arch[]]) | flatten' <<EOF
+          matrix_full=$(cat << EOF
             [
               {
                 "os": "linux",
@@ -51,7 +58,35 @@ jobs:
               }
             ]
           EOF
-          ) > "$GITHUB_OUTPUT"
+          )
+          matrix_small=$(cat << EOF
+            [
+              {
+                "os": "linux",
+                "image": "ubuntu-latest",
+                "arch": ["x86_64", "aarch64"],
+                "manylinux": "auto"
+              }, {
+                "os": "macos",
+                "image": "macos-latest",
+                "arch": ["x86_64", "aarch64"]
+              }, {
+                "os": "windows",
+                "image": "windows-latest",
+                "arch": ["x86_64"]
+              }
+            ]
+          EOF
+          )
+
+          if [[ $FULL = true ]]
+          then
+            matrix_input="$matrix_full"
+          else
+            matrix_input="$matrix_small"
+          fi
+
+          echo matrix=$(printf "%s" "$matrix_input" | jq -rc 'map([.arch=.arch[]]) | flatten') > "$GITHUB_OUTPUT"
 
   build:
     needs: generate-matrix
