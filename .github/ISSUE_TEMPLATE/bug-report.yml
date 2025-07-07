@@ -44,4 +44,3 @@ body:
         Include any relevant code snippets, workflow configurations, or input files that help demonstrate the problem.
     validations:
       required: true
-      
