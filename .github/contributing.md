@@ -39,7 +39,7 @@ Nevertheless, please try to follow the guidelines below as well as you can to he
 ## Core Guidelines
 
 - ["Commit early and push often"](https://www.worklytics.co/blog/commit-early-push-often).
-- Write meaningful commit messages. Although not enforced, we encourage contributers to adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. Alternatively, we recommend using [gitmoji](https://gitmoji.dev) for additional context.
+- Write meaningful commit messages. Although not enforced, we encourage contributors to adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. Alternatively, we recommend using [gitmoji](https://gitmoji.dev) for additional context.
 - Focus on a single feature or bug at a time and only touch relevant files. Split multiple features into separate contributions.
 - Add tests for new features to ensure they work as intended.
 - Document new features appropriately.s
