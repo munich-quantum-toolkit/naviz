@@ -14,6 +14,9 @@ jobs:
   publish:
     name: Publish Crates
     runs-on: ubuntu-latest
+    environment: crates.io
+    permissions:
+      id-token: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -23,7 +26,10 @@ jobs:
           cache-key: ${{ env.CACHE_KEY }}
       - name: Install Tools
         run: cargo install cargo-workspaces
+      - name: Authenticate using Trusted Publishing
+        uses: rust-lang/crates-io-auth-action@v1
+        id: auth
       - name: Publish Crates
         env:
-          TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+          TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo ws publish --token "$TOKEN" --publish-as-is --skip-published
