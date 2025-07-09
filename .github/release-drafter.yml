@@ -1,6 +1,7 @@
 name-template: "MQT NAViz $RESOLVED_VERSION Release"
 tag-template: "v$RESOLVED_VERSION"
 categories:
+  # Feature-related area labels
   - title: "🧑‍💻 Updates to the CLI"
     labels:
       - "Area: CLI"
@@ -13,6 +14,7 @@ categories:
   - title: "📼 Updates to the Video Export"
     labels:
       - "Area: Video Export"
+  # Backend-related area labels
   - title: "💫 Updates related to animation"
     labels:
       - "Area: Animation"
@@ -28,6 +30,7 @@ categories:
   - title: "🔧 Updates related to the machine repository"
     labels:
       - "Area: Repository"
+  # MQT labels
   - title: "🚀 Features and Enhancements"
     labels:
       - "feature"
