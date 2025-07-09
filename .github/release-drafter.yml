@@ -1,6 +1,33 @@
 name-template: "MQT NAViz $RESOLVED_VERSION Release"
 tag-template: "v$RESOLVED_VERSION"
 categories:
+  - title: "🧑‍💻 Updates to the CLI"
+    labels:
+      - "Area: CLI"
+  - title: "📱 Updates to the GUI"
+    labels:
+      - "Area: GUI"
+  - title: "🐍 Updates to the Python Integration"
+    labels:
+      - "Area: Python"
+  - title: "📼 Updates to the Video Export"
+    labels:
+      - "Area: Video Export"
+  - title: "💫 Updates related to animation"
+    labels:
+      - "Area: Animation"
+  - title: "🔍️ Updates related to file parsing"
+    labels:
+      - "Area: File Parser"
+  - title: "🔗 Updates related to supported import formats"
+    labels:
+      - "Area: Import"
+  - title: "🖼️ Updates related to rendering"
+    labels:
+      - "Area: Renderer"
+  - title: "🔧 Updates related to the machine repository"
+    labels:
+      - "Area: Repository"
   - title: "🚀 Features and Enhancements"
     labels:
       - "feature"
@@ -28,7 +55,7 @@ categories:
     labels:
       - "dependencies"
       - "submodules"
-      - "github_actions"
+      - "github actions"
       - "pre-commit"
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 change-title-escapes: '\<*_&'
