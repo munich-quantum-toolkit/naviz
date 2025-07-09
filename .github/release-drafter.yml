@@ -58,7 +58,7 @@ categories:
     labels:
       - "dependencies"
       - "submodules"
-      - "github actions"
+      - "github-actions"
       - "pre-commit"
 change-template: "- $TITLE @$AUTHOR (#$NUMBER)"
 change-title-escapes: '\<*_&'
