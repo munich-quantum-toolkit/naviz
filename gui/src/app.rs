@@ -351,7 +351,7 @@ impl App {
             self.machine_repository
                 .list()
                 .into_iter()
-                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .map(|(a, b, _)| (a.to_owned(), b.to_owned()))
                 .collect(),
         );
     }
@@ -372,7 +372,7 @@ impl App {
             self.style_repository
                 .list()
                 .into_iter()
-                .map(|(a, b)| (a.to_owned(), b.to_owned()))
+                .map(|(a, b, _)| (a.to_owned(), b.to_owned()))
                 .collect(),
         );
     }

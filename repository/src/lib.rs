@@ -168,11 +168,27 @@ impl Repository {
         self.import_to_user_dir::<VisualConfig>(STYLES_SUBDIR, file)
     }
 
-    /// The list of entries of this repository: `(id, name)`-pairs
-    pub fn list(&self) -> Vec<(&str, &str)> {
+    /// Delete an imported config from the user dir.
+    pub fn remove_from_user_dir(&mut self, id: &str) -> Result<()> {
+        let (id, entry) = self.0.remove_entry(id).ok_or(Error::IdError)?;
+
+        let RepositorySource::UserDir(path) = entry.source else {
+            // Not imported from user-dir
+            // => add back entry and return error
+            self.0.insert(id, entry);
+            return Err(Error::NotRemovableError);
+        };
+
+        fs::remove_file(path).map_err(Error::IoError)?;
+
+        Ok(())
+    }
+
+    /// The list of entries of this repository: `(id, name, removable)`-pairs
+    pub fn list(&self) -> Vec<(&str, &str, bool)> {
         self.0
             .iter()
-            .map(|(id, entry)| (id.as_str(), entry.name()))
+            .map(|(id, entry)| (id.as_str(), entry.name(), entry.source.is_removable()))
             .collect()
     }
 
@@ -295,6 +311,14 @@ impl RepositorySource {
     pub fn contents_as_config(&self) -> Result<Config> {
         config_from_bytes(self.contents()?.borrow())
     }
+
+    /// Check whether a [RepositoryEntry] from this [RepositorySource] can be removed.
+    pub fn is_removable(&self) -> bool {
+        match self {
+            Self::Bundled(_) => false,
+            Self::UserDir(_) => true,
+        }
+    }
 }
 
 /// Try to parse a [Config] from the passed `bytes`
@@ -334,7 +358,7 @@ mod tests {
             .bundled_machines()
             .expect("Failed to load bundled machines");
 
-        for (id, name) in machines.list() {
+        for (id, name, _) in machines.list() {
             machines
                 .get::<MachineConfig>(id)
                 .expect("Machine exists in `list`, but `get` returned `None`")
@@ -349,7 +373,7 @@ mod tests {
             .bundled_styles()
             .expect("Failed to load bundled styles");
 
-        for (id, name) in styles.list() {
+        for (id, name, _) in styles.list() {
             styles
                 .get::<VisualConfig>(id)
                 .expect("Style exists in `list`, but `get` returned `None`")
