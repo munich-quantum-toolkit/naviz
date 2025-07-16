@@ -351,7 +351,7 @@ impl App {
             self.machine_repository
                 .list()
                 .into_iter()
-                .map(|(a, b, _)| (a.to_owned(), b.to_owned()))
+                .map(|(id, name, removable)| (id.to_owned(), name.to_owned(), removable))
                 .collect(),
         );
     }
@@ -372,7 +372,7 @@ impl App {
             self.style_repository
                 .list()
                 .into_iter()
-                .map(|(a, b, _)| (a.to_owned(), b.to_owned()))
+                .map(|(id, name, removable)| (id.to_owned(), name.to_owned(), removable))
                 .collect(),
         );
     }
@@ -438,6 +438,26 @@ impl eframe::App for App {
                         .import_style_to_user_dir(&file)
                         .map_err(|e| {
                             Error::Repository(RepositoryError::Import(e), ConfigFormat::Style)
+                        })
+                        .pipe_void(&mut self.errors);
+                    self.update_styles();
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                MenuEvent::RemoveMachine(id) => {
+                    self.machine_repository
+                        .remove_from_user_dir(&id)
+                        .map_err(|e| {
+                            Error::Repository(RepositoryError::Remove(e), ConfigFormat::Machine)
+                        })
+                        .pipe_void(&mut self.errors);
+                    self.update_machines();
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                MenuEvent::RemoveStyle(id) => {
+                    self.style_repository
+                        .remove_from_user_dir(&id)
+                        .map_err(|e| {
+                            Error::Repository(RepositoryError::Remove(e), ConfigFormat::Style)
                         })
                         .pipe_void(&mut self.errors);
                     self.update_styles();
