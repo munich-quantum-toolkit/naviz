@@ -502,4 +502,44 @@ mod tests {
     fn import_styles() {
         test_import_configs(STYLES_SUBDIR, Repository::import_style_to_user_dir);
     }
+
+    /// Should not be able to remove bundled configs.
+    #[test]
+    fn cannot_remove_bundled_configs() {
+        let mut repo = Repository::empty()
+            .bundled_machines()
+            .expect("Failed to load bundled machines")
+            .bundled_styles()
+            .expect("Failed to load bundled styles");
+
+        let list: Vec<_> = repo
+            .list()
+            .into_iter()
+            .map(|(id, _name, removable)| (id.to_owned(), removable))
+            .collect();
+
+        // sanity-check: repository should not be empty
+        assert!(!list.is_empty(), "Did not load any bundled configs");
+
+        for (id, removable) in list {
+            // sanity-check: repository should contain the config
+            assert!(
+                repo.has(&id),
+                "Repository does not have the config it claims to have"
+            );
+
+            assert!(!removable, "Bundled config is marked as removable");
+
+            assert!(
+                repo.remove_from_user_dir(&id).is_err(),
+                "Trying to remove a bundled config did not return an error"
+            );
+
+            // Config should still exist
+            assert!(
+                repo.has(&id),
+                "Repository deleted a config even though it returned an error"
+            );
+        }
+    }
 }
