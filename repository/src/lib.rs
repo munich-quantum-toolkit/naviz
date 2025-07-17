@@ -492,6 +492,19 @@ mod tests {
                 .count(),
             "Wrong number of files imported on disk"
         );
+
+        // Check if loading from disk also has the same and correct configs
+        let repo_new = Repository::empty()
+            .load_user_dir(subdir)
+            .expect("Failed to load configs from disk");
+        let mut list_old = repo.list();
+        let mut list_new = repo_new.list();
+        list_old.sort();
+        list_new.sort();
+        assert_eq!(
+            list_old, list_new,
+            "Reading imported configs from disk did not give the same configs"
+        );
     }
 
     /// Checks whether the [Repository] can successfully import the bundled machines.
