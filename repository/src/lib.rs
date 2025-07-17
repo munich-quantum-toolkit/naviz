@@ -545,4 +545,80 @@ mod tests {
             );
         }
     }
+
+    /// Test removing imported configs by importing configs from the `subdir` of the bundled configs.
+    /// Will use `import_fn` to import the configs to the repo.
+    /// Takes care of resetting the [TEMP_DIR].
+    fn test_remove_configs(subdir: &str, import_fn: impl Fn(&mut Repository, &Path) -> Result<()>) {
+        reset_temp_dir();
+
+        // Directory where configs should be imported to
+        let target_dir = Repository::user_dir(subdir).expect("Failed to get config subdirectory");
+
+        // Use bundled configs as source configs
+        let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../configs/{subdir}"));
+
+        let configs: Vec<_> = fs::read_dir(&source_dir)
+            .expect("Failed to read bundled configs to import")
+            .map(|f| f.expect("Cannot get file"))
+            .collect();
+
+        let mut repo = Repository::empty();
+
+        for config in &configs {
+            import_fn(&mut repo, &config.path()).expect("Failed to import config");
+        }
+
+        assert!(
+            repo.list()
+                .into_iter()
+                .all(|(_id, _name, removable)| removable),
+            "Imported configs not marked as removable"
+        );
+
+        for config in configs {
+            let path = config.path();
+            let id = path
+                .file_stem()
+                .expect("Failed to get id from filename")
+                .to_string_lossy();
+
+            // sanity-check: repository should contain the config
+            assert!(
+                repo.has(&id),
+                "Repository does not have the config it claims to have"
+            );
+
+            let target_path = target_dir.join(config.file_name());
+
+            // sanity-check: config should exist on disk
+            assert!(
+                fs::exists(&target_path).unwrap_or(false),
+                "Imported config does not exist on disk"
+            );
+
+            // remove
+            repo.remove_from_user_dir(&id)
+                .expect("Failed to remove imported config from user dir");
+
+            assert!(!repo.has(&id), "Repository still contains deleted config");
+
+            assert!(
+                !fs::exists(&target_path).unwrap_or(true),
+                "Removed config still exists on disk"
+            );
+        }
+    }
+
+    /// Checks whether the [Repository] can successfully remove imported machines.
+    #[test]
+    fn remove_machines() {
+        test_remove_configs(MACHINES_SUBDIR, Repository::import_machine_to_user_dir);
+    }
+
+    /// Checks whether the [Repository] can successfully remove imported machines.
+    #[test]
+    fn remove_styles() {
+        test_remove_configs(STYLES_SUBDIR, Repository::import_style_to_user_dir);
+    }
 }
