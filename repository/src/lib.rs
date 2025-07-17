@@ -549,7 +549,11 @@ mod tests {
     /// Test removing imported configs by importing configs from the `subdir` of the bundled configs.
     /// Will use `import_fn` to import the configs to the repo.
     /// Takes care of resetting the [TEMP_DIR].
-    fn test_remove_configs(subdir: &str, import_fn: impl Fn(&mut Repository, &Path) -> Result<()>) {
+    /// If `RELOAD` is set, will recreate the repository and load the imported configs from disk.
+    fn test_remove_configs<const RELOAD: bool>(
+        subdir: &str,
+        import_fn: impl Fn(&mut Repository, &Path) -> Result<()>,
+    ) {
         reset_temp_dir();
 
         // Directory where configs should be imported to
@@ -567,6 +571,12 @@ mod tests {
 
         for config in &configs {
             import_fn(&mut repo, &config.path()).expect("Failed to import config");
+        }
+
+        if RELOAD {
+            repo = Repository::empty()
+                .load_user_dir(subdir)
+                .expect("Failed load configs from disk");
         }
 
         assert!(
@@ -613,12 +623,26 @@ mod tests {
     /// Checks whether the [Repository] can successfully remove imported machines.
     #[test]
     fn remove_machines() {
-        test_remove_configs(MACHINES_SUBDIR, Repository::import_machine_to_user_dir);
+        test_remove_configs::<false>(MACHINES_SUBDIR, Repository::import_machine_to_user_dir);
     }
 
     /// Checks whether the [Repository] can successfully remove imported machines.
     #[test]
     fn remove_styles() {
-        test_remove_configs(STYLES_SUBDIR, Repository::import_style_to_user_dir);
+        test_remove_configs::<false>(STYLES_SUBDIR, Repository::import_style_to_user_dir);
+    }
+
+    /// Checks whether the [Repository] can successfully remove imported machines.
+    /// Will first import the machines and then reload the repository.
+    #[test]
+    fn remove_machines_after_reload() {
+        test_remove_configs::<true>(MACHINES_SUBDIR, Repository::import_machine_to_user_dir);
+    }
+
+    /// Checks whether the [Repository] can successfully remove imported machines.
+    /// Will first import the styles and then reload the repository.
+    #[test]
+    fn remove_styles_after_reload() {
+        test_remove_configs::<true>(STYLES_SUBDIR, Repository::import_style_to_user_dir);
     }
 }
