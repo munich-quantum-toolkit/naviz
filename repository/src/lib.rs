@@ -179,6 +179,7 @@ impl Repository {
             .ok_or(Error::IdError)?
             .to_string_lossy()
             .into_owned();
+        // Create temporary entry with the source path to check if the config is valid
         let entry = RepositoryEntry::new(RepositorySource::UserDir(file.to_owned()))?;
         // Ensure the config is valid (i.e., can be parsed correctly)
         entry
@@ -186,13 +187,15 @@ impl Repository {
             .try_into()
             .map_err(Error::ConfigReadError)?;
 
-        fs::copy(
-            file,
-            Self::user_dir(subdir)?.join(file.file_name().unwrap()),
-        )
-        .map_err(Error::IoError)?;
+        // Import: Copy to target path
+        let target_path = Self::user_dir(subdir)?.join(file.file_name().unwrap());
+        fs::copy(file, &target_path).map_err(Error::IoError)?;
 
-        self.0.insert(id, entry);
+        self.0.insert(
+            id,
+            // New repository entry with correct target path
+            RepositoryEntry::new(RepositorySource::UserDir(target_path))?,
+        );
 
         Ok(())
     }
