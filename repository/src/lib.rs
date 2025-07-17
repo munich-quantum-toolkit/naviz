@@ -1,6 +1,8 @@
 //! [Repository] for loading configs.
 //! Also contains bundled configs.
 
+#[cfg(test)]
+use std::cell::RefCell;
 use std::{
     borrow::{Borrow, Cow},
     collections::HashMap,
@@ -9,10 +11,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[cfg(not(test))]
 use directories::ProjectDirs;
 use error::{Error, Result};
 use include_dir::{include_dir, Dir};
 use naviz_parser::config::{generic::Config, machine::MachineConfig, visual::VisualConfig};
+#[cfg(test)]
+use tempfile::TempDir;
 
 pub mod error;
 
@@ -26,11 +31,33 @@ const STYLES_SUBDIR: &str = "styles";
 pub struct Repository(HashMap<String, RepositoryEntry>);
 
 /// The project directories for this application
+#[cfg(not(test))]
 fn project_dirs() -> Result<ProjectDirs> {
     ProjectDirs::from("tv", "floeze", "naviz").ok_or(Error::IoError(std::io::Error::new(
         std::io::ErrorKind::NotFound,
         "Failed to get user directory",
     )))
+}
+
+/// Creates a new temporary directory.
+/// Can be used for testing.
+#[cfg(test)]
+fn create_temp_dir() -> TempDir {
+    TempDir::new().expect("Failed to create temporary directory")
+}
+
+#[cfg(test)]
+thread_local! {
+    /// Temporary directory for testing.
+    /// Use [reset_temp_dir] to reset the contents of the directory.
+    static TEMP_DIR: RefCell<TempDir> = RefCell::new(create_temp_dir());
+}
+
+/// Creates a new [TEMP_DIR].
+/// Will delete the old [TEMP_DIR] and all contents.
+#[cfg(test)]
+fn reset_temp_dir() {
+    TEMP_DIR.replace(create_temp_dir());
 }
 
 impl Repository {
@@ -68,8 +95,22 @@ impl Repository {
     }
 
     /// Gets the path of the passed `subdir` of the user-directory
+    #[cfg(not(test))]
     fn user_dir(subdir: &str) -> Result<PathBuf> {
         let directory = project_dirs()?.data_dir().join(subdir);
+
+        if !directory.exists() {
+            fs::create_dir_all(&directory).map_err(Error::IoError)?;
+        }
+
+        Ok(directory)
+    }
+
+    /// Gets the path of the passed `subdir` of the user-directory.
+    /// Uses [TEMP_DIR] for testing.
+    #[cfg(test)]
+    fn user_dir(subdir: &str) -> Result<PathBuf> {
+        let directory = TEMP_DIR.with_borrow(|t| t.path().join(subdir));
 
         if !directory.exists() {
             fs::create_dir_all(&directory).map_err(Error::IoError)?;
@@ -379,5 +420,86 @@ mod tests {
                 .expect("Style exists in `list`, but `get` returned `None`")
                 .unwrap_or_else(|e| panic!("Style \"{name}\" ({id}) is invalid:\n{e:#?}"));
         }
+    }
+
+    /// Test importing configs from the `subdir` of the bundled configs to the `subdir` of the [TEMP_DIR].
+    /// Will use `import_fn` to import the configs to the repo.
+    /// Takes care of resetting the [TEMP_DIR].
+    fn test_import_configs(subdir: &str, import_fn: impl Fn(&mut Repository, &Path) -> Result<()>) {
+        reset_temp_dir();
+
+        // Directory where configs should be imported to
+        let target_dir = Repository::user_dir(subdir).expect("Failed to get config subdirectory");
+
+        // sanity-check: should be initially empty
+        assert!(
+            fs::read_dir(&target_dir)
+                .expect("Failed to get contents of config subdirectory")
+                .next()
+                .is_none(),
+            "New temporary config directory is not empty"
+        );
+
+        // Use bundled configs as source configs
+        let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../configs/{subdir}"));
+
+        let configs: Vec<_> = fs::read_dir(&source_dir)
+            .expect("Failed to read bundled configs to import")
+            .map(|f| f.expect("Cannot get file"))
+            .collect();
+
+        // Create new empty repository
+        let mut repo = Repository::empty();
+
+        for config in &configs {
+            import_fn(&mut repo, &config.path()).expect("Failed to import config");
+
+            // Check if imported config exists in repo
+            assert!(
+                repo.has(
+                    config
+                        .path()
+                        .file_stem()
+                        .expect("Failed to get id from filename")
+                        .to_string_lossy()
+                        .borrow()
+                ),
+                "Imported config does not exist in repository"
+            );
+
+            // Check if imported config now exists on disk
+            assert!(
+                fs::exists(target_dir.join(config.file_name())).unwrap_or(false),
+                "Imported config does not exist on disk"
+            );
+        }
+
+        // Check if correct number of configs was imported
+        assert_eq!(
+            configs.len(),
+            repo.list().len(),
+            "Wrong number of files imported in repo"
+        );
+
+        // Check if correct number of configs now exists on disk
+        assert_eq!(
+            configs.len(),
+            fs::read_dir(&target_dir)
+                .expect("Failed to get contents of config subdirectory")
+                .count(),
+            "Wrong number of files imported on disk"
+        );
+    }
+
+    /// Checks whether the [Repository] can successfully import the bundled machines.
+    #[test]
+    fn import_machines() {
+        test_import_configs(MACHINES_SUBDIR, Repository::import_machine_to_user_dir);
+    }
+
+    /// Checks whether the [Repository] can successfully import the bundled styles.
+    #[test]
+    fn import_styles() {
+        test_import_configs(STYLES_SUBDIR, Repository::import_style_to_user_dir);
     }
 }
