@@ -27,7 +27,7 @@
     {
       matchManagers: ["cargo"],
       addLabels: ["rust"],
-      commitMessagePrefix: "⬆\uD83E\uDD80"
+      commitMessagePrefix: "⬆\uFE0F\uD83E\uDD80"
     },
     {
       matchManagers: ["pre-commit"],
