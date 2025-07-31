@@ -16,5 +16,3 @@ jobs:
   code-ql:
     name: 📝 CodeQL
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-code-ql-python.yml@v1.16
-
- 
