@@ -191,6 +191,10 @@ impl<Spec: bytemuck::NoUninit> Component<Spec> {
 
     /// Draws this component
     pub fn draw(&self, render_pass: &mut RenderPass<'_>) {
+        if self.instance_count == 0 {
+            // nothing to render
+            return;
+        }
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
         render_pass.set_bind_group(2, &self.bind_group, &[]);

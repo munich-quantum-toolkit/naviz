@@ -150,6 +150,11 @@ impl VideoExport {
                 format!("{}/1", self.fps).as_str(),
                 "-i",
                 "-",
+                // Set chroma subsampling for some video players
+                // See https://trac.ffmpeg.org/wiki/Encode/H.264#Encodingfordumbplayers
+                // Should be ignored on formats that don't support it
+                "-vf",
+                "format=yuv420p",
                 "-y",
             ])
             .arg(target)
