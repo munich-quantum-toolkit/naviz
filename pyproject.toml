@@ -36,22 +36,19 @@ Discussions = "https://github.com/cda-tum/mqt-naviz/discussions"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 manifest-path = "python/Cargo.toml"
-
+include = ["**/*"]
+exclude = [
+    { path = ".github/**/*", format = ["sdist", "wheel"] },
+    { path = "doc/**/*", format = "sdist" },
+    { path = "docs/**/*", format = "sdist" },
+    { path = "test/**/*", format = "sdist" },
+]
 
 [tool.check-sdist]
 git-only = [
-    "configs/*",
     "doc/*",
     "docs/*",
-    "gui/*",
     "test/*",
-    ".dockerignore",
-    ".gitignore",
-    ".readthedocs.yaml",
-    "Dockerfile",
-    "LICENSE",
-    "rust-toolchain.toml",
-    "uv.lock",
 ]
 
 
