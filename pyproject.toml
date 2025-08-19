@@ -38,10 +38,10 @@ features = ["pyo3/extension-module"]
 manifest-path = "python/Cargo.toml"
 include = ["**/*"]
 exclude = [
-    { path = ".github/**/*", format = ["sdist", "wheel"] },
-    { path = "doc/**/*", format = "sdist" },
-    { path = "docs/**/*", format = "sdist" },
-    { path = "test/**/*", format = "sdist" },
+    ".github/**/*",
+    "doc/**/*",
+    "docs/**/*",
+    "test/**/*",
 ]
 
 [tool.check-sdist]
