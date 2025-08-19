@@ -227,7 +227,9 @@ pub mod token {
     }
 
     /// Try to parse a single [Token::Value] where the value is a [Value::Number].
-    pub fn number<S: TryIntoValue + Clone + Debug>(input: &mut &[Token<S>]) -> ModalResult<Fraction> {
+    pub fn number<S: TryIntoValue + Clone + Debug>(
+        input: &mut &[Token<S>],
+    ) -> ModalResult<Fraction> {
         one_of(|t| matches!(t, Token::Value(lexer::Value::Number(_))))
             .map(|t| match t {
                 Token::Value(lexer::Value::Number(n)) => n,
@@ -238,7 +240,9 @@ pub mod token {
     }
 
     /// Try to parse a single [Token::Directive].
-    pub fn directive<S: TryIntoValue + Clone + Debug>(input: &mut &[Token<S>]) -> ModalResult<String> {
+    pub fn directive<S: TryIntoValue + Clone + Debug>(
+        input: &mut &[Token<S>],
+    ) -> ModalResult<String> {
         one_of(|t| matches!(t, Token::Directive(_)))
             .map(|t| match t {
                 Token::Directive(d) => d,
