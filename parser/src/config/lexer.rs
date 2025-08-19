@@ -107,21 +107,21 @@ pub mod token {
     /// Tries to parse a [Token::BlockOrSetOpen].
     pub fn block_or_set_open<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>> {
+    ) -> ModalResult<Token<<I as Stream>::Slice>> {
         "{".map(|_| Token::BlockOrSetOpen).parse_next(input)
     }
 
     /// Tries to parse a [Token::BlockClose].
     pub fn block_or_set_close<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>> {
+    ) -> ModalResult<Token<<I as Stream>::Slice>> {
         "}".map(|_| Token::BlockOrSetClose).parse_next(input)
     }
 
     /// Tries to parse a [Token::Separator].
     pub fn separator<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>> {
+    ) -> ModalResult<Token<<I as Stream>::Slice>> {
         ":".map(|_| Token::Separator).parse_next(input)
     }
 
@@ -135,7 +135,7 @@ pub mod token {
             + Copy,
     >(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>>
+    ) -> ModalResult<Token<<I as Stream>::Slice>>
     where
         <I as Stream>::Token: AsChar + Clone,
         I::Slice: SliceLen,

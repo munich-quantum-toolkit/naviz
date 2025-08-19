@@ -10,7 +10,7 @@ use token::{
 };
 use winnow::{
     combinator::{alt, opt, preceded, repeat, terminated},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 // Re-export the common parser
@@ -62,7 +62,7 @@ pub fn parse<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// and [Directive][InstructionOrDirective::Directive]s
 pub fn instruction_or_directives<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<Vec<InstructionOrDirective>> {
+) -> ModalResult<Vec<InstructionOrDirective>> {
     preceded(
         ignore_comments_and_separators,
         repeat(
@@ -79,7 +79,7 @@ pub fn instruction_or_directives<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse an [Instruction][InstructionOrDirective::Instruction] from a stream of [Token]s.
 pub fn instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<InstructionOrDirective> {
+) -> ModalResult<InstructionOrDirective> {
     (
         terminated(opt(time), ignore_comments),
         terminated(identifier, ignore_comments),
@@ -93,7 +93,7 @@ pub fn instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse an [Directive][InstructionOrDirective::Directive] from a stream of [Token]s.
 pub fn directive<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<InstructionOrDirective> {
+) -> ModalResult<InstructionOrDirective> {
     (
         terminated(token::directive, ignore_comments),
         repeat(0.., terminated(any_value, ignore_comments)),
@@ -106,7 +106,7 @@ pub fn directive<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse a time ([TimeSpec] and accompanying number) from a stream of [Token]s.
 pub fn time<S: TryIntoValue + Clone + Debug>(
     input: &mut &[Token<S>],
-) -> PResult<(TimeSpec, Fraction)> {
+) -> ModalResult<(TimeSpec, Fraction)> {
     (
         time_symbol,
         opt(number).map(|n| n.unwrap_or_else(Fraction::zero)),
@@ -117,7 +117,7 @@ pub fn time<S: TryIntoValue + Clone + Debug>(
 /// Try to parse a [GroupedTime][InstructionOrDirective::GroupedTime] from a stream of [Token]s.
 pub fn grouped_time<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<InstructionOrDirective> {
+) -> ModalResult<InstructionOrDirective> {
     let grouped_instruction = terminated(
         (
             terminated(identifier, ignore_comments),
@@ -151,7 +151,7 @@ pub fn grouped_time<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse a [GroupedInstruction][InstructionOrDirective::GroupedInstruction] from a stream of [Token]s.
 pub fn grouped_instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<InstructionOrDirective> {
+) -> ModalResult<InstructionOrDirective> {
     let grouped_value = terminated(
         repeat(0.., terminated(any_value, ignore_comments)),
         separator,
@@ -184,7 +184,7 @@ pub fn grouped_instruction<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Ignores all [Comment][Token::Comment]s and [Separator][Token::Separator]s
 pub fn ignore_comments_and_separators<S: Clone + Debug + PartialEq + TryIntoValue>(
     input: &mut &[Token<S>],
-) -> PResult<()> {
+) -> ModalResult<()> {
     repeat(0.., alt((comment.void(), separator))).parse_next(input)
 }
 
@@ -197,7 +197,7 @@ pub mod token {
     pub use common::parser::token::*;
 
     /// Try to parse a single [Token::TimeSymbol].
-    pub fn time_symbol<S: Clone + Debug>(input: &mut &[Token<S>]) -> PResult<TimeSpec> {
+    pub fn time_symbol<S: Clone + Debug>(input: &mut &[Token<S>]) -> ModalResult<TimeSpec> {
         one_of(|t| matches!(t, Token::TimeSymbol(_)))
             .map(|t| match t {
                 Token::TimeSymbol(t) => t,
@@ -207,7 +207,7 @@ pub mod token {
     }
 
     /// Try to parse a single [Token::GroupOpen].
-    pub fn group_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<bool> {
+    pub fn group_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> ModalResult<bool> {
         one_of(|t| matches!(t, Token::GroupOpen { .. }))
             .map(|t| match t {
                 Token::GroupOpen { variable } => variable,
@@ -217,17 +217,17 @@ pub mod token {
     }
 
     /// Try to parse a single [Token::GroupClose].
-    pub fn group_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+    pub fn group_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> ModalResult<()> {
         one_of([Token::GroupClose]).void().parse_next(input)
     }
 
     /// Try to parse a single [Token::Separator].
-    pub fn separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+    pub fn separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> ModalResult<()> {
         one_of([Token::Separator]).void().parse_next(input)
     }
 
     /// Try to parse a single [Token::Value] where the value is a [Value::Number].
-    pub fn number<S: TryIntoValue + Clone + Debug>(input: &mut &[Token<S>]) -> PResult<Fraction> {
+    pub fn number<S: TryIntoValue + Clone + Debug>(input: &mut &[Token<S>]) -> ModalResult<Fraction> {
         one_of(|t| matches!(t, Token::Value(lexer::Value::Number(_))))
             .map(|t| match t {
                 Token::Value(lexer::Value::Number(n)) => n,
@@ -238,7 +238,7 @@ pub mod token {
     }
 
     /// Try to parse a single [Token::Directive].
-    pub fn directive<S: TryIntoValue + Clone + Debug>(input: &mut &[Token<S>]) -> PResult<String> {
+    pub fn directive<S: TryIntoValue + Clone + Debug>(input: &mut &[Token<S>]) -> ModalResult<String> {
         one_of(|t| matches!(t, Token::Directive(_)))
             .map(|t| match t {
                 Token::Directive(d) => d,

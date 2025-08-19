@@ -122,7 +122,7 @@ pub mod token {
         combinator::{alt, opt, terminated},
         stream::{AsChar, Compare, FindSlice, SliceLen, Stream, StreamIsPartial},
         token::take_till,
-        PResult, Parser,
+        ModalResult, Parser,
     };
 
     pub use common::lexer::token::*;
@@ -130,7 +130,7 @@ pub mod token {
     /// Tries to parse a [Token::GroupOpen].
     pub fn group_open<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         Token<I::Slice>: Into<Tok>,
     {
@@ -145,7 +145,7 @@ pub mod token {
     /// Tries to parse a [Token::GroupClose].
     pub fn group_close<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         Token<I::Slice>: Into<Tok>,
     {
@@ -157,7 +157,7 @@ pub mod token {
     /// Tries to parse a single [Token::TimeSymbol].
     pub fn time_symbol<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>> {
+    ) -> ModalResult<Token<<I as Stream>::Slice>> {
         (
             "@",
             opt("=".void()).map(|o| o.is_some()),
@@ -188,7 +188,7 @@ pub mod token {
     /// Tries to parse a single [Token::Directive].
     pub fn directive<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>>
+    ) -> ModalResult<Token<<I as Stream>::Slice>>
     where
         I::Token: AsChar + Clone,
     {
@@ -203,7 +203,7 @@ pub mod token {
     /// Tries to parse a single [Token::Separator].
     pub fn separator<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>>
+    ) -> ModalResult<Token<<I as Stream>::Slice>>
     where
         I::Token: AsChar + Clone,
     {
@@ -222,7 +222,7 @@ pub mod token {
             + Copy,
     >(
         input: &mut I,
-    ) -> PResult<Token<<I as Stream>::Slice>>
+    ) -> ModalResult<Token<<I as Stream>::Slice>>
     where
         <I as Stream>::Token: AsChar + Clone,
         I::Slice: SliceLen,

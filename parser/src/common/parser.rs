@@ -17,7 +17,7 @@ use winnow::{
     combinator::{alt, separated, terminated},
     error::ParserError,
     stream::{Stream, StreamIsPartial},
-    PResult, Parser,
+    ModalResult, Parser,
 };
 
 pub mod try_into_value;
@@ -97,7 +97,7 @@ pub fn list_like<I: Stream + StreamIsPartial, E: ParserError<I>, TO, ES, TC, IG>
 /// Try to parse a [Value::Tuple] from a stream of tokens which are a superset of [GenericToken].
 pub fn tuple<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
     input: &mut &[Tok],
-) -> PResult<Value> {
+) -> ModalResult<Value> {
     list_like(
         tuple_open,
         element_separator,
@@ -112,7 +112,7 @@ pub fn tuple<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue
 /// Try to parse a [Value::Set] from a stream of tokens which are a superset of [GenericToken].
 pub fn set<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
     input: &mut &[Tok],
-) -> PResult<Value> {
+) -> ModalResult<Value> {
     list_like(
         set_open,
         element_separator,
@@ -129,7 +129,7 @@ pub fn set<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
 /// but also parses composite values such as sets or tuples.
 pub fn any_value<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
     input: &mut &[Tok],
-) -> PResult<Value> {
+) -> ModalResult<Value> {
     alt((value_or_identifier, tuple, set)).parse_next(input)
 }
 
@@ -141,14 +141,14 @@ pub mod token {
     use winnow::{
         combinator::{alt, repeat},
         token::one_of,
-        PResult,
+        ModalResult,
     };
 
     /// Try to parse a single [GenericToken::Identifier],
     /// mapping the value to a [String] using [TryIntoValue::identifier].
     pub fn identifier<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<String> {
+    ) -> ModalResult<String> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::Identifier(_))))
             .output_into()
             .map(|t| match t {
@@ -163,7 +163,7 @@ pub mod token {
     /// mapping the value to a [Value] using [TryIntoValue].
     pub fn value<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<Value> {
+    ) -> ModalResult<Value> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::Value(_))))
             .output_into()
             .try_map(|t| match t {
@@ -181,14 +181,14 @@ pub mod token {
         S: TryIntoValue,
     >(
         input: &mut &[Tok],
-    ) -> PResult<Value> {
+    ) -> ModalResult<Value> {
         alt((value, identifier.map(Value::Identifier))).parse_next(input)
     }
 
     /// Try to parse a single [GenericToken::Comment].
     pub fn comment<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<S> {
+    ) -> ModalResult<S> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::Comment(_))))
             .output_into()
             .map(|t| match t {
@@ -201,7 +201,7 @@ pub mod token {
     /// Ignore all comments until the next non-comment token.
     pub fn ignore_comments<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<()> {
+    ) -> ModalResult<()> {
         repeat::<_, _, (), _, _>(0.., comment)
             .void()
             .parse_next(input)
@@ -210,7 +210,7 @@ pub mod token {
     /// Try to parse a single [GenericToken::TupleOpen].
     pub fn tuple_open<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<()> {
+    ) -> ModalResult<()> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::TupleOpen)))
             .void()
             .parse_next(input)
@@ -219,7 +219,7 @@ pub mod token {
     /// Try to parse a single [GenericToken::TupleClose].
     pub fn tuple_close<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<()> {
+    ) -> ModalResult<()> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::TupleClose)))
             .void()
             .parse_next(input)
@@ -228,7 +228,7 @@ pub mod token {
     /// Try to parse a single [GenericToken::SetOpen].
     pub fn set_open<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<()> {
+    ) -> ModalResult<()> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::SetOpen)))
             .void()
             .parse_next(input)
@@ -237,7 +237,7 @@ pub mod token {
     /// Try to parse a single [GenericToken::SetClose].
     pub fn set_close<Tok: Into<Option<GenericToken<S>>> + Clone + Debug, S: TryIntoValue>(
         input: &mut &[Tok],
-    ) -> PResult<()> {
+    ) -> ModalResult<()> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::SetClose)))
             .void()
             .parse_next(input)
@@ -249,7 +249,7 @@ pub mod token {
         S: TryIntoValue,
     >(
         input: &mut &[Tok],
-    ) -> PResult<()> {
+    ) -> ModalResult<()> {
         one_of(|t: Tok| matches!(t.into(), Some(GenericToken::ElementSeparator)))
             .void()
             .parse_next(input)
