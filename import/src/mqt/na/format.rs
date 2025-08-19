@@ -139,7 +139,7 @@ pub mod parts {
         ascii::{float, multispace0, Caseless},
         combinator::{delimited, separated, terminated},
         stream::{AsBStr, AsChar, Compare, ParseSlice, Stream, StreamIsPartial},
-        PResult, Parser,
+        ModalResult, Parser,
     };
 
     use super::{Number, Position, PositionList};
@@ -149,7 +149,7 @@ pub mod parts {
         I: Stream + StreamIsPartial + Compare<Caseless<&'static str>> + Compare<char> + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Number>
+    ) -> ModalResult<Number>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -168,7 +168,7 @@ pub mod parts {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Position>
+    ) -> ModalResult<Position>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -195,7 +195,7 @@ pub mod parts {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<PositionList>
+    ) -> ModalResult<PositionList>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -217,7 +217,7 @@ pub mod operation {
         ascii::{alphanumeric1, multispace0, Caseless},
         combinator::{alt, delimited, opt, terminated},
         stream::{AsBStr, AsChar, Compare, ParseSlice, Stream, StreamIsPartial},
-        PResult, Parser,
+        ModalResult, Parser,
     };
 
     use super::{
@@ -235,7 +235,7 @@ pub mod operation {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Operation<I::Slice>>
+    ) -> ModalResult<Operation<I::Slice>>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -264,7 +264,7 @@ pub mod operation {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Operation<I::Slice>>
+    ) -> ModalResult<Operation<I::Slice>>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -294,7 +294,7 @@ pub mod operation {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Operation<I::Slice>>
+    ) -> ModalResult<Operation<I::Slice>>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -327,7 +327,7 @@ pub mod operation {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Operation<I::Slice>>
+    ) -> ModalResult<Operation<I::Slice>>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,
@@ -358,7 +358,7 @@ pub mod operation {
             + AsBStr,
     >(
         input: &mut I,
-    ) -> PResult<Operation<I::Slice>>
+    ) -> ModalResult<Operation<I::Slice>>
     where
         I::Slice: ParseSlice<Number>,
         I::Token: AsChar + Clone,

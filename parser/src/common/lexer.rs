@@ -48,7 +48,7 @@ pub mod value {
         combinator::{alt, opt, preceded, terminated},
         stream::{AsChar, Compare, FindSlice, SliceLen, Stream, StreamIsPartial},
         token::{one_of, take_while},
-        PResult, Parser,
+        ModalResult, Parser,
     };
 
     /// Tries to parse a [Value::String].
@@ -56,7 +56,7 @@ pub mod value {
     /// Zero-length strings (`""`) are allowed.
     pub fn string<I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>>(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>> {
+    ) -> ModalResult<Value<<I as Stream>::Slice>> {
         delimited_by("\"", "\"")
             .map(Value::String)
             .parse_next(input)
@@ -67,7 +67,7 @@ pub mod value {
     /// Zero-length regexes (`^$`) are allowed.
     pub fn regex<I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>>(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>> {
+    ) -> ModalResult<Value<<I as Stream>::Slice>> {
         delimited_by("^", "$")
             .take()
             .map(Value::Regex)
@@ -78,7 +78,7 @@ pub mod value {
     /// Returns the raw slice.
     pub fn number_raw<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
         input: &mut I,
-    ) -> PResult<<I as Stream>::Slice>
+    ) -> ModalResult<<I as Stream>::Slice>
     where
         I::Token: AsChar,
         I::Slice: SliceLen,
@@ -105,7 +105,7 @@ pub mod value {
     /// Tries to parse a [Value::Number].
     pub fn number<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>>
+    ) -> ModalResult<Value<<I as Stream>::Slice>>
     where
         I::Token: AsChar,
         I::Slice: SliceLen,
@@ -116,7 +116,7 @@ pub mod value {
     /// Tries to parse a [Value::Percentage].
     pub fn percentage<I: Stream + StreamIsPartial + Compare<&'static str> + Copy>(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>>
+    ) -> ModalResult<Value<<I as Stream>::Slice>>
     where
         I::Token: AsChar + Clone,
         I::Slice: SliceLen,
@@ -129,14 +129,14 @@ pub mod value {
     /// Tries to parse a [Value::Boolean].
     pub fn boolean<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>> {
+    ) -> ModalResult<Value<<I as Stream>::Slice>> {
         alt(("true", "false")).map(Value::Boolean).parse_next(input)
     }
 
     /// Tries to parse a [Value::Boolean].
     pub fn color<I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Value<I::Slice>>
+    ) -> ModalResult<Value<I::Slice>>
     where
         I::Token: AsChar + Clone,
     {
@@ -156,7 +156,7 @@ pub mod value {
         I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str> + Copy,
     >(
         input: &mut I,
-    ) -> PResult<Value<<I as Stream>::Slice>>
+    ) -> ModalResult<Value<<I as Stream>::Slice>>
     where
         I::Token: AsChar + Clone,
         I::Slice: SliceLen,
@@ -196,13 +196,13 @@ pub mod token {
         combinator::{alt, delimited},
         stream::{AsChar, Compare, FindSlice, SliceLen, Stream, StreamIsPartial},
         token::{take_until, take_while},
-        PResult, Parser,
+        ModalResult, Parser,
     };
 
     /// Tries to parse a [GenericToken::Identifier].
     /// Valid identifier characters are `[0-9a-zA-Z_]`.
     /// Does not allow empty identifiers.
-    pub fn identifier<Tok, I: Stream + StreamIsPartial>(input: &mut I) -> PResult<Tok>
+    pub fn identifier<Tok, I: Stream + StreamIsPartial>(input: &mut I) -> ModalResult<Tok>
     where
         <I as Stream>::Token: AsChar + Clone,
         GenericToken<I::Slice>: Into<Tok>,
@@ -220,7 +220,7 @@ pub mod token {
         I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str> + Copy,
     >(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         I::Token: AsChar + Clone,
         I::Slice: SliceLen,
@@ -240,7 +240,7 @@ pub mod token {
         I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<(char, char)>,
     >(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         <I as Stream>::Token: AsChar + Clone,
         GenericToken<I::Slice>: Into<Tok>,
@@ -257,7 +257,7 @@ pub mod token {
         I: Stream + StreamIsPartial + Compare<&'static str> + FindSlice<&'static str>,
     >(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         GenericToken<I::Slice>: Into<Tok>,
     {
@@ -278,7 +278,7 @@ pub mod token {
             + FindSlice<(char, char)>,
     >(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         <I as Stream>::Token: AsChar + Clone,
         GenericToken<I::Slice>: Into<Tok>,
@@ -289,7 +289,7 @@ pub mod token {
     /// Tries to parse a [GenericToken::TupleOpen].
     pub fn tuple_open<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         GenericToken<I::Slice>: Into<Tok>,
     {
@@ -301,7 +301,7 @@ pub mod token {
     /// Tries to parse a [GenericToken::TupleClose].
     pub fn tuple_close<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         GenericToken<I::Slice>: Into<Tok>,
     {
@@ -313,7 +313,7 @@ pub mod token {
     /// Tries to parse a [GenericToken::SetOpen].
     pub fn set_open<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         GenericToken<I::Slice>: Into<Tok>,
     {
@@ -325,7 +325,7 @@ pub mod token {
     /// Tries to parse a [GenericToken::SetClose].
     pub fn set_close<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         GenericToken<I::Slice>: Into<Tok>,
     {
@@ -337,7 +337,7 @@ pub mod token {
     /// Tries to parse a [GenericToken::ElementSeparator].
     pub fn element_separator<Tok, I: Stream + StreamIsPartial + Compare<&'static str>>(
         input: &mut I,
-    ) -> PResult<Tok>
+    ) -> ModalResult<Tok>
     where
         GenericToken<I::Slice>: Into<Tok>,
     {

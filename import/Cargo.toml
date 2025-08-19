@@ -13,7 +13,7 @@ version = "0.1.1"
 fraction = "0.15.3"
 naviz-parser = {workspace = true}
 serde = {version = "1.0.217", optional = true, features = ["serde_derive"]}
-winnow = "0.6.22"
+winnow = "0.7.0"
 
 [features]
 serde = ["dep:serde"]

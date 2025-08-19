@@ -34,7 +34,7 @@ pub fn parse<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse a [Config] from a stream of [Token]s.
 pub fn config<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<Config> {
+) -> ModalResult<Config> {
     preceded(
         ignore_comments,
         repeat(0.., terminated(config_item, ignore_comments)),
@@ -45,14 +45,14 @@ pub fn config<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse a single [ConfigItem] from a stream of [Token]s.
 pub fn config_item<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<ConfigItem> {
+) -> ModalResult<ConfigItem> {
     alt((property, block, named_block)).parse_next(input)
 }
 
 /// Try to parse a [ConfigItem::Property] from a stream of [Token]s.
 pub fn property<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<ConfigItem> {
+) -> ModalResult<ConfigItem> {
     (
         terminated(any_value, ignore_comments),
         terminated(separator, ignore_comments),
@@ -65,7 +65,7 @@ pub fn property<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse a [ConfigItem::Block] from a stream of [Token]s.
 pub fn block<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<ConfigItem> {
+) -> ModalResult<ConfigItem> {
     (
         terminated(identifier, ignore_comments),
         terminated(block_open, ignore_comments),
@@ -79,7 +79,7 @@ pub fn block<S: TryIntoValue + Clone + Debug + PartialEq>(
 /// Try to parse a [ConfigItem::NamedBlock] from a stream of [Token]s.
 pub fn named_block<S: TryIntoValue + Clone + Debug + PartialEq>(
     input: &mut &[Token<S>],
-) -> PResult<ConfigItem> {
+) -> ModalResult<ConfigItem> {
     (
         terminated(identifier, ignore_comments),
         terminated(any_value, ignore_comments),
@@ -100,17 +100,17 @@ pub mod token {
     pub use common::parser::token::*;
 
     /// Try to parse a single [Token::BlockOrSetOpen] for opening a block.
-    pub fn block_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+    pub fn block_open<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> ModalResult<()> {
         one_of([Token::BlockOrSetOpen]).void().parse_next(input)
     }
 
     /// Try to parse a single [Token::BlockOrSetClose] for closing a block.
-    pub fn block_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+    pub fn block_close<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> ModalResult<()> {
         one_of([Token::BlockOrSetClose]).void().parse_next(input)
     }
 
     /// Try to parse a single [Token::Separator].
-    pub fn separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> PResult<()> {
+    pub fn separator<S: Clone + Debug + PartialEq>(input: &mut &[Token<S>]) -> ModalResult<()> {
         one_of([Token::Separator]).void().parse_next(input)
     }
 }
