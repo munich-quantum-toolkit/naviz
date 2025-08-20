@@ -29,8 +29,8 @@ pub enum InputType {
 #[derive(Debug)]
 pub enum InputError {
     UTF8(Utf8Error),
-    Lex(ParseErrorInner),
-    Parse(ParseErrorInner),
+    Lex(ParseErrorInner, Option<ErrorLocation>),
+    Parse(ParseErrorInner, Option<ErrorLocation>),
     Convert(ParseInstructionsError),
 }
 
@@ -45,8 +45,8 @@ pub enum ConfigFormat {
 #[derive(Debug)]
 pub enum ConfigError {
     UTF8(Utf8Error),
-    Lex(ParseErrorInner),
-    Parse(ParseErrorInner),
+    Lex(ParseErrorInner, Option<ErrorLocation>),
+    Parse(ParseErrorInner, Option<ErrorLocation>),
     Convert(config::error::Error),
 }
 /// An error to do with the [Repository][naviz_repository::Repository]
@@ -127,21 +127,29 @@ fn format_config_error(format: &ConfigFormat, error: &ConfigError) -> String {
                 file_type, utf8_error
             )
         }
-        ConfigError::Lex(parse_error) => {
+        ConfigError::Lex(parse_error, location) => {
+            let location_info = location
+                .as_ref()
+                .map(|loc| format!(" at line {}, column {}", loc.line, loc.column))
+                .unwrap_or_default();
             format!(
-                "Failed to parse {} file due to invalid syntax.\n\n\
+                "Failed to parse {} file due to invalid syntax{}.\n\n\
                 Lexical analysis error: {}\n\n\
                 This typically means:\n\
                 • Unexpected characters or symbols\n\
                 • Invalid token sequences\n\
                 • Malformed identifiers or literals\n\n\
                 Please check the file syntax and ensure it follows the expected format.",
-                file_type, format_parse_error_context(parse_error)
+                file_type, location_info, format_parse_error_context(parse_error)
             )
         }
-        ConfigError::Parse(parse_error) => {
+        ConfigError::Parse(parse_error, location) => {
+            let location_info = location
+                .as_ref()
+                .map(|loc| format!(" at line {}, column {}", loc.line, loc.column))
+                .unwrap_or_default();
             format!(
-                "Failed to parse {} file structure.\n\n\
+                "Failed to parse {} file structure{}.\n\n\
                 Parsing error: {}\n\n\
                 This typically means:\n\
                 • Brackets, braces, or parentheses are not properly matched\n\
@@ -149,7 +157,7 @@ fn format_config_error(format: &ConfigFormat, error: &ConfigError) -> String {
                 • Field names are misspelled or invalid\n\
                 • Values are in an unexpected format\n\n\
                 Please verify the file structure and syntax.",
-                file_type, format_parse_error_context(parse_error)
+                file_type, location_info, format_parse_error_context(parse_error)
             )
         }
         ConfigError::Convert(config_error) => {
@@ -175,9 +183,13 @@ fn format_input_error(error: &InputError) -> String {
                 utf8_error
             )
         }
-        InputError::Lex(parse_error) => {
+        InputError::Lex(parse_error, location) => {
+            let location_info = location
+                .as_ref()
+                .map(|loc| format!(" at line {}, column {}", loc.line, loc.column))
+                .unwrap_or_default();
             format!(
-                "Failed to parse instruction file due to invalid syntax.\n\n\
+                "Failed to parse instruction file due to invalid syntax{}.\n\n\
                 Lexical analysis error: {}\n\n\
                 Common issues:\n\
                 • Unrecognized characters or symbols\n\
@@ -185,12 +197,16 @@ fn format_input_error(error: &InputError) -> String {
                 • Invalid number formats\n\
                 • Malformed identifiers\n\n\
                 Please check the file syntax.",
-                format_parse_error_context(parse_error)
+                location_info, format_parse_error_context(parse_error)
             )
         }
-        InputError::Parse(parse_error) => {
+        InputError::Parse(parse_error, location) => {
+            let location_info = location
+                .as_ref()
+                .map(|loc| format!(" at line {}, column {}", loc.line, loc.column))
+                .unwrap_or_default();
             format!(
-                "Failed to parse instruction file structure.\n\n\
+                "Failed to parse instruction file structure{}.\n\n\
                 Parsing error: {}\n\n\
                 Common issues:\n\
                 • Instructions are not properly formatted\n\
@@ -198,7 +214,7 @@ fn format_input_error(error: &InputError) -> String {
                 • Missing semicolons or separators\n\
                 • Invalid gate names or parameters\n\n\
                 Please verify the instruction syntax.",
-                format_parse_error_context(parse_error)
+                location_info, format_parse_error_context(parse_error)
             )
         }
         InputError::Convert(convert_error) => {
@@ -339,4 +355,44 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
             )
         }
     }
+}
+
+/// Location information for parsing errors
+#[derive(Debug, Clone)]
+pub struct ErrorLocation {
+    /// Line number (1-based)
+    pub line: usize,
+    /// Column number (1-based)
+    pub column: usize,
+    /// Byte offset in the original text
+    pub offset: usize,
+}
+
+impl ErrorLocation {
+    /// Create ErrorLocation from byte offset and original text
+    pub fn from_offset(text: &str, offset: usize) -> Self {
+        let (line, column) = byte_offset_to_line_column(text, offset);
+        Self { line, column, offset }
+    }
+}
+
+/// Convert byte offset to line and column numbers (1-based)
+fn byte_offset_to_line_column(text: &str, offset: usize) -> (usize, usize) {
+    let mut line = 1;
+    let mut column = 1;
+
+    for (i, ch) in text.char_indices() {
+        if i >= offset {
+            break;
+        }
+
+        if ch == '\n' {
+            line += 1;
+            column = 1;
+        } else {
+            column += 1;
+        }
+    }
+
+    (line, column)
 }
