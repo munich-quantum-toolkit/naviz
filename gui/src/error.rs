@@ -54,7 +54,7 @@ pub enum ConfigError {
 pub enum RepositoryError {
     Load(RepositoryLoadSource, naviz_repository::error::Error),
     Open(naviz_repository::error::Error),
-    Import(naviz_repository::error::Error),
+    Import(naviz_repository::error::Error, Option<ErrorLocation>),
     Remove(naviz_repository::error::Error),
     Search,
 }
@@ -84,8 +84,8 @@ impl Error {
             Self::Repository(RepositoryError::Load(RepositoryLoadSource::Bundled, _), ConfigFormat::Style) => "Failed to load bundled styles",
             Self::Repository(RepositoryError::Load(RepositoryLoadSource::UserDir, _), ConfigFormat::Machine) => "Failed to load machines from user-dir",
             Self::Repository(RepositoryError::Load(RepositoryLoadSource::UserDir, _), ConfigFormat::Style) => "Failed to load styles from user-dir",
-            Self::Repository(RepositoryError::Import(_), ConfigFormat::Machine) => "Failed to import machine to user-dir",
-            Self::Repository(RepositoryError::Import(_), ConfigFormat::Style) => "Failed to import machine to user-dir",
+            Self::Repository(RepositoryError::Import(_, _), ConfigFormat::Machine) => "Failed to import machine to user-dir",
+            Self::Repository(RepositoryError::Import(_, _), ConfigFormat::Style) => "Failed to import style to user-dir",
             Self::Repository(RepositoryError::Remove(_), ConfigFormat::Machine) => "Failed to remove machine from user-dir",
             Self::Repository(RepositoryError::Remove(_), ConfigFormat::Style) => "Failed to remove style from user-dir",
         }
@@ -322,16 +322,87 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
                 item_type, repo_error, item_type
             )
         }
-        RepositoryError::Import(repo_error) => {
-            format!(
-                "Failed to import {} to user directory.\n\n\
-                Error: {:?}\n\n\
-                This may be due to:\n\
-                • Insufficient permissions to write to user directory\n\
-                • Disk space limitations\n\
-                • File system errors",
-                item_type, repo_error
-            )
+        RepositoryError::Import(repo_error, location) => {
+            // Tailored messaging per underlying repository error kind
+            use naviz_repository::error::Error as RErr;
+            match repo_error {
+                RErr::IoError(ioe) => format!(
+                    "Failed to import {} to user directory.\n\n\
+                    I/O error: {}\n\n\
+                    This may be due to:\n\
+                    • Insufficient permissions to read or write the file\n\
+                    • The file being locked by another process\n\
+                    • Disk space limitations or file system errors\n\
+                    Please verify file permissions and available disk space.",
+                    item_type, ioe
+                ),
+                RErr::UTF8Error(utf8) => format!(
+                    "Failed to import {} – the file is not valid UTF-8.\n\n\
+                    Error details: {}\n\n\
+                    Ensure the file is saved using UTF-8 encoding (without BOM).",
+                    item_type, utf8
+                ),
+                RErr::LexError(offset, inner) => {
+                    let loc_info = location
+                        .as_ref()
+                        .map(|l| format!(" (line {}, column {})", l.line, l.column))
+                        .unwrap_or_else(String::new);
+                    format!(
+                        "Failed to lex {} definition{} at byte offset {}.\n\n\
+                        {}\n\
+                        Probable causes:\n\
+                        • Unexpected or invalid character\n\
+                        • Unterminated string / regex / comment\n\
+                        • Malformed number, percentage, or color literal\n\
+                        • Missing ':' between key and value\n\
+                        {}\n\
+                        Please correct the syntax and try again.",
+                        item_type,
+                        loc_info,
+                        offset,
+                        format_parse_error_context(inner),
+                        format_expected_hint(inner)
+                    )
+                }
+                RErr::ParseError(offset, inner) => {
+                    let loc_info = location
+                        .as_ref()
+                        .map(|l| format!(" (line {}, column {})", l.line, l.column))
+                        .unwrap_or_else(String::new);
+                    format!(
+                        "Failed to parse {} structure{} at byte offset {}.\n\n\
+                        {}\n\
+                        Probable causes:\n\
+                        • Unbalanced braces / parentheses / brackets\n\
+                        • Misplaced or missing block delimiters\n\
+                        • Extra or missing commas / separators\n\
+                        • Incorrect ordering of keys or blocks\n\
+                        {}\n\
+                        Please review structural syntax and retry.",
+                        item_type,
+                        loc_info,
+                        offset,
+                        format_parse_error_context(inner),
+                        format_expected_hint(inner)
+                    )
+                }
+                RErr::ConfigReadError(cfg_err) => format!(
+                    "Imported {} file has invalid semantic content.\n\n\
+                    Validation error: {}\n\
+                    The syntax was correct but values failed validation.\n\
+                    Check that required fields exist and values are within allowed ranges.",
+                    item_type, cfg_err
+                ),
+                RErr::IdError => format!(
+                    "Imported {} contains invalid or duplicate identifiers.\n\n\
+                    Ensure all identifiers are unique and follow naming rules.",
+                    item_type
+                ),
+                RErr::NotRemovableError => format!(
+                    "Internal error: attempted to treat a non-removable {} as removable during import.",
+                    item_type
+                ),
+            }
         }
         RepositoryError::Remove(repo_error) => {
             format!(
@@ -355,6 +426,12 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
             )
         }
     }
+}
+
+/// Provide an extra hint listing expected contexts if available (repository import helper)
+fn format_expected_hint(inner: &ParseErrorInner) -> String {
+    let contexts: Vec<String> = inner.context().map(|c| c.to_string()).collect();
+    if contexts.is_empty() { String::new() } else { format!("Expected one of: {}", contexts.join(", ")) }
 }
 
 /// Location information for parsing errors

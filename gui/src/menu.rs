@@ -95,6 +95,9 @@ impl MenuEvent {
             FileType::Instructions => panic!("Unable to import instructions"),
             FileType::Machine => Self::ImportMachine(handle.path().to_owned()),
             FileType::Style => Self::ImportStyle(handle.path().to_owned()),
+            FileType::MachineConfig => Self::ImportMachine(handle.path().to_owned()),
+            FileType::StyleConfig => Self::ImportStyle(handle.path().to_owned()),
+            FileType::Unknown => panic!("Cannot import file of unknown type"),
         }
     }
 }
@@ -105,6 +108,9 @@ pub enum FileType {
     Instructions,
     Machine,
     Style,
+    MachineConfig,
+    StyleConfig,
+    Unknown,
 }
 
 /// Something which can be used to filter files by extension
@@ -127,6 +133,9 @@ impl FileFilter for FileType {
             FileType::Instructions => "NAViz instructions",
             FileType::Machine => "NAViz machine",
             FileType::Style => "NAViz style",
+            FileType::MachineConfig => "NAViz machine config",
+            FileType::StyleConfig => "NAViz style config",
+            FileType::Unknown => "Unknown file type",
         }
     }
     fn extensions(&self) -> &'static [&'static str] {
@@ -134,6 +143,9 @@ impl FileFilter for FileType {
             FileType::Instructions => &["naviz"],
             FileType::Machine => &["namachine"],
             FileType::Style => &["nastyle"],
+            FileType::MachineConfig => &["nmconfig"],
+            FileType::StyleConfig => &["nsconfig"],
+            FileType::Unknown => &[],
         }
     }
 }
@@ -210,7 +222,13 @@ impl MenuBar {
             let extension = &*extension.to_string_lossy();
 
             // Internal formats
-            for file_type in [FileType::Instructions, FileType::Machine, FileType::Style] {
+            for file_type in [
+                FileType::Instructions,
+                FileType::Machine,
+                FileType::Style,
+                FileType::MachineConfig,
+                FileType::StyleConfig,
+            ] {
                 // File extension is known?
                 if file_type.extensions().contains(&extension) {
                     let _ = self
@@ -286,6 +304,60 @@ impl MenuBar {
         });
     }
 
+    /// Show a file dialog allowing any internal NAViz file (instructions, machine, style, configs)
+    pub fn choose_any_internal(&self, future_helper: &FutureHelper) {
+        let sender = self.event_channel.0.clone();
+        future_helper.execute_maybe_to(
+            async move {
+                let mut dialog = rfd::AsyncFileDialog::new();
+                // Aggregate filter
+                dialog = dialog.add_filter(
+                    "All NAViz files",
+                    &["naviz", "namachine", "nastyle", "nmconfig", "nsconfig"],
+                );
+                for ft in [
+                    FileType::Instructions,
+                    FileType::Machine,
+                    FileType::Style,
+                    FileType::MachineConfig,
+                    FileType::StyleConfig,
+                ] {
+                    dialog = dialog.add_filter(ft.name(), ft.extensions());
+                }
+                if let Some(handle) = dialog.pick_file().await {
+                    let name = handle.file_name();
+                    let data = handle.read().await;
+                    let ext = std::path::Path::new(&name)
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .map(|s| s.to_ascii_lowercase());
+                    if let Some(ext) = ext {
+                        let file_type = if ["naviz"].contains(&ext.as_str()) {
+                            FileType::Instructions
+                        } else if ["namachine"].contains(&ext.as_str()) {
+                            FileType::Machine
+                        } else if ["nastyle"].contains(&ext.as_str()) {
+                            FileType::Style
+                        } else if ["nmconfig"].contains(&ext.as_str()) {
+                            FileType::MachineConfig
+                        } else if ["nsconfig"].contains(&ext.as_str()) {
+                            FileType::StyleConfig
+                        } else {
+                            FileType::Unknown
+                        };
+                        if file_type != FileType::Unknown {
+                            return Some(MenuEvent::FileOpen(file_type, data.into()));
+                        }
+                    }
+                    None
+                } else {
+                    None
+                }
+            },
+            sender,
+        );
+    }
+
     /// Draw the [MenuBar]
     pub fn draw(
         &mut self,
@@ -305,6 +377,7 @@ impl MenuBar {
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open").clicked() {
+                    // Use the simpler single-filter dialog for instructions to ensure .naviz always shows
                     self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
                     ui.close_menu();
                 }

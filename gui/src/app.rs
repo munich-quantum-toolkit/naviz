@@ -1,4 +1,4 @@
-use core::str;
+use std::str;
 #[cfg(not(target_arch = "wasm32"))]
 use std::{sync::mpsc::channel, thread};
 
@@ -18,7 +18,7 @@ use crate::{
     canvas::{CanvasContent, EmptyCanvas, WgpuCanvas},
     current_machine::CurrentMachine,
     error::{
-        ConfigError, ConfigFormat, Error, InputError, InputType, RepositoryError,
+        ConfigError, ConfigFormat, Error, ErrorLocation, InputError, InputType, RepositoryError,
         RepositoryLoadSource, Result,
     },
     errors::{ErrorEmitter, Errors},
@@ -28,7 +28,18 @@ use crate::{
     util::WEB,
 };
 
-/// The main App to draw using [egui]/[eframe]
+/// Determine file type based on file extension
+fn get_file_type_from_extension(filename: &str) -> FileType {
+    let path = std::path::Path::new(filename);
+    match path.extension().and_then(|ext| ext.to_str()) {
+        Some("naviz") => FileType::Instructions,
+        Some("namachine") => FileType::Machine, // Use Machine for .namachine files
+        Some("nastyle") => FileType::Style,     // Use Style for .nastyle files
+        _ => FileType::Unknown,
+    }
+}
+
+/// The main App to draw using [eframe]/[egui]
 pub struct App {
     future_helper: FutureHelper,
     menu_bar: MenuBar,
@@ -172,21 +183,152 @@ impl App {
         Ok(())
     }
 
+    /// Open a file from `data`, automatically detecting the file type based on filename
+    pub fn open_file(&mut self, filename: Option<&str>, data: &[u8]) -> Result<()> {
+        // Detect file type based on extension
+        if let Some(filename) = filename {
+            match get_file_type_from_extension(filename) {
+                FileType::Instructions => self.open(data),
+                FileType::Machine => self.set_machine_manually(data),
+                FileType::Style => self.set_style_manually(data),
+                FileType::MachineConfig => self.open_machine_config(data),
+                FileType::StyleConfig => self.open_style_config(data),
+                FileType::Unknown => {
+                    // Try to parse as instructions by default for backwards compatibility
+                    self.open(data)
+                }
+            }
+        } else {
+            // No filename provided, try to parse as instructions by default
+            self.open(data)
+        }
+    }
+
     /// Open the naviz-instructions from `data`
     pub fn open(&mut self, data: &[u8]) -> Result<()> {
-        let input = naviz_parser::input::lexer::lex(
-            str::from_utf8(data)
-                .map_err(|e| Error::FileOpen(InputType::Instruction(InputError::UTF8(e))))?,
-        )
-        .map_err(|e| Error::FileOpen(InputType::Instruction(InputError::Lex(e.into_inner()))))?;
-        let input = naviz_parser::input::parser::parse(&input).map_err(|e| {
-            Error::FileOpen(InputType::Instruction(InputError::Parse(e.into_inner())))
+        let text = str::from_utf8(data)
+            .map_err(|e| Error::FileOpen(InputType::Instruction(InputError::UTF8(e))))?;
+
+        let input = naviz_parser::input::lexer::lex(text).map_err(|e| {
+            let location = ErrorLocation::from_offset(text, e.offset());
+            Error::FileOpen(InputType::Instruction(InputError::Lex(
+                e.into_inner(),
+                Some(location),
+            )))
         })?;
+
+        let input = naviz_parser::input::parser::parse(&input).map_err(|e| {
+            // Estimate line from number of separator tokens before the error index.
+            let token_index = e.offset();
+            use naviz_parser::input::lexer::Token as InTok;
+            let line = 1 + input
+                .iter()
+                .take(token_index.min(input.len()))
+                .filter(|t| matches!(t, InTok::Separator))
+                .count();
+            // Find byte offset of start of that line
+            let mut current_line = 1usize;
+            let mut line_start_offset = 0usize;
+            for (i, ch) in text.char_indices() {
+                if current_line == line {
+                    break;
+                }
+                if ch == '\n' {
+                    current_line += 1;
+                    line_start_offset = i + 1;
+                }
+            }
+            // Column unknown without per-token spans; default to 1
+            let location = ErrorLocation {
+                line,
+                column: 1,
+                offset: line_start_offset,
+            };
+            Error::FileOpen(InputType::Instruction(InputError::Parse(
+                e.into_inner(),
+                Some(location),
+            )))
+        })?;
+
         let input = naviz_parser::input::concrete::Instructions::new(input)
             .map_err(|e| Error::FileOpen(InputType::Instruction(InputError::Convert(e))))?;
+
         self.animator_adapter.set_instructions(input);
         self.update_compatible_machines();
         self.select_compatible_machine()?;
+        Ok(())
+    }
+
+    /// Open a machine configuration file from `data`
+    pub fn open_machine_config(&mut self, data: &[u8]) -> Result<()> {
+        let config_str = str::from_utf8(data).map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::UTF8(e),
+            ))
+        })?;
+
+        let tokens = naviz_parser::config::lexer::lex(config_str).map_err(|e| {
+            let location = ErrorLocation::from_offset(config_str, e.offset());
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::Lex(e.into_inner(), Some(location)),
+            ))
+        })?;
+
+        let parsed = naviz_parser::config::parser::parse(&tokens).map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::Parse(e.into_inner(), None),
+            ))
+        })?;
+
+        // Convert to generic config first, then to machine config
+        let generic_config: naviz_parser::config::generic::Config = parsed.into();
+        let machine_config = naviz_parser::config::machine::MachineConfig::try_from(generic_config)
+            .map_err(|e| {
+                Error::FileOpen(InputType::Config(
+                    ConfigFormat::Machine,
+                    ConfigError::Convert(e),
+                ))
+            })?;
+
+        self.set_loaded_machine(None::<String>, machine_config);
+        Ok(())
+    }
+
+    /// Open a style configuration file from `data`
+    pub fn open_style_config(&mut self, data: &[u8]) -> Result<()> {
+        let config_str = str::from_utf8(data).map_err(|e| {
+            Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::UTF8(e)))
+        })?;
+
+        let tokens = naviz_parser::config::lexer::lex(config_str).map_err(|e| {
+            let location = ErrorLocation::from_offset(config_str, e.offset());
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Style,
+                ConfigError::Lex(e.into_inner(), Some(location)),
+            ))
+        })?;
+
+        let parsed = naviz_parser::config::parser::parse(&tokens).map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Style,
+                ConfigError::Parse(e.into_inner(), None),
+            ))
+        })?;
+
+        // Convert to generic config first, then to style config
+        let generic_config: naviz_parser::config::generic::Config = parsed.into();
+        let style_config = naviz_parser::config::visual::VisualConfig::try_from(generic_config)
+            .map_err(|e| {
+                Error::FileOpen(InputType::Config(
+                    ConfigFormat::Style,
+                    ConfigError::Convert(e),
+                ))
+            })?;
+
+        self.set_loaded_style(None::<String>, style_config);
         Ok(())
     }
 
@@ -260,22 +402,24 @@ impl App {
 
     /// Set the current machine to the one specified in `data`.
     pub fn set_machine_manually(&mut self, data: &[u8]) -> Result<()> {
-        let machine = naviz_parser::config::lexer::lex(str::from_utf8(data).map_err(|e| {
+        let config_str = str::from_utf8(data).map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
                 ConfigError::UTF8(e),
             ))
-        })?)
-        .map_err(|e| {
+        })?;
+
+        let machine = naviz_parser::config::lexer::lex(config_str).map_err(|e| {
+            let location = ErrorLocation::from_offset(config_str, e.offset());
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
-                ConfigError::Lex(e.into_inner()),
+                ConfigError::Lex(e.into_inner(), Some(location)),
             ))
         })?;
         let machine = naviz_parser::config::parser::parse(&machine).map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
-                ConfigError::Parse(e.into_inner()),
+                ConfigError::Parse(e.into_inner(), None),
             ))
         })?;
         let machine: naviz_parser::config::generic::Config = machine.into();
@@ -317,19 +461,21 @@ impl App {
 
     /// Set the current style to the one specified in `data`.
     pub fn set_style_manually(&mut self, data: &[u8]) -> Result<()> {
-        let visual = naviz_parser::config::lexer::lex(str::from_utf8(data).map_err(|e| {
+        let config_str = str::from_utf8(data).map_err(|e| {
             Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::UTF8(e)))
-        })?)
-        .map_err(|e| {
+        })?;
+
+        let visual = naviz_parser::config::lexer::lex(config_str).map_err(|e| {
+            let location = ErrorLocation::from_offset(config_str, e.offset());
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Style,
-                ConfigError::Lex(e.into_inner()),
+                ConfigError::Lex(e.into_inner(), Some(location)),
             ))
         })?;
         let visual = naviz_parser::config::parser::parse(&visual).map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Style,
-                ConfigError::Parse(e.into_inner()),
+                ConfigError::Parse(e.into_inner(), None),
             ))
         })?;
         let visual: naviz_parser::config::generic::Config = visual.into();
@@ -399,6 +545,18 @@ impl eframe::App for App {
                     self.set_style_manually(&content)
                         .pipe_void(&mut self.errors);
                 }
+                MenuEvent::FileOpen(FileType::MachineConfig, content) => {
+                    self.set_machine_manually(&content)
+                        .pipe_void(&mut self.errors);
+                }
+                MenuEvent::FileOpen(FileType::StyleConfig, content) => {
+                    self.set_style_manually(&content)
+                        .pipe_void(&mut self.errors);
+                }
+                MenuEvent::FileOpen(FileType::Unknown, content) => {
+                    // Try to parse as instructions by default
+                    self.open(&content).pipe_void(&mut self.errors);
+                }
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ExportVideo {
                     target,
@@ -427,7 +585,19 @@ impl eframe::App for App {
                     self.machine_repository
                         .import_machine_to_user_dir(&file)
                         .map_err(|e| {
-                            Error::Repository(RepositoryError::Import(e), ConfigFormat::Machine)
+                            use naviz_repository::error::Error as RErr;
+                            let loc = match &e {
+                                RErr::LexError(offset, _) | RErr::ParseError(offset, _) => {
+                                    std::fs::read_to_string(&file).ok().map(|content| {
+                                        ErrorLocation::from_offset(&content, *offset)
+                                    })
+                                }
+                                _ => None,
+                            };
+                            Error::Repository(
+                                RepositoryError::Import(e, loc),
+                                ConfigFormat::Machine,
+                            )
                         })
                         .pipe_void(&mut self.errors);
                     self.update_machines();
@@ -437,7 +607,16 @@ impl eframe::App for App {
                     self.style_repository
                         .import_style_to_user_dir(&file)
                         .map_err(|e| {
-                            Error::Repository(RepositoryError::Import(e), ConfigFormat::Style)
+                            use naviz_repository::error::Error as RErr;
+                            let loc = match &e {
+                                RErr::LexError(offset, _) | RErr::ParseError(offset, _) => {
+                                    std::fs::read_to_string(&file).ok().map(|content| {
+                                        ErrorLocation::from_offset(&content, *offset)
+                                    })
+                                }
+                                _ => None,
+                            };
+                            Error::Repository(RepositoryError::Import(e, loc), ConfigFormat::Style)
                         })
                         .pipe_void(&mut self.errors);
                     self.update_styles();
