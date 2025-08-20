@@ -1,11 +1,11 @@
 [package]
 authors = ["FloezeTv <floeze@floeze.tv>"]
 categories = []
-description = "Python-interface for naviz"
+description = "Python interface for naviz"
 edition = "2021"
 keywords = ["naviz", "python"]
 license = "MIT"
-name = "naviz-python"
+name = "naviz-bindings"
 repository.workspace = true
 version = "0.1.1"
 

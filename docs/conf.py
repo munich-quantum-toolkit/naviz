@@ -203,7 +203,7 @@ latex_docclass = {
 
 rust_crates = {
     "animator": "animator",
-    "python": "python",
+    "bindings": "bindings",
     "renderer": "renderer",
     "repository": "repository",
     "state": "state",

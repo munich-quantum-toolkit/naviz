@@ -35,10 +35,9 @@ Discussions = "https://github.com/cda-tum/mqt-naviz/discussions"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
-manifest-path = "python/Cargo.toml"
-include = ["**/*"]
+manifest-path = "bindings/Cargo.toml"
+sdist-generator = "git"
 exclude = [
-    ".github/**/*",
     "doc/**/*",
     "docs/**/*",
     "test/**/*",

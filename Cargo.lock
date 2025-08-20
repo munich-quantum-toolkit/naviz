@@ -2267,6 +2267,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "naviz-bindings"
+version = "0.1.1"
+dependencies = [
+ "futures",
+ "naviz-animator",
+ "naviz-import",
+ "naviz-parser",
+ "naviz-repository",
+ "naviz-video",
+ "pyo3",
+ "serde",
+ "serde-pyobject",
+]
+
+[[package]]
 name = "naviz-gui"
 version = "0.6.1"
 dependencies = [
@@ -2311,21 +2326,6 @@ dependencies = [
  "itertools",
  "regex",
  "winnow",
-]
-
-[[package]]
-name = "naviz-python"
-version = "0.1.1"
-dependencies = [
- "futures",
- "naviz-animator",
- "naviz-import",
- "naviz-parser",
- "naviz-repository",
- "naviz-video",
- "pyo3",
- "serde",
- "serde-pyobject",
 ]
 
 [[package]]
