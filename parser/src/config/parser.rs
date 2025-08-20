@@ -236,9 +236,7 @@ mod test {
         ];
 
         let err = parse(&tokens).expect_err("Config parser accepted property without separator");
-        // Collect any available context (may legitimately be empty depending on parser path)
-        let _context: Vec<String> = err.into_inner().context().map(|c| c.to_string()).collect();
-        // Intentionally no assertion on non-emptiness; this test's purpose is to ensure
-        // an error is produced and context retrieval works without panicking.
+        let _context = crate::test_utils::collect_context(err);
+        // No assertion; ensures error produced and context retrieval works.
     }
 }

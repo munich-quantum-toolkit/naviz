@@ -249,6 +249,7 @@ pub mod token {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::test_utils::byte_offset_to_line_column;
 
     #[test]
     pub fn simple_example() {
@@ -461,26 +462,5 @@ mod test {
         assert_eq!((line, column), (3, 1));
         let (line, column) = byte_offset_to_line_column("\n\n\n", 3);
         assert_eq!((line, column), (4, 1));
-    }
-
-    // Helper function for line/column calculation (should match the one in gui/src/error.rs)
-    fn byte_offset_to_line_column(text: &str, offset: usize) -> (usize, usize) {
-        let mut line = 1;
-        let mut column = 1;
-
-        for (i, ch) in text.char_indices() {
-            if i >= offset {
-                break;
-            }
-
-            if ch == '\n' {
-                line += 1;
-                column = 1;
-            } else {
-                column += 1;
-            }
-        }
-
-        (line, column)
     }
 }
