@@ -8,7 +8,7 @@ members = [
   "video",
   "repository",
   "import",
-  "python",
+  "bindings",
 ]
 resolver = "2"
 
@@ -21,7 +21,7 @@ naviz-animator = {path = "animator", version = "0.4.1"}
 naviz-gui = {path = "gui", version = "0.6.1"}
 naviz-import = {path = "import", version = "0.1.1"}
 naviz-parser = {path = "parser", version = "0.4.1"}
-naviz-python = {path = "python", version = "0.1.1"}
+naviz-bindings = {path = "bindings", version = "0.1.1"}
 naviz-renderer = {path = "renderer", version = "0.5.1"}
 naviz-repository = {path = "repository", version = "0.1.1"}
 naviz-state = {path = "state", version = "0.5.0"}
