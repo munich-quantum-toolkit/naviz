@@ -245,23 +245,30 @@ fn format_import_error(error: &ImportError) -> String {
         ImportError::MqtNqParse(parse_error) => {
             format!(
                 "Failed to parse the MQT-NA format file.\n\n\
-                Error context: {:?}\n\n\
+                Parsing error: {}\n\n\
+                This typically means:\n\
+                • Invalid MQT-NA syntax or format\n\
+                • Unrecognized quantum operation names\n\
+                • Malformed operation parameters or arguments\n\
+                • Missing or incorrect punctuation (semicolons, parentheses)\n\
+                • Invalid qubit register declarations\n\n\
                 Please verify that:\n\
                 • The file follows the MQT-NA format specification\n\
                 • All quantum operations are properly formatted\n\
                 • Register declarations are valid",
-                parse_error
+                format_parse_error_context(parse_error)
             )
         }
         ImportError::MqtNqConvert(convert_error) => {
             format!(
                 "Failed to convert MQT-NA operations.\n\n\
-                Error: {:?}\n\n\
+                Conversion error: {:?}\n\n\
                 The file was parsed successfully, but some operations could not be converted.\n\
                 This may indicate:\n\
-                • Unsupported gate types\n\
-                • Invalid operation parameters\n\
-                • Incompatible quantum circuit structure",
+                • Unsupported gate types or operations\n\
+                • Invalid operation parameters or qubit indices\n\
+                • Incompatible quantum circuit structure\n\
+                • Operations not supported by the target format",
                 convert_error
             )
         }
