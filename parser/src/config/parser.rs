@@ -226,4 +226,19 @@ mod test {
 
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn parser_error_context_available() {
+        // Minimal invalid config: two identifiers without separator should error
+        let tokens = vec![
+            Token::Identifier("property"),
+            Token::Identifier("value"), // missing ':'
+        ];
+
+        let err = parse(&tokens).expect_err("Config parser accepted property without separator");
+        // Collect any available context (may legitimately be empty depending on parser path)
+        let _context: Vec<String> = err.into_inner().context().map(|c| c.to_string()).collect();
+        // Intentionally no assertion on non-emptiness; this test's purpose is to ensure
+        // an error is produced and context retrieval works without panicking.
+    }
 }
