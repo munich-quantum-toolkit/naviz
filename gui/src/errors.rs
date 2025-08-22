@@ -1,6 +1,6 @@
 use std::{borrow::Cow, sync::atomic::AtomicU32};
 
-use egui::{Id, Window, ScrollArea, RichText, Color32};
+use egui::{Color32, Id, RichText, ScrollArea, Window};
 
 /// Display errors to the user.
 ///
@@ -77,31 +77,33 @@ impl Error {
             .show(ctx, |ui| {
                 // Add an error icon
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new("⚠").color(Color32::from_rgb(255, 165, 0)).size(20.0));
+                    ui.label(
+                        RichText::new("⚠")
+                            .color(Color32::from_rgb(255, 165, 0))
+                            .size(20.0),
+                    );
                     ui.label(RichText::new("Error Details").strong());
                 });
                 ui.separator();
 
                 // Show the error message in a scrollable area
-                ScrollArea::vertical()
-                    .max_height(400.0)
-                    .show(ui, |ui| {
-                        ui.label(&self.message);
+                ScrollArea::vertical().max_height(400.0).show(ui, |ui| {
+                    ui.label(&self.message);
 
-                        // Add some spacing and helpful actions
-                        ui.add_space(10.0);
-                        ui.separator();
-                        ui.horizontal(|ui| {
-                            if ui.button("Copy to Clipboard").clicked() {
-                                ctx.copy_text(format!("{}: {}", self.title, self.message));
+                    // Add some spacing and helpful actions
+                    ui.add_space(10.0);
+                    ui.separator();
+                    ui.horizontal(|ui| {
+                        if ui.button("Copy to Clipboard").clicked() {
+                            ctx.copy_text(format!("{}: {}", self.title, self.message));
+                        }
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button("Close").clicked() {
+                                close_requested = true;
                             }
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.button("Close").clicked() {
-                                    close_requested = true;
-                                }
-                            });
                         });
                     });
+                });
             });
 
         open && !close_requested

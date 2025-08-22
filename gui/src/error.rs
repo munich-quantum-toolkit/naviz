@@ -98,12 +98,8 @@ impl Error {
             Self::FileOpen(InputType::Config(format, config_error)) => {
                 format_config_error(format, config_error)
             }
-            Self::FileOpen(InputType::Instruction(input_error)) => {
-                format_input_error(input_error)
-            }
-            Self::Import(import_error) => {
-                format_import_error(import_error)
-            }
+            Self::FileOpen(InputType::Instruction(input_error)) => format_input_error(input_error),
+            Self::Import(import_error) => format_import_error(import_error),
             Self::Repository(repo_error, config_format) => {
                 format_repository_error(repo_error, config_format)
             }
@@ -140,7 +136,9 @@ fn format_config_error(format: &ConfigFormat, error: &ConfigError) -> String {
                 • Invalid token sequences\n\
                 • Malformed identifiers or literals\n\n\
                 Please check the file syntax and ensure it follows the expected format.",
-                file_type, location_info, format_parse_error_context(parse_error)
+                file_type,
+                location_info,
+                format_parse_error_context(parse_error)
             )
         }
         ConfigError::Parse(parse_error, location) => {
@@ -157,7 +155,9 @@ fn format_config_error(format: &ConfigFormat, error: &ConfigError) -> String {
                 • Field names are misspelled or invalid\n\
                 • Values are in an unexpected format\n\n\
                 Please verify the file structure and syntax.",
-                file_type, location_info, format_parse_error_context(parse_error)
+                file_type,
+                location_info,
+                format_parse_error_context(parse_error)
             )
         }
         ConfigError::Convert(config_error) => {
@@ -197,7 +197,8 @@ fn format_input_error(error: &InputError) -> String {
                 • Invalid number formats\n\
                 • Malformed identifiers\n\n\
                 Please check the file syntax.",
-                location_info, format_parse_error_context(parse_error)
+                location_info,
+                format_parse_error_context(parse_error)
             )
         }
         InputError::Parse(parse_error, location) => {
@@ -214,7 +215,8 @@ fn format_input_error(error: &InputError) -> String {
                 • Missing semicolons or separators\n\
                 • Invalid gate names or parameters\n\n\
                 Please verify the instruction syntax.",
-                location_info, format_parse_error_context(parse_error)
+                location_info,
+                format_parse_error_context(parse_error)
             )
         }
         InputError::Convert(convert_error) => {
@@ -431,7 +433,11 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
 /// Provide an extra hint listing expected contexts if available (repository import helper)
 fn format_expected_hint(inner: &ParseErrorInner) -> String {
     let contexts: Vec<String> = inner.context().map(|c| c.to_string()).collect();
-    if contexts.is_empty() { String::new() } else { format!("Expected one of: {}", contexts.join(", ")) }
+    if contexts.is_empty() {
+        String::new()
+    } else {
+        format!("Expected one of: {}", contexts.join(", "))
+    }
 }
 
 /// Location information for parsing errors
@@ -449,7 +455,11 @@ impl ErrorLocation {
     /// Create ErrorLocation from byte offset and original text
     pub fn from_offset(text: &str, offset: usize) -> Self {
         let (line, column) = byte_offset_to_line_column(text, offset);
-        Self { line, column, offset }
+        Self {
+            line,
+            column,
+            offset,
+        }
     }
 }
 
