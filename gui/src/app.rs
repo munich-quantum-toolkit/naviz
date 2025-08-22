@@ -33,8 +33,8 @@ fn get_file_type_from_extension(filename: &str) -> FileType {
     let path = std::path::Path::new(filename);
     match path.extension().and_then(|ext| ext.to_str()) {
         Some("naviz") => FileType::Instructions,
-        Some("namachine") => FileType::Machine, // Use Machine for .namachine files
-        Some("nastyle") => FileType::Style,     // Use Style for .nastyle files
+        Some("namachine") => FileType::Machine,
+        Some("nastyle") => FileType::Style,
         _ => FileType::Unknown,
     }
 }
