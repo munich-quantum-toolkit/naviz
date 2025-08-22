@@ -378,55 +378,41 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
                     )
                 }
                 RErr::ConfigReadError(cfg_err) => format!(
-                    "Imported {} file has invalid semantic content.\n\n\
-                    Validation error: {}\n\
+                    "Imported {item_type} file has invalid semantic content.\n\n\
+                    Validation error: {cfg_err}\n\
                     The syntax was correct but values failed validation.\n\
-                    Check that required fields exist and values are within allowed ranges.",
-                    item_type, cfg_err
+                    Check that required fields exist and values are within allowed ranges."
                 ),
                 RErr::IdError => format!(
-                    "Imported {} contains invalid or duplicate identifiers.\n\n\
-                    Ensure all identifiers are unique and follow naming rules.",
-                    item_type
+                    "Imported {item_type} contains invalid or duplicate identifiers.\n\n\
+                    Ensure all identifiers are unique and follow naming rules."
                 ),
                 RErr::NotRemovableError => format!(
-                    "Internal error: attempted to treat a non-removable {} as removable during import.",
-                    item_type
+                    "Internal error: attempted to treat a non-removable {item_type} as removable during import."
                 ),
-            }
-        }
-        RepositoryError::Remove(repo_error) => {
-            format!(
-                "Failed to remove {} from user directory.\n\n\
-                Error: {:?}\n\n\
+             }
+         }
+        RepositoryError::Remove(repo_error) => format!(
+            "Failed to remove {item_type} from user directory.\n\n\
+                Error: {repo_error:?}\n\n\
                 This may be due to:\n\
                 • Insufficient permissions\n\
                 • File is currently in use\n\
-                • File system errors",
-                item_type, repo_error
-            )
-        }
-        RepositoryError::Search => {
-            format!(
-                "Could not find the requested {} in the repository.\n\n\
+                • File system errors"
+        ),
+        RepositoryError::Search => format!(
+            "Could not find the requested {item_type} in the repository.\n\n\
                 Please verify:\n\
-                • The {} name is spelled correctly\n\
-                • The {} exists in the repository\n\
-                • The repository was loaded successfully",
-                item_type, item_type, item_type
-            )
-        }
-    }
-}
-
+                • The {item_type} name is spelled correctly\n\
+                • The {item_type} exists in the repository\n\
+                • The repository was loaded successfully"
+        ),
+     }
+ }
 /// Provide an extra hint listing expected contexts if available (repository import helper)
 fn format_expected_hint(inner: &ParseErrorInner) -> String {
     let contexts: Vec<String> = inner.context().map(|c| c.to_string()).collect();
-    if contexts.is_empty() {
-        String::new()
-    } else {
-        format!("Expected one of: {}", contexts.join(", "))
-    }
+    if contexts.is_empty() { String::new() } else { format!("Expected one of: {}", contexts.join(", ")) }
 }
 
 /// Location information for parsing errors
@@ -444,31 +430,19 @@ impl ErrorLocation {
     /// Create ErrorLocation from byte offset and original text
     pub fn from_offset(text: &str, offset: usize) -> Self {
         let (line, column) = byte_offset_to_line_column(text, offset);
-        Self {
-            line,
-            column,
-            offset,
-        }
+        Self { line, column, offset }
     }
 }
 
-/// Convert byte offset to line and column numbers (1-based)
+/// Convert byte-offset to (line, column) (both 1-based)
 fn byte_offset_to_line_column(text: &str, offset: usize) -> (usize, usize) {
-    let mut line = 1;
-    let mut column = 1;
-
-    for (i, ch) in text.char_indices() {
-        if i >= offset {
-            break;
-        }
-
-        if ch == '\n' {
-            line += 1;
-            column = 1;
-        } else {
-            column += 1;
-        }
+    let mut line = 1usize;
+    let mut col = 1usize;
+    let mut counted = 0usize;
+    for ch in text.chars() {
+        if counted >= offset { break; }
+        if ch == '\n' { line += 1; col = 1; } else { col += 1; }
+        counted += ch.len_utf8();
     }
-
-    (line, column)
+    (line, col)
 }

@@ -45,7 +45,7 @@ impl Errors {
     pub fn add(&mut self, title: impl Into<Cow<'static, str>>, body: impl ToString) {
         let title = title.into();
         let body = body.to_string();
-        log::error!("{}:\n{}", title, body);
+        log::error!("{title}:\n{body}");
         self.0.push(Error::new(title, body));
     }
 
