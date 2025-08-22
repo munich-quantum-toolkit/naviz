@@ -304,60 +304,6 @@ impl MenuBar {
         });
     }
 
-    /// Show a file dialog allowing any internal NAViz file (instructions, machine, style, configs)
-    pub fn choose_any_internal(&self, future_helper: &FutureHelper) {
-        let sender = self.event_channel.0.clone();
-        future_helper.execute_maybe_to(
-            async move {
-                let mut dialog = rfd::AsyncFileDialog::new();
-                // Aggregate filter
-                dialog = dialog.add_filter(
-                    "All NAViz files",
-                    &["naviz", "namachine", "nastyle", "nmconfig", "nsconfig"],
-                );
-                for ft in [
-                    FileType::Instructions,
-                    FileType::Machine,
-                    FileType::Style,
-                    FileType::MachineConfig,
-                    FileType::StyleConfig,
-                ] {
-                    dialog = dialog.add_filter(ft.name(), ft.extensions());
-                }
-                if let Some(handle) = dialog.pick_file().await {
-                    let name = handle.file_name();
-                    let data = handle.read().await;
-                    let ext = std::path::Path::new(&name)
-                        .extension()
-                        .and_then(|e| e.to_str())
-                        .map(|s| s.to_ascii_lowercase());
-                    if let Some(ext) = ext {
-                        let file_type = if ["naviz"].contains(&ext.as_str()) {
-                            FileType::Instructions
-                        } else if ["namachine"].contains(&ext.as_str()) {
-                            FileType::Machine
-                        } else if ["nastyle"].contains(&ext.as_str()) {
-                            FileType::Style
-                        } else if ["nmconfig"].contains(&ext.as_str()) {
-                            FileType::MachineConfig
-                        } else if ["nsconfig"].contains(&ext.as_str()) {
-                            FileType::StyleConfig
-                        } else {
-                            FileType::Unknown
-                        };
-                        if file_type != FileType::Unknown {
-                            return Some(MenuEvent::FileOpen(file_type, data.into()));
-                        }
-                    }
-                    None
-                } else {
-                    None
-                }
-            },
-            sender,
-        );
-    }
-
     /// Draw the [MenuBar]
     pub fn draw(
         &mut self,
