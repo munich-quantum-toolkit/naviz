@@ -247,8 +247,7 @@ mod test {
             assert_eq!(
                 (line, column),
                 (expected_line, expected_column),
-                "Failed for text '{}' at offset {}: expected line {}, column {}, got line {}, column {}",
-                text, offset, expected_line, expected_column, line, column
+                "Failed for text '{text}' at offset {offset}: expected line {expected_line}, column {expected_column}, got line {line}, column {column}",
             );
         }
     }
