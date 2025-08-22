@@ -80,6 +80,9 @@ pub enum MenuEvent {
     /// The style with the specified `id` should be removed
     #[cfg(not(target_arch = "wasm32"))]
     RemoveStyle(String),
+    /// An unsupported import attempt (e.g., trying to import instructions or unknown file type)
+    #[cfg(not(target_arch = "wasm32"))]
+    UnsupportedImport(FileType),
 }
 
 impl MenuEvent {
@@ -92,12 +95,14 @@ impl MenuEvent {
     #[cfg(not(target_arch = "wasm32"))]
     async fn file_import(file_type: FileType, handle: FileHandle) -> Self {
         match file_type {
-            FileType::Instructions => panic!("Unable to import instructions"),
+            FileType::Instructions | FileType::Unknown => {
+                log::warn!("Unsupported import attempt for file type: {file_type:?}");
+                Self::UnsupportedImport(file_type)
+            }
             FileType::Machine => Self::ImportMachine(handle.path().to_owned()),
             FileType::Style => Self::ImportStyle(handle.path().to_owned()),
             FileType::MachineConfig => Self::ImportMachine(handle.path().to_owned()),
             FileType::StyleConfig => Self::ImportStyle(handle.path().to_owned()),
-            FileType::Unknown => panic!("Cannot import file of unknown type"),
         }
     }
 }

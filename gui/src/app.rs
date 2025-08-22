@@ -558,6 +558,10 @@ impl eframe::App for App {
                     self.open(&content).pipe_void(&mut self.errors);
                 }
                 #[cfg(not(target_arch = "wasm32"))]
+                MenuEvent::UnsupportedImport(file_type) => {
+                    log::warn!("Ignoring unsupported import request for file type: {file_type:?}");
+                }
+                #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ExportVideo {
                     target,
                     resolution,
