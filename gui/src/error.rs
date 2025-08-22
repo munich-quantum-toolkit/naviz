@@ -117,10 +117,9 @@ fn format_config_error(format: &ConfigFormat, error: &ConfigError) -> String {
     match error {
         ConfigError::UTF8(utf8_error) => {
             format!(
-                "The {} file contains invalid UTF-8 encoding.\n\n\
-                Error details: {}\n\n\
-                Please ensure the file is saved with proper UTF-8 encoding.",
-                file_type, utf8_error
+                "The {file_type} file contains invalid UTF-8 encoding.\n\n\
+                Error details: {utf8_error}\n\n\
+                Please ensure the file is saved with proper UTF-8 encoding."
             )
         }
         ConfigError::Lex(parse_error, location) => {
@@ -162,11 +161,10 @@ fn format_config_error(format: &ConfigFormat, error: &ConfigError) -> String {
         }
         ConfigError::Convert(config_error) => {
             format!(
-                "Failed to process {} file content.\n\n\
-                {}\n\n\
+                "Failed to process {file_type} file content.\n\n\
+                {config_error}\n\n\
                 The file syntax is correct, but the content validation failed.\n\
-                Please check that all required fields are present and have valid values.",
-                file_type, config_error
+                Please check that all required fields are present and have valid values."
             )
         }
     }
@@ -178,9 +176,8 @@ fn format_input_error(error: &InputError) -> String {
         InputError::UTF8(utf8_error) => {
             format!(
                 "The instruction file contains invalid UTF-8 encoding.\n\n\
-                Error details: {}\n\n\
-                Please ensure the file is saved with proper UTF-8 encoding.",
-                utf8_error
+                Error details: {utf8_error}\n\n\
+                Please ensure the file is saved with proper UTF-8 encoding."
             )
         }
         InputError::Lex(parse_error, location) => {
@@ -222,14 +219,13 @@ fn format_input_error(error: &InputError) -> String {
         InputError::Convert(convert_error) => {
             format!(
                 "Failed to process instruction file content.\n\n\
-                Conversion error: {:?}\n\n\
+                Conversion error: {convert_error:?}\n\n\
                 The file syntax is correct, but the instructions could not be processed.\n\
                 This usually indicates:\n\
                 • Invalid gate parameters or arguments\n\
                 • Undefined or inconsistent quantum registers\n\
                 • Unsupported instruction types\n\
-                • Qubit index out of range",
-                convert_error
+                • Qubit index out of range"
             )
         }
     }
@@ -242,10 +238,10 @@ fn format_parse_error_context(error: &ParseErrorInner) -> String {
 
     if !context_info.is_empty() {
         let contexts = context_info.join(", ");
-        format!("Expected: {}", contexts)
+        format!("Expected: {contexts}")
     } else {
-        // If no context is available, provide more helpful generic information
-        format!("Syntax error encountered while parsing")
+        // If no context is available, provide more generic information
+        "Syntax error encountered while parsing".to_string()
     }
 }
 
@@ -255,9 +251,8 @@ fn format_import_error(error: &ImportError) -> String {
         ImportError::InvalidUtf8(utf8_error) => {
             format!(
                 "The imported file contains invalid UTF-8 encoding.\n\n\
-                Error details: {}\n\n\
-                Please ensure the file is saved with proper UTF-8 encoding.",
-                utf8_error
+                Error details: {utf8_error}\n\n\
+                Please ensure the file is saved with proper UTF-8 encoding."
             )
         }
         ImportError::MqtNqParse(parse_error) => {
@@ -280,14 +275,13 @@ fn format_import_error(error: &ImportError) -> String {
         ImportError::MqtNqConvert(convert_error) => {
             format!(
                 "Failed to convert MQT-NA operations.\n\n\
-                Conversion error: {:?}\n\n\
+                Conversion error: {convert_error:?}\n\n\
                 The file was parsed successfully, but some operations could not be converted.\n\
                 This may indicate:\n\
                 • Unsupported gate types or operations\n\
                 • Invalid operation parameters or qubit indices\n\
                 • Incompatible quantum circuit structure\n\
-                • Operations not supported by the target format",
-                convert_error
+                • Operations not supported by the target format"
             )
         }
     }
@@ -307,42 +301,37 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
                 RepositoryLoadSource::UserDir => "user directory",
             };
             format!(
-                "Failed to load {} definitions from {}.\n\n\
-                Error: {:?}\n\n\
+                "Failed to load {item_type} definitions from {source_desc}.\n\n\
+                Error: {repo_error:?}\n\n\
                 This may indicate:\n\
-                • Corrupted files in the {} repository\n\
+                • Corrupted files in the {source_desc} repository\n\
                 • Missing or inaccessible files\n\
-                • Permission issues",
-                item_type, source_desc, repo_error, source_desc
+                • Permission issues"
             )
         }
         RepositoryError::Open(repo_error) => {
             format!(
-                "Failed to open {} from repository.\n\n\
-                Error: {:?}\n\n\
-                The {} file may be corrupted or in an incompatible format.",
-                item_type, repo_error, item_type
+                "Failed to open {item_type} from repository.\n\n\
+                Error: {repo_error:?}\n\n\
+                The {item_type} file may be corrupted or in an incompatible format."
             )
         }
         RepositoryError::Import(repo_error, location) => {
-            // Tailored messaging per underlying repository error kind
             use naviz_repository::error::Error as RErr;
             match repo_error {
                 RErr::IoError(ioe) => format!(
-                    "Failed to import {} to user directory.\n\n\
-                    I/O error: {}\n\n\
+                    "Failed to import {item_type} to user directory.\n\n\
+                    I/O error: {ioe}\n\n\
                     This may be due to:\n\
                     • Insufficient permissions to read or write the file\n\
                     • The file being locked by another process\n\
                     • Disk space limitations or file system errors\n\
-                    Please verify file permissions and available disk space.",
-                    item_type, ioe
+                    Please verify file permissions and available disk space."
                 ),
                 RErr::UTF8Error(utf8) => format!(
-                    "Failed to import {} – the file is not valid UTF-8.\n\n\
-                    Error details: {}\n\n\
-                    Ensure the file is saved using UTF-8 encoding (without BOM).",
-                    item_type, utf8
+                    "Failed to import {item_type} – the file is not valid UTF-8.\n\n\
+                    Error details: {utf8}\n\n\
+                    Ensure the file is saved using UTF-8 encoding (without BOM)."
                 ),
                 RErr::LexError(offset, inner) => {
                     let loc_info = location
