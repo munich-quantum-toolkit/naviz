@@ -66,7 +66,7 @@ impl MenuEvent {
     async fn file_import(file_type: FileType, handle: FileHandle) -> Self {
         match file_type {
             FileType::Instructions => {
-                log::warn!("Unsupported import attempt for file type: {:?}", file_type);
+                log::warn!("Unsupported import attempt for file type: {file_type:?}");
                 Self::UnsupportedImport
             }
             FileType::Machine => Self::ImportMachine(handle.path().to_owned()),

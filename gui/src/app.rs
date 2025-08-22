@@ -337,10 +337,19 @@ impl AppState {
             let mut current_line = 1usize;
             let mut line_start_offset = 0usize;
             for (i, ch) in text.char_indices() {
-                if current_line == line { break; }
-                if ch == '\n' { current_line += 1; line_start_offset = i + 1; }
+                if current_line == line {
+                    break;
+                }
+                if ch == '\n' {
+                    current_line += 1;
+                    line_start_offset = i + 1;
+                }
             }
-            let location = ErrorLocation { line, column: 1, offset: line_start_offset };
+            let location = ErrorLocation {
+                line,
+                column: 1,
+                offset: line_start_offset,
+            };
             Error::FileOpen(InputType::Instruction(InputError::Parse(
                 e.into_inner(),
                 Some(location),
@@ -371,16 +380,26 @@ impl AppState {
         if let Some(instr) = self.animator_adapter.get_instructions() {
             // No specific targets -> just return if current machine is compatible
             if instr.directives.targets.is_empty() {
-                return Ok(self.current_machine.compatible_with(&instr.directives.targets));
+                return Ok(self
+                    .current_machine
+                    .compatible_with(&instr.directives.targets));
             }
 
             // Check if current machine is compatible
-            if self.current_machine.compatible_with(&instr.directives.targets) {
+            if self
+                .current_machine
+                .compatible_with(&instr.directives.targets)
+            {
                 return Ok(true);
             }
 
             // Try to find any compatible machine
-            if let Some(id) = instr.directives.targets.iter().find(|id| self.machine_repository.has(id)) {
+            if let Some(id) = instr
+                .directives
+                .targets
+                .iter()
+                .find(|id| self.machine_repository.has(id))
+            {
                 self.set_machine(id.clone().as_str())?;
                 return Ok(true);
             }
@@ -394,8 +413,13 @@ impl AppState {
     /// Also updates the persistence state to remember the selected machine.
     pub fn set_machine(&mut self, id: impl Into<String>) -> Result<()> {
         let id = id.into();
-        let machine = self.machine_repository.get(&id)
-            .ok_or(Error::Repository(RepositoryError::Search, ConfigFormat::Machine))?
+        let machine = self
+            .machine_repository
+            .get(&id)
+            .ok_or(Error::Repository(
+                RepositoryError::Search,
+                ConfigFormat::Machine,
+            ))?
             .map_err(|e| Error::Repository(RepositoryError::Open(e), ConfigFormat::Machine))?;
         self.set_loaded_machine(Some(id.clone()), machine);
         self.persistence.machine = Some(IdOrManual::Id(id));
@@ -404,18 +428,42 @@ impl AppState {
     /// Internal helper to set loaded machine and update animator.
     fn set_loaded_machine(&mut self, id: Option<impl Into<String>>, machine: MachineConfig) {
         let id = id.map(Into::into);
-        self.current_machine = id.clone().map(CurrentMachine::Id).unwrap_or(CurrentMachine::Manual);
+        self.current_machine = id
+            .clone()
+            .map(CurrentMachine::Id)
+            .unwrap_or(CurrentMachine::Manual);
         self.animator_adapter.set_machine_config(machine);
     }
 
     /// Sets the machine manually from the given configuration data.
     /// Also updates the persistence state to remember the manual machine configuration.
     pub fn set_machine_manually(&mut self, data: &[u8]) -> Result<()> {
-        let s = str::from_utf8(data).map_err(|e| Error::FileOpen(InputType::Config(ConfigFormat::Machine, ConfigError::UTF8(e))))?;
-        let toks = naviz_parser::config::lexer::lex(s).map_err(|e| { let loc = ErrorLocation::from_offset(s, e.offset()); Error::FileOpen(InputType::Config(ConfigFormat::Machine, ConfigError::Lex(e.into_inner(), Some(loc)))) })?;
-        let parsed = naviz_parser::config::parser::parse(&toks).map_err(|e| Error::FileOpen(InputType::Config(ConfigFormat::Machine, ConfigError::Parse(e.into_inner(), None))))?;
+        let s = str::from_utf8(data).map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::UTF8(e),
+            ))
+        })?;
+        let toks = naviz_parser::config::lexer::lex(s).map_err(|e| {
+            let loc = ErrorLocation::from_offset(s, e.offset());
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::Lex(e.into_inner(), Some(loc)),
+            ))
+        })?;
+        let parsed = naviz_parser::config::parser::parse(&toks).map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::Parse(e.into_inner(), None),
+            ))
+        })?;
         let gen: naviz_parser::config::generic::Config = parsed.into();
-        let mach: MachineConfig = gen.try_into().map_err(|e| Error::FileOpen(InputType::Config(ConfigFormat::Machine, ConfigError::Convert(e))))?;
+        let mach: MachineConfig = gen.try_into().map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Machine,
+                ConfigError::Convert(e),
+            ))
+        })?;
         self.set_loaded_machine(None::<String>, mach);
         self.persistence.machine = Some(IdOrManual::Manual(data.into()));
         Ok(())
@@ -425,8 +473,13 @@ impl AppState {
     /// Also updates the persistence state to remember the selected style.
     pub fn set_style(&mut self, id: impl Into<String>) -> Result<()> {
         let id = id.into();
-        let style = self.style_repository.get(&id)
-            .ok_or(Error::Repository(RepositoryError::Search, ConfigFormat::Style))?
+        let style = self
+            .style_repository
+            .get(&id)
+            .ok_or(Error::Repository(
+                RepositoryError::Search,
+                ConfigFormat::Style,
+            ))?
             .map_err(|e| Error::Repository(RepositoryError::Open(e), ConfigFormat::Style))?;
         self.set_loaded_style(Some(id.clone()), style);
         self.persistence.style = Some(IdOrManual::Id(id));
@@ -441,11 +494,29 @@ impl AppState {
     /// Sets the style manually from the given configuration data.
     /// Also updates the persistence state to remember the manual style configuration.
     pub fn set_style_manually(&mut self, data: &[u8]) -> Result<()> {
-        let s = str::from_utf8(data).map_err(|e| Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::UTF8(e))))?;
-        let toks = naviz_parser::config::lexer::lex(s).map_err(|e| { let loc = ErrorLocation::from_offset(s, e.offset()); Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::Lex(e.into_inner(), Some(loc)))) })?;
-        let parsed = naviz_parser::config::parser::parse(&toks).map_err(|e| Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::Parse(e.into_inner(), None))))?;
+        let s = str::from_utf8(data).map_err(|e| {
+            Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::UTF8(e)))
+        })?;
+        let toks = naviz_parser::config::lexer::lex(s).map_err(|e| {
+            let loc = ErrorLocation::from_offset(s, e.offset());
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Style,
+                ConfigError::Lex(e.into_inner(), Some(loc)),
+            ))
+        })?;
+        let parsed = naviz_parser::config::parser::parse(&toks).map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Style,
+                ConfigError::Parse(e.into_inner(), None),
+            ))
+        })?;
         let gen: naviz_parser::config::generic::Config = parsed.into();
-        let vis: VisualConfig = gen.try_into().map_err(|e| Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::Convert(e))))?;
+        let vis: VisualConfig = gen.try_into().map_err(|e| {
+            Error::FileOpen(InputType::Config(
+                ConfigFormat::Style,
+                ConfigError::Convert(e),
+            ))
+        })?;
         self.set_loaded_style(None::<String>, vis);
         self.persistence.style = Some(IdOrManual::Manual(data.into()));
         Ok(())
@@ -475,16 +546,20 @@ impl AppState {
     /// Only available on non-web targets.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn import_machine(&mut self, path: &Path) -> Result<()> {
-        self.machine_repository.import_machine_to_user_dir(path).map_err(|e| {
-            use naviz_repository::error::Error as RErr;
-            let loc = match &e {
-                RErr::LexError(offset, _) | RErr::ParseError(offset, _) => {
-                    std::fs::read_to_string(path).ok().map(|c| ErrorLocation::from_offset(&c, *offset))
-                }
-                _ => None,
-            };
-            Error::Repository(RepositoryError::Import(e, loc), ConfigFormat::Machine)
-        })?;
+        self.machine_repository
+            .import_machine_to_user_dir(path)
+            .map_err(|e| {
+                use naviz_repository::error::Error as RErr;
+                let loc = match &e {
+                    RErr::LexError(offset, _) | RErr::ParseError(offset, _) => {
+                        std::fs::read_to_string(path)
+                            .ok()
+                            .map(|c| ErrorLocation::from_offset(&c, *offset))
+                    }
+                    _ => None,
+                };
+                Error::Repository(RepositoryError::Import(e, loc), ConfigFormat::Machine)
+            })?;
         self.update_machines();
         Ok(())
     }
@@ -492,16 +567,20 @@ impl AppState {
     /// Only available on non-web targets.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn import_style(&mut self, path: &Path) -> Result<()> {
-        self.style_repository.import_style_to_user_dir(path).map_err(|e| {
-            use naviz_repository::error::Error as RErr;
-            let loc = match &e {
-                RErr::LexError(offset, _) | RErr::ParseError(offset, _) => {
-                    std::fs::read_to_string(path).ok().map(|c| ErrorLocation::from_offset(&c, *offset))
-                }
-                _ => None,
-            };
-            Error::Repository(RepositoryError::Import(e, loc), ConfigFormat::Style)
-        })?;
+        self.style_repository
+            .import_style_to_user_dir(path)
+            .map_err(|e| {
+                use naviz_repository::error::Error as RErr;
+                let loc = match &e {
+                    RErr::LexError(offset, _) | RErr::ParseError(offset, _) => {
+                        std::fs::read_to_string(path)
+                            .ok()
+                            .map(|c| ErrorLocation::from_offset(&c, *offset))
+                    }
+                    _ => None,
+                };
+                Error::Repository(RepositoryError::Import(e, loc), ConfigFormat::Style)
+            })?;
         self.update_styles();
         Ok(())
     }
@@ -510,7 +589,9 @@ impl AppState {
     /// Only available on non-web targets.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn remove_machine(&mut self, id: &str) -> Result<()> {
-        self.machine_repository.remove_from_user_dir(id).map_err(|e| Error::Repository(RepositoryError::Remove(e), ConfigFormat::Machine))?;
+        self.machine_repository
+            .remove_from_user_dir(id)
+            .map_err(|e| Error::Repository(RepositoryError::Remove(e), ConfigFormat::Machine))?;
         self.update_machines();
         Ok(())
     }
@@ -519,7 +600,9 @@ impl AppState {
     /// Only available on non-web targets.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn remove_style(&mut self, id: &str) -> Result<()> {
-        self.style_repository.remove_from_user_dir(id).map_err(|e| Error::Repository(RepositoryError::Remove(e), ConfigFormat::Style))?;
+        self.style_repository
+            .remove_from_user_dir(id)
+            .map_err(|e| Error::Repository(RepositoryError::Remove(e), ConfigFormat::Style))?;
         self.update_styles();
         Ok(())
     }
@@ -527,29 +610,52 @@ impl AppState {
     /// Exports the current animation to a video file.
     /// Only available on non-web targets.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn export(&self, target: PathBuf, res: (u32, u32), fps: u32, progress: Sender<VideoProgress>) {
+    pub fn export(
+        &self,
+        target: PathBuf,
+        res: (u32, u32),
+        fps: u32,
+        progress: Sender<VideoProgress>,
+    ) {
         if let Some(animator) = self.animator_adapter.animator() {
             let video = VideoExport::new(animator, res, fps);
-            thread::spawn(move || { let mut video = futures::executor::block_on(video); video.export_video(&target, progress); });
+            thread::spawn(move || {
+                let mut video = futures::executor::block_on(video);
+                video.export_video(&target, progress);
+            });
         }
     }
 
     /// Updates the cached list of machines in the app state.
     fn update_machines(&mut self) {
-        self.cache.update_machines(&self.machine_repository, self.animator_adapter.get_instructions().map(|i| i.directives.targets.as_slice()).unwrap_or(&[]));
+        self.cache.update_machines(
+            &self.machine_repository,
+            self.animator_adapter
+                .get_instructions()
+                .map(|i| i.directives.targets.as_slice())
+                .unwrap_or(&[]),
+        );
     }
 
     /// Updates the cached list of styles in the app state.
-    fn update_styles(&mut self) { self.cache.update_styles(&self.style_repository); }
+    fn update_styles(&mut self) {
+        self.cache.update_styles(&self.style_repository);
+    }
 
     /// Checks if the visualization is loaded and ready.
-    pub fn visualization_loaded(&self) -> bool { self.animator_adapter.all_inputs_set() }
+    pub fn visualization_loaded(&self) -> bool {
+        self.animator_adapter.all_inputs_set()
+    }
 
     /// Sets or unsets the force zen mode for the animator.
-    pub fn set_force_zen(&mut self, z: bool) { self.animator_adapter.set_force_zen(z); }
+    pub fn set_force_zen(&mut self, z: bool) {
+        self.animator_adapter.set_force_zen(z);
+    }
 
     /// Gets the current state of the force zen mode.
-    pub fn get_force_zen(&mut self) -> bool { self.animator_adapter.get_force_zen() }
+    pub fn get_force_zen(&mut self) -> bool {
+        self.animator_adapter.get_force_zen()
+    }
 }
 
 impl eframe::App for App {
