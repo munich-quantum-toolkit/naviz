@@ -391,7 +391,7 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
                     "Internal error: attempted to treat a non-removable {item_type} as removable during import."
                 ),
              }
-         }
+        }
         RepositoryError::Remove(repo_error) => format!(
             "Failed to remove {item_type} from user directory.\n\n\
                 Error: {repo_error:?}\n\n\
@@ -407,12 +407,16 @@ fn format_repository_error(error: &RepositoryError, config_format: &ConfigFormat
                 • The {item_type} exists in the repository\n\
                 • The repository was loaded successfully"
         ),
-     }
- }
+    }
+}
 /// Provide an extra hint listing expected contexts if available (repository import helper)
 fn format_expected_hint(inner: &ParseErrorInner) -> String {
     let contexts: Vec<String> = inner.context().map(|c| c.to_string()).collect();
-    if contexts.is_empty() { String::new() } else { format!("Expected one of: {}", contexts.join(", ")) }
+    if contexts.is_empty() {
+        String::new()
+    } else {
+        format!("Expected one of: {}", contexts.join(", "))
+    }
 }
 
 /// Location information for parsing errors
@@ -430,7 +434,11 @@ impl ErrorLocation {
     /// Create ErrorLocation from byte offset and original text
     pub fn from_offset(text: &str, offset: usize) -> Self {
         let (line, column) = byte_offset_to_line_column(text, offset);
-        Self { line, column, offset }
+        Self {
+            line,
+            column,
+            offset,
+        }
     }
 }
 
@@ -440,8 +448,15 @@ fn byte_offset_to_line_column(text: &str, offset: usize) -> (usize, usize) {
     let mut col = 1usize;
     let mut counted = 0usize;
     for ch in text.chars() {
-        if counted >= offset { break; }
-        if ch == '\n' { line += 1; col = 1; } else { col += 1; }
+        if counted >= offset {
+            break;
+        }
+        if ch == '\n' {
+            line += 1;
+            col = 1;
+        } else {
+            col += 1;
+        }
         counted += ch.len_utf8();
     }
     (line, col)
