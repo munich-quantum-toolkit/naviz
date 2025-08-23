@@ -50,15 +50,13 @@ async fn create_device() -> (Device, Queue) {
         .await
         .expect("No adapter");
     adapter
-        .request_device(
-            &DeviceDescriptor {
-                label: Some("naviz video renderer"),
-                required_features: Features::default(),
-                required_limits: Limits::default(),
-                memory_hints: MemoryHints::default(),
-                trace: wgpu::Trace::default(),
-            },
-        )
+        .request_device(&DeviceDescriptor {
+            label: Some("naviz video renderer"),
+            required_features: Features::default(),
+            required_limits: Limits::default(),
+            memory_hints: MemoryHints::default(),
+            trace: wgpu::Trace::default(),
+        })
         .await
         .expect("Failed to create device")
 }
