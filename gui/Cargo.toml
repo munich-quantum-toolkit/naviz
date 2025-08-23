@@ -40,7 +40,7 @@ wgpu = {version = "24", features = ["webgl"]}# Enable webgl-support in wgpu
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "0.10"
+env_logger = "0.11"
 futures = {version = "0.3.30", default-features = false, features = ["executor", "thread-pool"]}
 naviz-video = {path = "../video"}
 
