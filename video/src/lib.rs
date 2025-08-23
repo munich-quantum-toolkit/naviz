@@ -56,8 +56,8 @@ async fn create_device() -> (Device, Queue) {
                 required_features: Features::default(),
                 required_limits: Limits::default(),
                 memory_hints: MemoryHints::default(),
+                trace: wgpu::Trace::default(),
             },
-            None,
         )
         .await
         .expect("Failed to create device")
