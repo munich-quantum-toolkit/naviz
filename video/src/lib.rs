@@ -267,7 +267,7 @@ impl VideoExport {
         buffer_slice.map_async(MapMode::Read, move |result| {
             tx.send(result).unwrap();
         });
-        self.device.poll(wgpu::MaintainBase::Wait);
+        let _ = self.device.poll(wgpu::MaintainBase::Wait);
         rx.recv().unwrap().unwrap();
 
         buffer_slice.get_mapped_range()
