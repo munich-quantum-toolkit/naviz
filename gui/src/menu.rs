@@ -55,9 +55,6 @@ enum MenuEvent {
     /// The style at the specified `path` should be imported
     #[cfg(not(target_arch = "wasm32"))]
     ImportStyle(PathBuf),
-    /// An unsupported import was attempted.
-    #[cfg(not(target_arch = "wasm32"))]
-    UnsupportedImport,
 }
 
 impl MenuEvent {
@@ -186,8 +183,6 @@ impl MenuBar {
                 MenuEvent::ImportMachine(path) => state.import_machine(&path),
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ImportStyle(path) => state.import_style(&path),
-                #[cfg(not(target_arch = "wasm32"))]
-                MenuEvent::UnsupportedImport => Ok(()),
             }
             .pipe_void(errors);
         }
