@@ -1,5 +1,5 @@
-use core::str;
 use std::ops::{Deref, DerefMut};
+use std::str;
 #[cfg(not(target_arch = "wasm32"))]
 use std::{
     path::{Path, PathBuf},
@@ -162,7 +162,7 @@ impl App {
         Self::new_from_state(cc, |errors| AppState::new_with_init(init_options, errors))
     }
 
-    /// Create a new instance of the [App] with the specified [InitOptions]
+    /// Create a new instance of the [AppState] with the specified [InitOptions]
     /// and loading the last persisted state.
     /// The passed [InitOptions] will overwrite any persisted options.
     pub fn new_with_init_and_persistence(
@@ -358,9 +358,8 @@ impl AppState {
 
         let input = naviz_parser::input::concrete::Instructions::new(input)
             .map_err(|e| Error::FileOpen(InputType::Instruction(InputError::Convert(e))))?;
-
         self.animator_adapter.set_instructions(input);
-        self.update_machines();
+        self.update_machines(); // update compatible machines
         self.select_compatible_machine()?;
         Ok(())
     }
@@ -374,43 +373,46 @@ impl AppState {
         }
     }
 
-    /// Tries to select a compatible machine based on the current instructions.
-    /// Returns `true` if a compatible machine was selected, `false` if no compatible machine was found.
+    /// Selects any compatible machine for the currently opened machine.
+    /// Returns `true` if a compatible machine could be found and was loaded,
+    /// or `false` otherwise.
     pub fn select_compatible_machine(&mut self) -> Result<bool> {
-        if let Some(instr) = self.animator_adapter.get_instructions() {
-            // No specific targets -> just return if current machine is compatible
-            if instr.directives.targets.is_empty() {
-                return Ok(self
-                    .current_machine
-                    .compatible_with(&instr.directives.targets));
+        if let Some(instructions) = self.animator_adapter.get_instructions() {
+            if instructions.directives.targets.is_empty() {
+                // No targets specified => no machine is compatible => cannot load any
+                return Ok(false);
             }
 
-            // Check if current machine is compatible
             if self
                 .current_machine
-                .compatible_with(&instr.directives.targets)
+                .compatible_with(&instructions.directives.targets)
             {
+                // compatible machine already loaded
                 return Ok(true);
             }
 
-            // Try to find any compatible machine
-            if let Some(id) = instr
+            // Machine is not compatible or not set => load compatible machine
+
+            // Find some compatible machine
+            let compatible_machine = instructions
                 .directives
                 .targets
                 .iter()
-                .find(|id| self.machine_repository.has(id))
-            {
+                .find(|id| self.machine_repository.has(id));
+            if let Some(id) = compatible_machine {
+                // compatible machine exists => load machine
                 self.set_machine(id.clone().as_str())?;
                 return Ok(true);
             }
 
+            // failed to find a compatible machine
             return Ok(false);
         }
+        // No instructions loaded =>cannot set any compatible machine
         Ok(false)
     }
 
-    /// Sets the machine by ID.
-    /// Also updates the persistence state to remember the selected machine.
+    /// Sets the machine to the one with the specified `id`
     pub fn set_machine(&mut self, id: impl Into<String>) -> Result<()> {
         let id = id.into();
         let machine = self
@@ -422,10 +424,13 @@ impl AppState {
             ))?
             .map_err(|e| Error::Repository(RepositoryError::Open(e), ConfigFormat::Machine))?;
         self.set_loaded_machine(Some(id.clone()), machine);
+        // keep machine in persistence
         self.persistence.machine = Some(IdOrManual::Id(id));
         Ok(())
     }
-    /// Internal helper to set loaded machine and update animator.
+
+    /// Sets the current machine to `machine` with the optional `id`.
+    /// If `id` is [None], the machine is assumed to be set manually.
     fn set_loaded_machine(&mut self, id: Option<impl Into<String>>, machine: MachineConfig) {
         let id = id.map(Into::into);
         self.current_machine = id
@@ -435,8 +440,7 @@ impl AppState {
         self.animator_adapter.set_machine_config(machine);
     }
 
-    /// Sets the machine manually from the given configuration data.
-    /// Also updates the persistence state to remember the manual machine configuration.
+    /// Set the current machine to the one specified in `data`.
     pub fn set_machine_manually(&mut self, data: &[u8]) -> Result<()> {
         let s = str::from_utf8(data).map_err(|e| {
             Error::FileOpen(InputType::Config(
@@ -465,12 +469,12 @@ impl AppState {
             ))
         })?;
         self.set_loaded_machine(None::<String>, mach);
+        // keep machine in persistence
         self.persistence.machine = Some(IdOrManual::Manual(data.into()));
         Ok(())
     }
 
-    /// Sets the style by ID.
-    /// Also updates the persistence state to remember the selected style.
+    /// Sets the style to the one with the specified `id`
     pub fn set_style(&mut self, id: impl Into<String>) -> Result<()> {
         let id = id.into();
         let style = self
@@ -482,17 +486,19 @@ impl AppState {
             ))?
             .map_err(|e| Error::Repository(RepositoryError::Open(e), ConfigFormat::Style))?;
         self.set_loaded_style(Some(id.clone()), style);
+        // keep style in persistence
         self.persistence.style = Some(IdOrManual::Id(id));
         Ok(())
     }
-    /// Internal helper to set loaded style and update animator.
+
+    /// Sets the current style to `style` with the optional `id`.
+    /// If `id` is [None], the style is assumed to be set manually.
     fn set_loaded_style(&mut self, id: Option<impl Into<String>>, style: VisualConfig) {
         self.current_style_id = id.map(Into::into);
         self.animator_adapter.set_visual_config(style);
     }
 
-    /// Sets the style manually from the given configuration data.
-    /// Also updates the persistence state to remember the manual style configuration.
+    /// Set the current style to the one specified in `data`.
     pub fn set_style_manually(&mut self, data: &[u8]) -> Result<()> {
         let s = str::from_utf8(data).map_err(|e| {
             Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::UTF8(e)))
@@ -522,28 +528,34 @@ impl AppState {
         Ok(())
     }
 
-    /// Gets the ID of the currently set machine, if any.
+    /// Gets the ID of the currently selected machine
+    /// or [None] if the current machine does not have an ID
+    /// (i.e., is loaded from memory).
     pub fn get_current_machine_id(&self) -> Option<&str> {
         self.current_machine.id()
     }
 
-    /// Gets the ID of the currently set style, if any.
+    /// Gets the ID of the currently selected style
+    /// or [None] if the current style does not have an ID
+    /// (i.e., is loaded from memory).
     pub fn get_current_style_id(&self) -> Option<&str> {
         self.current_style_id.as_deref()
     }
 
-    /// Gets an iterator over the cached and sorted list of machines.
+    /// Gets the list of loaded machines.
+    /// Will be sorted by name and compatible machines will be at the top.
     pub fn get_machines(&self) -> impl Iterator<Item = (&str, &str, bool)> {
         self.cache.machines()
     }
 
-    /// Gets an iterator over the cached and sorted list of styles.
+    /// Gets the list of loaded styles sorted by name.
     pub fn get_styles(&self) -> impl Iterator<Item = (&str, &str, bool)> {
         self.cache.styles()
     }
 
-    /// Imports a machine configuration from the specified file path.
-    /// Only available on non-web targets.
+    /// Imports a machine to the repository by the specified `path`.
+    /// The id will be set to the file name.
+    /// See [Repository::import_machine_to_user_dir].
     #[cfg(not(target_arch = "wasm32"))]
     pub fn import_machine(&mut self, path: &Path) -> Result<()> {
         self.machine_repository
@@ -563,8 +575,10 @@ impl AppState {
         self.update_machines();
         Ok(())
     }
-    /// Imports a style configuration from the specified file path.
-    /// Only available on non-web targets.
+
+    /// Imports a style to the repository by the specified `path`.
+    /// The id will be set to the file name.
+    /// See [Repository::import_style_to_user_dir].
     #[cfg(not(target_arch = "wasm32"))]
     pub fn import_style(&mut self, path: &Path) -> Result<()> {
         self.style_repository
@@ -585,8 +599,7 @@ impl AppState {
         Ok(())
     }
 
-    /// Removes a machine from the user directory.
-    /// Only available on non-web targets.
+    /// Removes an imported machine from the repository.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn remove_machine(&mut self, id: &str) -> Result<()> {
         self.machine_repository
@@ -596,8 +609,7 @@ impl AppState {
         Ok(())
     }
 
-    /// Removes a style from the user directory.
-    /// Only available on non-web targets.
+    /// Removes an imported style from the repository.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn remove_style(&mut self, id: &str) -> Result<()> {
         self.style_repository
@@ -607,18 +619,19 @@ impl AppState {
         Ok(())
     }
 
-    /// Exports the current animation to a video file.
-    /// Only available on non-web targets.
+    /// Starts an export of the visualization to the specified `target`-path
+    /// with the specified `resolution` and `fps`.
+    /// Updates will be sent over the `progress`-channel.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn export(
         &self,
         target: PathBuf,
-        res: (u32, u32),
+        resolution: (u32, u32),
         fps: u32,
         progress: Sender<VideoProgress>,
     ) {
         if let Some(animator) = self.animator_adapter.animator() {
-            let video = VideoExport::new(animator, res, fps);
+            let video = VideoExport::new(animator, resolution, fps);
             thread::spawn(move || {
                 let mut video = futures::executor::block_on(video);
                 video.export_video(&target, progress);
@@ -626,7 +639,7 @@ impl AppState {
         }
     }
 
-    /// Updates the cached list of machines in the app state.
+    /// Updates the cached list of machines.
     fn update_machines(&mut self) {
         self.cache.update_machines(
             &self.machine_repository,
@@ -637,22 +650,24 @@ impl AppState {
         );
     }
 
-    /// Updates the cached list of styles in the app state.
+    /// Updates the cached list of styles.
     fn update_styles(&mut self) {
         self.cache.update_styles(&self.style_repository);
     }
 
-    /// Checks if the visualization is loaded and ready.
+    /// Returns whether a visualization is currently loaded:
+    /// Some machine and style is selected and some instructions are loaded.
     pub fn visualization_loaded(&self) -> bool {
         self.animator_adapter.all_inputs_set()
     }
 
-    /// Sets or unsets the force zen mode for the animator.
-    pub fn set_force_zen(&mut self, z: bool) {
-        self.animator_adapter.set_force_zen(z);
+    /// Whether to force the zen-mode.
+    /// See [Renderer::set_force_zen].
+    pub fn set_force_zen(&mut self, force_zen: bool) {
+        self.animator_adapter.set_force_zen(force_zen);
     }
 
-    /// Gets the current state of the force zen mode.
+    /// Gets whether the zen-mode is currently forced as set by [AppState::set_force_zen]
     pub fn get_force_zen(&mut self) -> bool {
         self.animator_adapter.get_force_zen()
     }
@@ -660,7 +675,7 @@ impl AppState {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Menu bar draws and processes events internally
+        // Menu bar
         egui::TopBottomPanel::top("app_menu").show(ctx, |ui| {
             self.ui.menu_bar.draw(
                 &mut self.state,
@@ -690,6 +705,7 @@ impl eframe::App for App {
                     if let Some(animator_state) = animator_state {
                         WgpuCanvas::new(RendererAdapter::new(animator_state)).draw(ctx, ui);
                     } else {
+                        // Animator is not ready (something missing) => empty canvas
                         WgpuCanvas::new(EmptyCanvas::new()).draw(ctx, ui);
                     }
                 },
@@ -704,6 +720,10 @@ impl eframe::App for App {
         });
 
         self.ui.errors.draw(ctx);
+    }
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        eframe::set_value(storage, eframe::APP_KEY, &self.state.persistence);
     }
 }
 

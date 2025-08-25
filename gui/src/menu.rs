@@ -45,12 +45,17 @@ pub struct MenuBar {
 
 /// An event which can be triggered by asynchronous actions like the user choosing a file
 enum MenuEvent {
+    /// A file of the specified [FileType] with the specified content was opened
     FileOpen(FileType, Arc<[u8]>),
+    /// A file should be imported
     FileImport(ImportOptions, Arc<[u8]>),
+    /// The machine at the specified `path` should be imported
     #[cfg(not(target_arch = "wasm32"))]
     ImportMachine(PathBuf),
+    /// The style at the specified `path` should be imported
     #[cfg(not(target_arch = "wasm32"))]
     ImportStyle(PathBuf),
+    /// An unsupported import was attempted.
     #[cfg(not(target_arch = "wasm32"))]
     UnsupportedImport,
 }
@@ -96,15 +101,21 @@ impl MenuBar {
         contents: Arc<[u8]>,
         state: &mut AppState,
     ) -> Result<()> {
+        // Extract extension
         if let Some(extension) = Path::new(name).extension() {
             let extension = &*extension.to_string_lossy();
+            // Internal formats
             for file_type in [FileType::Instructions, FileType::Machine, FileType::Style] {
+                // File extension is known?
                 if file_type.extensions().contains(&extension) {
                     return state.open_by_type(file_type, &contents);
                 }
             }
+            // Imported formats
             for import_format in IMPORT_FORMATS {
+                // File extension is known by some import-format?
                 if import_format.file_extensions().contains(&extension) {
+                    // Set current import options to show dialog
                     self.current_import_options = Some((import_format.into(), Some(contents)));
                     return Ok(());
                 }
