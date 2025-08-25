@@ -70,10 +70,7 @@ impl MenuEvent {
     #[cfg(not(target_arch = "wasm32"))]
     async fn file_import(file_type: FileType, handle: FileHandle) -> Self {
         match file_type {
-            FileType::Instructions => {
-                log::warn!("Unsupported import attempt for file type: {file_type:?}");
-                Self::UnsupportedImport
-            }
+            FileType::Instructions => panic!("Unable to import instructions"),
             FileType::Machine => Self::ImportMachine(handle.path().to_owned()),
             FileType::Style => Self::ImportStyle(handle.path().to_owned()),
         }
@@ -221,7 +218,6 @@ impl MenuBar {
         egui::menu::bar(ui, |ui| {
             ui.menu_button("File", |ui| {
                 if ui.button("Open").clicked() {
-                    // Use the simpler single-filter dialog for instructions to ensure .naviz always shows
                     self.choose_file(FileType::Instructions, future_helper, MenuEvent::file_open);
                     ui.close_menu();
                 }
