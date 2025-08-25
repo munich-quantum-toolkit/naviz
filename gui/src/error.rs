@@ -218,18 +218,7 @@ fn format_input_error(error: &InputError) -> String {
                 format_parse_error_context(parse_error)
             )
         }
-        InputError::Convert(convert_error) => {
-            format!(
-                "Failed to process instruction file content.\n\n\
-                Conversion error: {convert_error:?}\n\n\
-                The file syntax is correct, but the instructions could not be processed.\n\
-                This usually indicates:\n\
-                • Invalid gate parameters or arguments\n\
-                • Undefined or inconsistent quantum registers\n\
-                • Unsupported instruction types\n\
-                • Qubit index out of range"
-            )
-        }
+        InputError::Convert(convert_error) => format_parse_instructions_error(convert_error),
     }
 }
 
@@ -441,5 +430,130 @@ impl ErrorLocation {
             column,
             offset,
         }
+    }
+}
+
+/// Format a parse instructions error with detailed messages
+fn format_parse_instructions_error(err: &ParseInstructionsError) -> String {
+    match err {
+        ParseInstructionsError::UnknownInstruction { name } => format!(
+            "Unknown instruction '{name}'.\n\n\
+             This instruction name is not recognized.\n\
+             Possible causes:\n\
+             • Typo in the instruction name\n\
+             • The instruction isn't supported yet\n\
+             • A missing feature or version mismatch\n\n\
+             Check the documentation for the list of supported instructions."
+        ),
+        ParseInstructionsError::UnknownDirective { name } => format!(
+            "Unknown directive '{name}'.\n\n\
+             The directive name is not recognized.\n\
+             Ensure the directive is spelled correctly and supported."
+        ),
+        ParseInstructionsError::WrongNumberOfArguments {
+            name,
+            expected,
+            actual,
+        } => {
+            let expected_list = if expected.len() == 1 {
+                expected[0].to_string()
+            } else {
+                expected
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" or ")
+            };
+            format!(
+                "Instruction/directive '{name}' called with wrong number of arguments.\n\n\
+                 Expected: {expected_list} argument(s)\n\
+                 Actual: {actual}\n\n\
+                 Adjust the argument list to match the expected arity."
+            )
+        }
+        ParseInstructionsError::WrongTypeOfArgument { name, expected } => {
+            // expected is &[ &[&str] ] representing alternative signatures
+            let sigs = expected
+                .iter()
+                .map(|alts| alts.join(", "))
+                .collect::<Vec<_>>();
+            let expected_str = if sigs.len() == 1 {
+                sigs[0].clone()
+            } else {
+                sigs.join(" | ")
+            };
+            format!(
+                "Instruction/directive '{name}' called with wrong argument types.\n\n\
+                 Expected one of:\n  {expected_str}\n\n\
+                 Ensure each argument matches the required type."
+            )
+        }
+        ParseInstructionsError::MissingTime { name } => {
+            let list = name.join(", ");
+            format!(
+                "Missing time specifier for timed instruction(s): {list}.\n\n\
+                 Timed instructions require a leading time marker such as '@0', '@+3', '@=5', etc.\n\
+                 Add an absolute '@<time>' or relative '@+/-<delta>' before the instruction."
+            )
+        }
+        ParseInstructionsError::SuperfluousTime { name } => {
+            let list = name.join(", ");
+            format!(
+                "Superfluous time specifier for setup instruction(s): {list}.\n\n\
+                 Setup instructions must not be preceded by a time marker.\n\
+                 Remove the '@<time>' prefix."
+            )
+        }
+    }
+}
+
+#[cfg(test)]
+mod parse_instructions_error_format_tests {
+    use super::*;
+
+    #[test]
+    fn unknown_instruction() {
+        let e = ParseInstructionsError::UnknownInstruction { name: "foo".into() };
+        let msg = format_parse_instructions_error(&e);
+        assert!(msg.contains("Unknown instruction 'foo'"));
+    }
+
+    #[test]
+    fn wrong_number_args() {
+        let e = ParseInstructionsError::WrongNumberOfArguments {
+            name: "load",
+            expected: &[1, 2],
+            actual: 3,
+        };
+        let msg = format_parse_instructions_error(&e);
+        assert!(msg.contains("3"));
+        assert!(msg.contains("1 or 2"));
+    }
+
+    #[test]
+    fn wrong_type_args() {
+        let expected: &[&[&str]] = &[&["position", "id"], &["id"]];
+        let e = ParseInstructionsError::WrongTypeOfArgument {
+            name: "load",
+            expected,
+        };
+        let msg = format_parse_instructions_error(&e);
+        assert!(msg.contains("position, id"));
+    }
+
+    #[test]
+    fn missing_time() {
+        let e = ParseInstructionsError::MissingTime {
+            name: vec!["load", "store"],
+        };
+        let msg = format_parse_instructions_error(&e);
+        assert!(msg.contains("load, store"));
+    }
+
+    #[test]
+    fn superfluous_time() {
+        let e = ParseInstructionsError::SuperfluousTime { name: vec!["atom"] };
+        let msg = format_parse_instructions_error(&e);
+        assert!(msg.contains("Superfluous time"));
     }
 }
