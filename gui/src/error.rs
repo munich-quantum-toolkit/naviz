@@ -1,7 +1,9 @@
 use std::str::Utf8Error;
 
 use naviz_import::ImportError;
-use naviz_parser::{config, input::concrete::ParseInstructionsError, ParseErrorInner};
+use naviz_parser::{
+    byte_offset_to_line_column, config, input::concrete::ParseInstructionsError, ParseErrorInner,
+};
 
 /// A [Result][std::result::Result] pre-filled with [Error]
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -440,24 +442,4 @@ impl ErrorLocation {
             offset,
         }
     }
-}
-
-/// Convert byte-offset to (line, column) (both 1-based)
-fn byte_offset_to_line_column(text: &str, offset: usize) -> (usize, usize) {
-    let mut line = 1usize;
-    let mut col = 1usize;
-    let mut counted = 0usize;
-    for ch in text.chars() {
-        if counted >= offset {
-            break;
-        }
-        if ch == '\n' {
-            line += 1;
-            col = 1;
-        } else {
-            col += 1;
-        }
-        counted += ch.len_utf8();
-    }
-    (line, col)
 }
