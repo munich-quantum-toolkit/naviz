@@ -12,7 +12,6 @@ For format specifications for `.namachine`, `.nastyle` and input files, refer to
 
 :::
 
-
 ```{toctree}
 :hidden:
 
