@@ -249,7 +249,7 @@ fn to_text_area(
     color: Color,
     viewport: ViewportProjection,
     screen_resolution: (u32, u32),
-) -> TextArea {
+) -> TextArea<'_> {
     let bounds = TextBounds {
         left: 0,
         top: 0,
