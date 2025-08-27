@@ -1,9 +1,3 @@
-<!-- [![PyPI](https://img.shields.io/pypi/v/mqt.naviz?logo=pypi&style=flat-square)](https://pypi.org/project/mqt.naviz/) -->
-<!-- ![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square) -->
-<!-- [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT) -->
-<!-- [![CI](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/naviz/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/munich-quantum-toolkit/naviz/actions/workflows/ci.yml) -->
-<!-- [![CD](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/naviz/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/munich-quantum-toolkit/naviz/actions/workflows/cd.yml) -->
-
 [![Documentation](https://img.shields.io/readthedocs/mqt-naviz?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/naviz)
 
 <p align="center">
@@ -56,6 +50,41 @@ Thank you to all the contributors who have helped make MQT NAViz a reality!
   <img src="https://contrib.rocks/image?repo=munich-quantum-toolkit/naviz" />
 </a>
 </p>
+
+The MQT will remain free, open-source, and permissively licensed—now and in the future.
+We are firmly committed to keeping it open and actively maintained for the quantum computing community.
+
+To support this endeavor, please consider:
+
+- Starring and sharing our repositories: https://github.com/munich-quantum-toolkit
+- Contributing code, documentation, tests, or examples via issues and pull requests
+- Citing the MQT in your publications (see [Cite This](#cite-this))
+- Using the MQT in research and teaching, and sharing feedback and use cases
+- Sponsoring us on GitHub: https://github.com/sponsors/munich-quantum-toolkit
+
+<p align="center">
+  <a href="https://github.com/sponsors/munich-quantum-toolkit">
+  <img width=20% src="https://img.shields.io/badge/Sponsor-white?style=for-the-badge&logo=githubsponsors&labelColor=black&color=blue" alt="Sponsor the MQT" />
+  </a>
+</p>
+
+## Cite This
+
+When discussing the overall MQT project or its ecosystem, please cite the MQT Handbook:
+
+```bibtex
+@inproceedings{mqt,
+  title        = {The {{MQT}} Handbook: {{A}} Summary of Design Automation Tools and Software for Quantum Computing},
+  shorttitle   = {{The MQT Handbook}},
+  author       = {Wille, Robert and Berent, Lucas and Forster, Tobias and Kunasaikaran, Jagatheesan and Mato, Kevin and Peham, Tom and Quetschlich, Nils and Rovara, Damian and Sander, Aaron and Schmid, Ludwig and Schoenberger, Daniel and Stade, Yannick and Burgholzer, Lukas},
+  year         = 2024,
+  booktitle    = {IEEE International Conference on Quantum Software (QSW)},
+  doi          = {10.1109/QSW62656.2024.00013},
+  eprint       = {2405.17543},
+  eprinttype   = {arxiv},
+  addendum     = {A live version of this document is available at \url{https://mqt.readthedocs.io}}
+}
+```
 
 ---
 
