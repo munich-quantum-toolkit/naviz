@@ -19,10 +19,22 @@ self
 ```
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 1
 :caption: User Guide
+:hidden:
 
 file_format
+```
+
+```{toctree}
+:maxdepth: 1
+:titlesonly:
+:caption: Developers
+:glob:
+:hidden:
+
+contributing
+support
 ```
 
 ```{toctree}
