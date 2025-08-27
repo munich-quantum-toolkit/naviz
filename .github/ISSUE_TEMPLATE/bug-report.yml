@@ -8,8 +8,8 @@ body:
         **Thanks for taking the time to report an issue!**
 
         ⚠ Before submitting:
-        1. Search [existing issues](https://github.com/cda-tum/mqt-naviz/search?q=is%3Aissue&type=issues) to avoid duplicates
-        2. For questions or discussions, please use our [discussions forum](https://github.com/cda-tum/mqt-naviz/discussions)
+        1. Search [existing issues](https://github.com/munich-quantum-toolkit/naviz/search?q=is%3Aissue&type=issues) to avoid duplicates
+        2. For questions or discussions, please use our [discussions forum](https://github.com/munich-quantum-toolkit/naviz/discussions)
   - type: textarea
     attributes:
       label: System Information

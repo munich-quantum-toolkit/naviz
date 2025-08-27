@@ -1,8 +1,8 @@
 <!-- [![PyPI](https://img.shields.io/pypi/v/mqt.naviz?logo=pypi&style=flat-square)](https://pypi.org/project/mqt.naviz/) -->
 <!-- ![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square) -->
 <!-- [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://opensource.org/licenses/MIT) -->
-<!-- [![CI](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-naviz/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/cda-tum/mqt-naviz/actions/workflows/ci.yml) -->
-<!-- [![CD](https://img.shields.io/github/actions/workflow/status/cda-tum/mqt-naviz/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/cda-tum/mqt-naviz/actions/workflows/cd.yml) -->
+<!-- [![CI](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/naviz/ci.yml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/munich-quantum-toolkit/naviz/actions/workflows/ci.yml) -->
+<!-- [![CD](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/naviz/cd.yml?style=flat-square&logo=github&label=cd)](https://github.com/munich-quantum-toolkit/naviz/actions/workflows/cd.yml) -->
 
 [![Documentation](https://img.shields.io/readthedocs/mqt-naviz?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/naviz)
 
@@ -35,7 +35,7 @@ It is developed as part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.read
 - Support for different input formats
 - Fully customizable visualization style and clean predefined styles
 
-If you have any questions, feel free to create a [discussion](https://github.com/cda-tum/mqt-naviz/discussions) or an [issue](https://github.com/cda-tum/mqt-naviz/issues) on [GitHub](https://github.com/cda-tum/mqt-naviz).
+If you have any questions, feel free to create a [discussion](https://github.com/munich-quantum-toolkit/naviz/discussions) or an [issue](https://github.com/munich-quantum-toolkit/naviz/issues) on [GitHub](https://github.com/munich-quantum-toolkit/naviz).
 
 ## Contributors and Supporters
 
@@ -52,8 +52,8 @@ Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://w
 Thank you to all the contributors who have helped make MQT NAViz a reality!
 
 <p align="center">
-<a href="https://github.com/cda-tum/mqt-naviz/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=cda-tum/mqt-naviz" />
+<a href="https://github.com/munich-quantum-toolkit/naviz/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=munich-quantum-toolkit/naviz" />
 </a>
 </p>
 

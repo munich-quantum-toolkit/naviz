@@ -27,10 +27,10 @@ classifiers = [
 dynamic = ["version"]
 
 [project.urls]
-Homepage = "https://github.com/cda-tum/mqt-naviz"
+Homepage = "https://github.com/munich-quantum-toolkit/naviz"
 Documentation = "https://mqt.readthedocs.io/projects/naviz"
-Issues = "https://github.com/cda-tum/mqt-naviz/issues"
-Discussions = "https://github.com/cda-tum/mqt-naviz/discussions"
+Issues = "https://github.com/munich-quantum-toolkit/naviz/issues"
+Discussions = "https://github.com/munich-quantum-toolkit/naviz/discussions"
 
 
 [tool.maturin]

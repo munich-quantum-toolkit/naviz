@@ -8,7 +8,7 @@ MQT NAViz is an open-source Rust and Python library to visualize atom movements 
 It is developed as part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_ by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de).
 
 This documentation provides a comprehensive guide to the MQT NAViz library, including {doc}`installation instructions <installation>` and detailed {doc}`API documentation <api/mqt/naviz/index>`.
-The source code of MQT NAViz is publicly available on GitHub at [cda-tum/mqt-naviz](https://github.com/cda-tum/mqt-naviz), while pre-built binaries are available via [PyPI](https://pypi.org/project/mqt.naviz/) for all major operating systems and all modern Python versions.
+The source code of MQT NAViz is publicly available on GitHub at [munich-quantum-toolkit/naviz](https://github.com/munich-quantum-toolkit/naviz), while pre-built binaries are available via [PyPI](https://pypi.org/project/mqt.naviz/) for all major operating systems and all modern Python versions.
 
 We recommend you to start with the {doc}`installation instructions <installation>`.
 Then proceed to the {doc}`usage page <usage>` or {doc}`file format page <file_format>` and read the {doc}`reference documentation <api/mqt/naviz/index>`.
@@ -89,8 +89,8 @@ Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://w
 Thank you to all the contributors who have helped make MQT NAViz a reality!
 
 <p align="center">
-<a href="https://github.com/cda-tum/mqt-naviz/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=cda-tum/mqt-naviz" />
+<a href="https://github.com/munich-quantum-toolkit/naviz/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=munich-quantum-toolkit/naviz" />
 </a>
 </p>
 ```
