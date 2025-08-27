@@ -442,27 +442,27 @@ impl AppState {
 
     /// Set the current machine to the one specified in `data`.
     pub fn set_machine_manually(&mut self, data: &[u8]) -> Result<()> {
-        let s = str::from_utf8(data).map_err(|e| {
+        let machine = str::from_utf8(data).map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
                 ConfigError::UTF8(e),
             ))
         })?;
-        let toks = naviz_parser::config::lexer::lex(s).map_err(|e| {
-            let loc = ErrorLocation::from_offset(s, e.offset());
+        let machine = naviz_parser::config::lexer::lex(machine).map_err(|e| {
+            let loc = ErrorLocation::from_offset(machine, e.offset());
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
                 ConfigError::Lex(e.into_inner(), Some(loc)),
             ))
         })?;
-        let parsed = naviz_parser::config::parser::parse(&toks).map_err(|e| {
+        let machine = naviz_parser::config::parser::parse(&machine).map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
                 ConfigError::Parse(e.into_inner(), None),
             ))
         })?;
-        let gen: naviz_parser::config::generic::Config = parsed.into();
-        let machine: MachineConfig = gen.try_into().map_err(|e| {
+        let machine: naviz_parser::config::generic::Config = machine.into();
+        let machine: MachineConfig = machine.try_into().map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
                 ConfigError::Convert(e),
@@ -500,30 +500,31 @@ impl AppState {
 
     /// Set the current style to the one specified in `data`.
     pub fn set_style_manually(&mut self, data: &[u8]) -> Result<()> {
-        let s = str::from_utf8(data).map_err(|e| {
+        let visual = str::from_utf8(data).map_err(|e| {
             Error::FileOpen(InputType::Config(ConfigFormat::Style, ConfigError::UTF8(e)))
         })?;
-        let toks = naviz_parser::config::lexer::lex(s).map_err(|e| {
-            let loc = ErrorLocation::from_offset(s, e.offset());
+        let visual = naviz_parser::config::lexer::lex(visual).map_err(|e| {
+            let loc = ErrorLocation::from_offset(visual, e.offset());
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Style,
                 ConfigError::Lex(e.into_inner(), Some(loc)),
             ))
         })?;
-        let parsed = naviz_parser::config::parser::parse(&toks).map_err(|e| {
+        let visual = naviz_parser::config::parser::parse(&visual).map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Style,
                 ConfigError::Parse(e.into_inner(), None),
             ))
         })?;
-        let gen: naviz_parser::config::generic::Config = parsed.into();
-        let visual: VisualConfig = gen.try_into().map_err(|e| {
+        let visual: naviz_parser::config::generic::Config = visual.into();
+        let visual: VisualConfig = visual.try_into().map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Style,
                 ConfigError::Convert(e),
             ))
         })?;
         self.set_loaded_style(None::<String>, visual);
+        // keep style in persistence
         self.persistence.style = Some(IdOrManual::Manual(data.into()));
         Ok(())
     }
