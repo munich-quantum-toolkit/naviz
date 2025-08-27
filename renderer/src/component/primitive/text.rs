@@ -242,14 +242,14 @@ fn to_text_buffer(
 
 /// Creates a [TextArea] of the passed [glyphon::Buffer].
 /// Will handle alignment.
-fn to_text_area(
-    text_buffer: &Buffer,
+fn to_text_area<'a>(
+    text_buffer: &'a Buffer,
     (x, y): (f32, f32),
     alignment: Alignment,
     color: Color,
     viewport: ViewportProjection,
     screen_resolution: (u32, u32),
-) -> TextArea {
+) -> TextArea<'a> {
     let bounds = TextBounds {
         left: 0,
         top: 0,
