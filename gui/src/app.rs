@@ -462,13 +462,13 @@ impl AppState {
             ))
         })?;
         let gen: naviz_parser::config::generic::Config = parsed.into();
-        let mach: MachineConfig = gen.try_into().map_err(|e| {
+        let machine: MachineConfig = gen.try_into().map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Machine,
                 ConfigError::Convert(e),
             ))
         })?;
-        self.set_loaded_machine(None::<String>, mach);
+        self.set_loaded_machine(None::<String>, machine);
         // keep machine in persistence
         self.persistence.machine = Some(IdOrManual::Manual(data.into()));
         Ok(())
@@ -517,13 +517,13 @@ impl AppState {
             ))
         })?;
         let gen: naviz_parser::config::generic::Config = parsed.into();
-        let vis: VisualConfig = gen.try_into().map_err(|e| {
+        let visual: VisualConfig = gen.try_into().map_err(|e| {
             Error::FileOpen(InputType::Config(
                 ConfigFormat::Style,
                 ConfigError::Convert(e),
             ))
         })?;
-        self.set_loaded_style(None::<String>, vis);
+        self.set_loaded_style(None::<String>, visual);
         self.persistence.style = Some(IdOrManual::Manual(data.into()));
         Ok(())
     }
@@ -675,7 +675,7 @@ impl AppState {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Menu bar
+        // Menu
         egui::TopBottomPanel::top("app_menu").show(ctx, |ui| {
             self.ui.menu_bar.draw(
                 &mut self.state,
