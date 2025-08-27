@@ -246,7 +246,7 @@ impl Repository {
     /// - `None`: No entry with the passed `id` exists
     /// - `Some(Err)`: An entry exists, but failed to load the data
     /// - `Some(Ok)`: The data of the found entry
-    pub fn get_raw(&self, id: &str) -> Option<Result<Cow<[u8]>>> {
+    pub fn get_raw<'a>(&'a self, id: &str) -> Option<Result<Cow<'a, [u8]>>> {
         self.0.get(id).map(|e| e.contents())
     }
 
@@ -317,7 +317,7 @@ impl RepositoryEntry {
     }
 
     /// The contents of this [RepositoryEntry]
-    pub fn contents(&self) -> Result<Cow<[u8]>> {
+    pub fn contents<'a>(&'a self) -> Result<Cow<'a, [u8]>> {
         self.source.contents()
     }
 
@@ -343,7 +343,7 @@ impl RepositorySource {
     }
 
     /// Read the contents of this [RepositorySource]
-    pub fn contents(&self) -> Result<Cow<[u8]>> {
+    pub fn contents<'a>(&'a self) -> Result<Cow<'a, [u8]>> {
         Ok(match self {
             Self::Bundled(c) => Cow::Borrowed(c),
             Self::UserDir(p) => fs::read(p).map(Cow::Owned).map_err(Error::IoError)?,
