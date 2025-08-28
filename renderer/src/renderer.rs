@@ -211,25 +211,48 @@ impl Renderer {
 /// Will detect which [Layout] to use based on which parts should be displayed in the [Config].
 /// If `force_content_only` is `true`, will always use [Layout::new_content_only].
 fn get_layout(config: &Config, screen_resolution: (u32, u32), force_content_only: bool) -> Layout {
-    const CONTENT_PADDING_Y: f32 = 36.;
     const LEGEND_HEIGHT: f32 = 1024.;
+
+    // Calculate dynamic content padding based on grid legend configuration
+    let content_padding_y = calculate_content_padding(&config.machine.grid.legend);
 
     // content source
     let content = ViewportSource::from_tl_br(config.content_extent.0, config.content_extent.1);
 
     if force_content_only || (!config.display_time() && !config.display_sidebar()) {
         // no time and no sidebar
-        Layout::new_content_only(screen_resolution, content, CONTENT_PADDING_Y)
+        Layout::new_content_only(screen_resolution, content, content_padding_y)
     } else {
         // default layout
         Layout::new_full(
             screen_resolution,
             content,
-            CONTENT_PADDING_Y,
+            content_padding_y,
             LEGEND_HEIGHT,
             config.time.font.size * 1.2,
         )
     }
+}
+
+/// Calculates appropriate content padding based on the grid legend configuration.
+/// This replaces the hard-coded padding with dynamic calculation that considers:
+/// - Font size of coordinate labels
+/// - Whether labels and numbers are displayed
+/// - Minimum padding for visual breathing room
+fn calculate_content_padding(grid_legend: &naviz_state::config::GridLegendConfig) -> f32 {
+    const MIN_PADDING: f32 = 8.0; // Minimum padding for visual breathing room
+    const PADDING_MULTIPLIER: f32 = 1.5; // Extra space beyond font size
+
+    // If neither labels nor numbers are displayed, use minimal padding
+    if !grid_legend.display_labels && !grid_legend.display_numbers {
+        return MIN_PADDING;
+    }
+
+    // Calculate padding based on font size with some extra space
+    let font_based_padding = grid_legend.font.size * PADDING_MULTIPLIER;
+
+    // Use the larger of minimum padding or font-based padding
+    font_based_padding.max(MIN_PADDING)
 }
 
 #[cfg(test)]
@@ -268,5 +291,89 @@ mod test {
             layout.time.is_none(),
             "Example config without legend and time should not allocates space for time"
         );
+    }
+
+    #[test]
+    fn calculate_content_padding_with_labels_and_numbers() {
+        use naviz_state::config::{FontConfig, GridLegendConfig, HPosition, VPosition};
+
+        let grid_legend = GridLegendConfig {
+            step: (40., 40.),
+            font: FontConfig {
+                size: 12.,
+                color: [16, 16, 16, 255],
+                family: "Fira Mono".to_owned(),
+            },
+            labels: ("x".to_owned(), "y".to_owned()),
+            position: (VPosition::Bottom, HPosition::Left),
+            display_labels: true,
+            display_numbers: true,
+        };
+
+        let padding = calculate_content_padding(&grid_legend);
+        assert_eq!(padding, 18.0); // 12.0 * 1.5 = 18.0
+    }
+
+    #[test]
+    fn calculate_content_padding_no_display() {
+        use naviz_state::config::{FontConfig, GridLegendConfig, HPosition, VPosition};
+
+        let grid_legend = GridLegendConfig {
+            step: (40., 40.),
+            font: FontConfig {
+                size: 12.,
+                color: [16, 16, 16, 255],
+                family: "Fira Mono".to_owned(),
+            },
+            labels: ("x".to_owned(), "y".to_owned()),
+            position: (VPosition::Bottom, HPosition::Left),
+            display_labels: false,
+            display_numbers: false,
+        };
+
+        let padding = calculate_content_padding(&grid_legend);
+        assert_eq!(padding, 8.0); // MIN_PADDING
+    }
+
+    #[test]
+    fn calculate_content_padding_large_font() {
+        use naviz_state::config::{FontConfig, GridLegendConfig, HPosition, VPosition};
+
+        let grid_legend = GridLegendConfig {
+            step: (40., 40.),
+            font: FontConfig {
+                size: 24.,
+                color: [16, 16, 16, 255],
+                family: "Fira Mono".to_owned(),
+            },
+            labels: ("x".to_owned(), "y".to_owned()),
+            position: (VPosition::Bottom, HPosition::Left),
+            display_labels: true,
+            display_numbers: true,
+        };
+
+        let padding = calculate_content_padding(&grid_legend);
+        assert_eq!(padding, 36.0); // 24.0 * 1.5 = 36.0
+    }
+
+    #[test]
+    fn calculate_content_padding_small_font() {
+        use naviz_state::config::{FontConfig, GridLegendConfig, HPosition, VPosition};
+
+        let grid_legend = GridLegendConfig {
+            step: (40., 40.),
+            font: FontConfig {
+                size: 4.,
+                color: [16, 16, 16, 255],
+                family: "Fira Mono".to_owned(),
+            },
+            labels: ("x".to_owned(), "y".to_owned()),
+            position: (VPosition::Bottom, HPosition::Left),
+            display_labels: true,
+            display_numbers: true,
+        };
+
+        let padding = calculate_content_padding(&grid_legend);
+        assert_eq!(padding, 8.0); // max(4.0 * 1.5, 8.0) = 8.0 (MIN_PADDING)
     }
 }
