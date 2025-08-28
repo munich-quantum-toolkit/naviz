@@ -1,3 +1,3 @@
-# Contributing
+```{include} ../.github/CONTRIBUTING.md
 
-The documentation of MQT NAViz is still under construction.
+```
