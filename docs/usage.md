@@ -4,7 +4,7 @@
 
 NAViz allows opening `.naviz` instruction files or importing instructions from external formats such as `mqt na` under the `File` menu.
 Alternatively, files can simply be dropped onto or pasted into the application.
-You can read more about the supported file formats in the {doc}`file format documentation <file_format>`.
+For more information on the supported file formats, see {doc}`file_format`.
 
 The machine and style can be selected from the `Machine` and `Style` menus respectively.
 These menus allow selecting a config from the loaded configs as well as opening or importing a new config.
