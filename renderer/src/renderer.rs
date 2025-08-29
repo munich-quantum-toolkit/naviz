@@ -240,19 +240,19 @@ fn get_layout(config: &Config, screen_resolution: (u32, u32), force_content_only
 /// - Whether labels and numbers are displayed
 /// - Minimum padding for visual breathing room
 fn calculate_content_padding(grid_legend: &naviz_state::config::GridLegendConfig) -> f32 {
-    const MIN_PADDING: f32 = 8.0; // Minimum padding for visual breathing room
-    const PADDING_MULTIPLIER: f32 = 1.5; // Extra space beyond font size
+    const MIN_CONTENT_PADDING: f32 = 8.0; // Minimum padding for visual breathing room
+    const FONT_SIZE_MULTIPLIER: f32 = 1.5; // Extra space beyond font size
 
     // If neither labels nor numbers are displayed, use minimal padding
     if !grid_legend.display_labels && !grid_legend.display_numbers {
-        return MIN_PADDING;
+        return MIN_CONTENT_PADDING;
     }
 
     // Calculate padding based on font size with some extra space
-    let font_based_padding = grid_legend.font.size * PADDING_MULTIPLIER;
+    let font_based_padding = grid_legend.font.size * FONT_SIZE_MULTIPLIER;
 
     // Use the larger of minimum padding or font-based padding
-    font_based_padding.max(MIN_PADDING)
+    font_based_padding.max(MIN_CONTENT_PADDING)
 }
 
 #[cfg(test)]
