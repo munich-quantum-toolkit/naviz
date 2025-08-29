@@ -204,8 +204,19 @@ impl Renderer {
             time,
         } = get_layout_with_zoom(config, self.screen_resolution, self.force_zen, zoom_extent);
 
+        // Calculate zoom level for adaptive grid scaling
+        let zoom_level = if let Some(extent) = zoom_extent {
+            let original_extent = config.content_extent;
+            let original_width = original_extent.1 .0 - original_extent.0 .0;
+            let zoomed_width = extent.1 .0 - extent.0 .0;
+            original_width / zoomed_width // Higher values mean more zoomed in
+        } else {
+            1.0 // No zoom
+        };
+
+        // Update machine with zoom-aware grid
         self.machine
-            .update_full(updater, device, queue, config, state, content);
+            .update_full_with_zoom(updater, device, queue, config, state, content, zoom_level);
         self.atoms
             .update_full(updater, device, queue, config, state, content);
         self.legend.update_full(

@@ -22,8 +22,8 @@ impl Default for ZoomState {
             zoom_level: 1.0,
             zoom_center: (0.0, 0.0),
             auto_fit: true,
-            min_zoom: 0.05,
-            max_zoom: 10.0,
+            min_zoom: 0.5,
+            max_zoom: 2.0,
         }
     }
 }

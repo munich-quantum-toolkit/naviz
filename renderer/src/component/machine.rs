@@ -87,6 +87,31 @@ impl Machine {
         self.coordinate_legend
             .update_viewport((device, queue), screen_resolution);
     }
+
+    /// Updates this Machine with zoom-aware grid scaling
+    pub fn update_full_with_zoom(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        _state: &State,
+        viewport_projection: ViewportProjection,
+        zoom_level: f32,
+    ) {
+        self.viewport.update(updater, viewport_projection);
+        let mut text_buffer = Vec::new();
+        let MachineSpec {
+            lines,
+            traps,
+            labels,
+            zones,
+        } = get_specs_with_zoom(config, viewport_projection, &mut text_buffer, zoom_level);
+        self.background_grid.update(updater, &lines);
+        self.static_traps.update(updater, &traps);
+        self.coordinate_legend.update((device, queue), labels);
+        self.zones.update(updater, zones);
+    }
 }
 
 impl Drawable for Machine {
@@ -198,6 +223,47 @@ fn get_specs<'a>(
     }
 }
 
+/// Gets the specs for [Machine] from the passed [State] and [Config] with zoom-aware grid scaling.
+fn get_specs_with_zoom<'a>(
+    config: &'a Config,
+    viewport_projection: ViewportProjection,
+    text_buffer: &'a mut Vec<(String, (f32, f32), Alignment)>,
+    zoom_level: f32,
+) -> MachineSpec<'a, impl IntoIterator<Item = (&'a str, (f32, f32), Alignment)>> {
+    let MachineConfig { grid, traps, zones } = &config.machine;
+    let viewport_source = viewport_projection.source;
+
+    // Calculate adaptive grid steps for grid lines only
+    let adaptive_steps = calculate_adaptive_grid_steps(grid, zoom_level);
+
+    // Create grid lines with adaptive steps (finer grid at higher zoom)
+    let lines = get_grid_lines_specs_with_steps(grid, viewport_source, adaptive_steps);
+    let traps = get_trap_specs(traps);
+
+    // Build labels with ORIGINAL steps to maintain consistent text size and spacing
+    build_number_labels(grid, text_buffer, viewport_source);
+    let texts = add_grid_legend(
+        grid,
+        viewport_source,
+        text_buffer.iter().map(|(t, p, a)| (t.as_str(), *p, *a)),
+    );
+
+    let zones = get_zone_specs(zones);
+
+    MachineSpec {
+        lines,
+        traps,
+        labels: TextSpec {
+            viewport_projection,
+            font_size: grid.legend.font.size, // Keep original font size
+            font_family: &grid.legend.font.family,
+            texts,
+            color: grid.legend.font.color,
+        },
+        zones,
+    }
+}
+
 /// Create the [LineSpec]s for the grid fit to the [ViewportSource].
 #[inline]
 fn get_grid_lines_specs(grid: &GridConfig, vp: ViewportSource) -> Vec<LineSpec> {
@@ -231,6 +297,85 @@ fn get_grid_lines_specs(grid: &GridConfig, vp: ViewportSource) -> Vec<LineSpec> 
             }),
         )
         .collect()
+}
+
+/// Create the [LineSpec]s for the grid with custom step sizes.
+fn get_grid_lines_specs_with_steps(
+    grid: &GridConfig,
+    vp: ViewportSource,
+    steps: (f32, f32),
+) -> Vec<LineSpec> {
+    if !grid.display_ticks {
+        return Vec::new();
+    }
+
+    let vp_left_grid = clamp_to(vp.left(), steps.0);
+    let vp_top_grid = clamp_to(vp.top(), steps.1);
+
+    range_f32(vp_left_grid, vp.right(), steps.0)
+        .map(|x| LineSpec {
+            start: [x, vp.top()],
+            end: [x, vp.bottom()],
+            color: grid.line.color,
+            width: grid.line.width,
+            segment_length: grid.line.segment_length,
+            duty: grid.line.duty,
+        })
+        .chain(
+            range_f32(vp_top_grid, vp.bottom(), steps.1).map(|y| LineSpec {
+                start: [vp.left(), y],
+                end: [vp.right(), y],
+                color: grid.line.color,
+                width: grid.line.width,
+                segment_length: grid.line.segment_length,
+                duty: grid.line.duty,
+            }),
+        )
+        .collect()
+}
+
+/// Calculate adaptive grid step sizes based on zoom level
+fn calculate_adaptive_grid_steps(grid: &GridConfig, zoom_level: f32) -> (f32, f32) {
+    let base_step_x = grid.step.0;
+    let base_step_y = grid.step.1;
+
+    // Define zoom thresholds and step divisors
+    // At higher zoom levels, we want smaller (more fine-grained) grid steps
+    let adaptive_step_x = if zoom_level >= 8.0 {
+        // Very high zoom: 1/8 of base step
+        base_step_x / 8.0
+    } else if zoom_level >= 4.0 {
+        // High zoom: 1/4 of base step
+        base_step_x / 4.0
+    } else if zoom_level >= 2.0 {
+        // Medium zoom: 1/2 of base step
+        base_step_x / 2.0
+    } else if zoom_level >= 0.5 {
+        // Normal to slightly zoomed out: use base step
+        base_step_x
+    } else if zoom_level >= 0.25 {
+        // Zoomed out: 2x base step
+        base_step_x * 2.0
+    } else {
+        // Very zoomed out: 4x base step
+        base_step_x * 4.0
+    };
+
+    let adaptive_step_y = if zoom_level >= 8.0 {
+        base_step_y / 8.0
+    } else if zoom_level >= 4.0 {
+        base_step_y / 4.0
+    } else if zoom_level >= 2.0 {
+        base_step_y / 2.0
+    } else if zoom_level >= 0.5 {
+        base_step_y
+    } else if zoom_level >= 0.25 {
+        base_step_y * 2.0
+    } else {
+        base_step_y * 4.0
+    };
+
+    (adaptive_step_x, adaptive_step_y)
 }
 
 /// Create the [CircleSpec]s for the static traps
