@@ -118,6 +118,38 @@ impl ZoomState {
         self.zoom_center = machine_center;
     }
 
+    /// Zoom to fit just the active atoms, ignoring the machine layout
+    pub fn zoom_to_atoms(&mut self, config: &Config, atoms: &[naviz_state::state::AtomState]) {
+        self.auto_fit = false;
+
+        if let Some(atom_extent) = self.calculate_auto_fit_extent(atoms) {
+            // Calculate zoom level needed to fit atom extent within the original content extent
+            let original_extent = config.content_extent;
+            let original_width = original_extent.1 .0 - original_extent.0 .0;
+            let original_height = original_extent.1 .1 - original_extent.0 .1;
+
+            let atom_width = atom_extent.1 .0 - atom_extent.0 .0;
+            let atom_height = atom_extent.1 .1 - atom_extent.0 .1;
+
+            // Calculate zoom level to fit atoms (with some margin)
+            let zoom_x = original_width / (atom_width * 1.1); // 10% margin
+            let zoom_y = original_height / (atom_height * 1.1);
+            let zoom_level = zoom_x.min(zoom_y).clamp(self.min_zoom, self.max_zoom);
+
+            // Set zoom center to center of atoms
+            let atom_center_x = (atom_extent.0 .0 + atom_extent.1 .0) / 2.0;
+            let atom_center_y = (atom_extent.0 .1 + atom_extent.1 .1) / 2.0;
+
+            self.zoom_level = zoom_level;
+            self.zoom_center = (atom_center_x, atom_center_y);
+        } else {
+            // No atoms to zoom to, fall back to machine center
+            let machine_center = self.calculate_machine_center(config, atoms);
+            self.zoom_center = machine_center;
+            self.zoom_level = 1.0;
+        }
+    }
+
     /// Enable auto-fit mode (deprecated - use reset_zoom instead)
     pub fn enable_auto_fit(&mut self) {
         self.auto_fit = true;
@@ -354,25 +386,47 @@ impl ZoomControls {
         let mut changed = false;
 
         ui.horizontal(|ui| {
-            // Zoom in button - use current center, not machine center
+            // Zoom in button - use proper center handling
             if ui
                 .add(Button::new("🔍+").small())
                 .on_hover_text("Zoom In")
                 .clicked()
             {
-                // Don't change the center when manually zooming - keep current view center
-                zoom_state.zoom_in(1.2);
+                if let (Some(config), Some(atoms)) = (config, atoms) {
+                    zoom_state.zoom_in_with_center_check(1.2, config, atoms);
+                } else {
+                    zoom_state.zoom_in(1.2);
+                }
                 changed = true;
             }
 
-            // Zoom out button - use current center, not machine center
+            // Zoom out button - use proper center handling
             if ui
                 .add(Button::new("🔍-").small())
                 .on_hover_text("Zoom Out")
                 .clicked()
             {
-                // Don't change the center when manually zooming - keep current view center
-                zoom_state.zoom_out(1.2);
+                if let (Some(config), Some(atoms)) = (config, atoms) {
+                    zoom_state.zoom_out_with_center_check(1.2, config, atoms);
+                } else {
+                    zoom_state.zoom_out(1.2);
+                }
+                changed = true;
+            }
+
+            // Zoom to atoms button - fits to just the atoms
+            if ui
+                .add(Button::new("⚛").small())
+                .on_hover_text("Zoom to Atoms")
+                .clicked()
+            {
+                if let (Some(config), Some(atoms)) = (config, atoms) {
+                    zoom_state.zoom_to_atoms(config, atoms);
+                } else {
+                    // Fallback when no context available
+                    zoom_state.auto_fit = false;
+                    zoom_state.zoom_level = 1.0;
+                }
                 changed = true;
             }
 
