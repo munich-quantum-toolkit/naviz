@@ -282,13 +282,13 @@ fn get_layout(config: &Config, screen_resolution: (u32, u32), force_content_only
 
     if force_content_only || (!config.display_time() && !config.display_sidebar()) {
         // no time and no sidebar
-        Layout::new_content_only(screen_resolution, content, CONTENT_PADDING_Y)
+        Layout::new_content_only(screen_resolution, content, content_padding_y)
     } else {
         // default layout
         Layout::new_full(
             screen_resolution,
             content,
-            CONTENT_PADDING_Y,
+            content_padding_y,
             LEGEND_HEIGHT,
             config.time.font.size * 1.2,
         )
@@ -303,8 +303,10 @@ fn get_layout_with_zoom(
     force_content_only: bool,
     zoom_extent: Option<((f32, f32), (f32, f32))>,
 ) -> Layout {
-    const CONTENT_PADDING_Y: f32 = 36.;
     const LEGEND_HEIGHT: f32 = 1024.;
+
+    // Calculate dynamic content padding based on grid legend configuration
+    let content_padding_y = calculate_content_padding(&config.machine.grid.legend);
 
     // Use zoom extent if provided, otherwise use config extent
     let extent = zoom_extent.unwrap_or(config.content_extent);
