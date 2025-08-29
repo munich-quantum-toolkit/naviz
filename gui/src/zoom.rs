@@ -22,7 +22,7 @@ impl Default for ZoomState {
             zoom_level: 1.0,
             zoom_center: (0.0, 0.0),
             auto_fit: true,
-            min_zoom: 0.1,
+            min_zoom: 0.05,
             max_zoom: 10.0,
         }
     }
@@ -34,16 +34,44 @@ impl ZoomState {
         Self::default()
     }
 
-    /// Zoom in by the specified factor
+    /// Zoom in by the specified factor, centering on the machine
     pub fn zoom_in(&mut self, factor: f32) {
         self.auto_fit = false;
         self.zoom_level = (self.zoom_level * factor).clamp(self.min_zoom, self.max_zoom);
     }
 
-    /// Zoom out by the specified factor
+    /// Zoom out by the specified factor, centering on the machine
     pub fn zoom_out(&mut self, factor: f32) {
         self.auto_fit = false;
         self.zoom_level = (self.zoom_level / factor).clamp(self.min_zoom, self.max_zoom);
+    }
+
+    /// Zoom in towards a specific point in content coordinates
+    pub fn zoom_in_towards(&mut self, factor: f32, target_point: (f32, f32)) {
+        let old_zoom = self.zoom_level;
+        self.zoom_in(factor);
+        let new_zoom = self.zoom_level;
+
+        // Adjust center to keep the target point stable
+        let zoom_ratio = old_zoom / new_zoom;
+        let dx = (target_point.0 - self.zoom_center.0) * (1.0 - zoom_ratio);
+        let dy = (target_point.1 - self.zoom_center.1) * (1.0 - zoom_ratio);
+        self.zoom_center.0 += dx;
+        self.zoom_center.1 += dy;
+    }
+
+    /// Zoom out from a specific point in content coordinates
+    pub fn zoom_out_from(&mut self, factor: f32, target_point: (f32, f32)) {
+        let old_zoom = self.zoom_level;
+        self.zoom_out(factor);
+        let new_zoom = self.zoom_level;
+
+        // Adjust center to keep the target point stable
+        let zoom_ratio = old_zoom / new_zoom;
+        let dx = (target_point.0 - self.zoom_center.0) * (1.0 - zoom_ratio);
+        let dy = (target_point.1 - self.zoom_center.1) * (1.0 - zoom_ratio);
+        self.zoom_center.0 += dx;
+        self.zoom_center.1 += dy;
     }
 
     /// Set zoom to a specific level
@@ -52,14 +80,17 @@ impl ZoomState {
         self.zoom_level = zoom.clamp(self.min_zoom, self.max_zoom);
     }
 
-    /// Reset zoom to 100%
-    pub fn reset_zoom(&mut self) {
-        self.auto_fit = false;
+    /// Reset zoom to 100% and center on the machine (also enables auto-fit)
+    pub fn reset_zoom(&mut self, config: &Config, atoms: &[naviz_state::state::AtomState]) {
+        self.auto_fit = true; // Enable auto-fit instead of manual zoom
         self.zoom_level = 1.0;
-        self.zoom_center = (0.0, 0.0);
+
+        // Calculate the center of the machine content
+        let machine_center = self.calculate_machine_center(config, atoms);
+        self.zoom_center = machine_center;
     }
 
-    /// Enable auto-fit mode
+    /// Enable auto-fit mode (deprecated - use reset_zoom instead)
     pub fn enable_auto_fit(&mut self) {
         self.auto_fit = true;
     }
@@ -75,6 +106,64 @@ impl ZoomState {
     pub fn set_center(&mut self, center: (f32, f32)) {
         self.auto_fit = false;
         self.zoom_center = center;
+    }
+
+    /// Calculate the center point of the machine content
+    pub fn calculate_machine_center(
+        &self,
+        config: &Config,
+        atoms: &[naviz_state::state::AtomState],
+    ) -> (f32, f32) {
+        let mut min_x = f32::INFINITY;
+        let mut max_x = f32::NEG_INFINITY;
+        let mut min_y = f32::INFINITY;
+        let mut max_y = f32::NEG_INFINITY;
+        let mut has_content = false;
+
+        // Include atom positions
+        for atom in atoms {
+            let (x, y) = atom.position;
+            let radius = atom.size;
+            min_x = min_x.min(x - radius);
+            max_x = max_x.max(x + radius);
+            min_y = min_y.min(y - radius);
+            max_y = max_y.max(y + radius);
+            has_content = true;
+        }
+
+        // Include trap positions
+        for &trap_pos in &config.machine.traps.positions {
+            let radius = config.machine.traps.radius;
+            min_x = min_x.min(trap_pos.0 - radius);
+            max_x = max_x.max(trap_pos.0 + radius);
+            min_y = min_y.min(trap_pos.1 - radius);
+            max_y = max_y.max(trap_pos.1 + radius);
+            has_content = true;
+        }
+
+        // Include zone boundaries
+        for zone in &config.machine.zones {
+            let zone_min_x = zone.start.0;
+            let zone_max_x = zone.start.0 + zone.size.0;
+            let zone_min_y = zone.start.1;
+            let zone_max_y = zone.start.1 + zone.size.1;
+            min_x = min_x.min(zone_min_x);
+            max_x = max_x.max(zone_max_x);
+            min_y = min_y.min(zone_min_y);
+            max_y = max_y.max(zone_max_y);
+            has_content = true;
+        }
+
+        if has_content {
+            ((min_x + max_x) / 2.0, (min_y + max_y) / 2.0)
+        } else {
+            // Fall back to config extent center
+            let extent = config.content_extent;
+            (
+                (extent.0 .0 + extent.1 .0) / 2.0,
+                (extent.0 .1 + extent.1 .1) / 2.0,
+            )
+        }
     }
 
     /// Calculate auto-fit extent based on the entire machine layout, not just atoms
@@ -131,58 +220,57 @@ impl ZoomState {
             return Some(config.content_extent);
         }
 
-        // Ensure we include at least some grid lines for context
+        // Calculate content dimensions
+        let content_width = max_x - min_x;
+        let content_height = max_y - min_y;
+
+        // Use minimal padding: 5% of content size or one grid step, whichever is smaller
         let grid_step_x = config.machine.grid.step.0;
         let grid_step_y = config.machine.grid.step.1;
 
-        // Align to grid boundaries and add some grid padding
-        let grid_padding_x = grid_step_x * 2.0;
-        let grid_padding_y = grid_step_y * 2.0;
+        let padding_x = (content_width * 0.05).min(grid_step_x);
+        let padding_y = (content_height * 0.05).min(grid_step_y);
 
-        // Align boundaries to grid steps
-        min_x = (min_x / grid_step_x).floor() * grid_step_x - grid_padding_x;
-        max_x = (max_x / grid_step_x).ceil() * grid_step_x + grid_padding_x;
-        min_y = (min_y / grid_step_y).floor() * grid_step_y - grid_padding_y;
-        max_y = (max_y / grid_step_y).ceil() * grid_step_y + grid_padding_y;
+        // Align to grid boundaries for clean appearance
+        min_x = ((min_x - padding_x) / grid_step_x).floor() * grid_step_x;
+        max_x = ((max_x + padding_x) / grid_step_x).ceil() * grid_step_x;
+        min_y = ((min_y - padding_y) / grid_step_y).floor() * grid_step_y;
+        max_y = ((max_y + padding_y) / grid_step_y).ceil() * grid_step_y;
 
         Some(((min_x, min_y), (max_x, max_y)))
     }
 
     /// Calculate the effective content extent based on zoom state and config
     pub fn calculate_effective_extent(&self, config: &Config) -> ((f32, f32), (f32, f32)) {
-        let original_extent = config.content_extent;
-
         if self.auto_fit {
-            // Return the original extent for auto-fit mode
-            original_extent
+            // Use auto-fit extent for auto mode
+            if let Some(auto_extent) = self.calculate_auto_fit_extent_for_machine(config, &[]) {
+                auto_extent
+            } else {
+                config.content_extent
+            }
         } else {
-            // Calculate zoomed extent aligned to grid
-            let grid_step_x = config.machine.grid.step.0;
-            let grid_step_y = config.machine.grid.step.1;
-
+            // Calculate zoomed extent without grid alignment to avoid scaling issues
+            let original_extent = config.content_extent;
             let original_width = original_extent.1 .0 - original_extent.0 .0;
             let original_height = original_extent.1 .1 - original_extent.0 .1;
 
-            let zoomed_width = original_width / self.zoom_level;
-            let zoomed_height = original_height / self.zoom_level;
+            // Calculate the visible area size based on zoom level
+            let visible_width = original_width / self.zoom_level;
+            let visible_height = original_height / self.zoom_level;
 
             let center_x = self.zoom_center.0;
             let center_y = self.zoom_center.1;
 
-            let half_width = zoomed_width / 2.0;
-            let half_height = zoomed_height / 2.0;
+            let half_width = visible_width / 2.0;
+            let half_height = visible_height / 2.0;
 
-            let mut min_x = center_x - half_width;
-            let mut max_x = center_x + half_width;
-            let mut min_y = center_y - half_height;
-            let mut max_y = center_y + half_height;
+            let min_x = center_x - half_width;
+            let max_x = center_x + half_width;
+            let min_y = center_y - half_height;
+            let max_y = center_y + half_height;
 
-            // Align to grid boundaries to maintain coordinate system alignment
-            min_x = (min_x / grid_step_x).floor() * grid_step_x;
-            max_x = (max_x / grid_step_x).ceil() * grid_step_x;
-            min_y = (min_y / grid_step_y).floor() * grid_step_y;
-            max_y = (max_y / grid_step_y).ceil() * grid_step_y;
-
+            // Don't align to grid - let the renderer handle grid scaling
             ((min_x, min_y), (max_x, max_y))
         }
     }
@@ -211,11 +299,11 @@ impl ZoomState {
             max_y = max_y.max(y + radius);
         }
 
-        // Add some padding (10% of the dimensions)
+        // Add minimal padding (5% of the dimensions)
         let width = max_x - min_x;
         let height = max_y - min_y;
-        let padding_x = width * 0.1;
-        let padding_y = height * 0.1;
+        let padding_x = width * 0.05;
+        let padding_y = height * 0.05;
 
         Some((
             (min_x - padding_x, min_y - padding_y),
@@ -228,61 +316,69 @@ impl ZoomState {
 pub struct ZoomControls;
 
 impl ZoomControls {
-    /// Draw zoom controls in the UI
-    pub fn draw(ui: &mut Ui, zoom_state: &mut ZoomState) -> bool {
+    /// Draw zoom controls in the UI with access to config and atoms for proper centering
+    pub fn draw_with_context(
+        ui: &mut Ui,
+        zoom_state: &mut ZoomState,
+        config: Option<&Config>,
+        atoms: Option<&[naviz_state::state::AtomState]>,
+    ) -> bool {
         let mut changed = false;
 
         ui.horizontal(|ui| {
-            // Zoom in button
+            // Zoom in button - use current center, not machine center
             if ui
                 .add(Button::new("🔍+").small())
                 .on_hover_text("Zoom In")
                 .clicked()
             {
+                // Don't change the center when manually zooming - keep current view center
                 zoom_state.zoom_in(1.2);
                 changed = true;
             }
 
-            // Zoom out button
+            // Zoom out button - use current center, not machine center
             if ui
                 .add(Button::new("🔍-").small())
                 .on_hover_text("Zoom Out")
                 .clicked()
             {
+                // Don't change the center when manually zooming - keep current view center
                 zoom_state.zoom_out(1.2);
                 changed = true;
             }
 
-            // Reset zoom button
+            // Reset zoom button - fits to content and centers on machine
             if ui
                 .add(Button::new("⌂").small())
-                .on_hover_text("Reset Zoom")
-                .clicked()
-            {
-                zoom_state.reset_zoom();
-                changed = true;
-            }
-
-            // Fit to content button
-            if ui
-                .add(Button::new("⤢").small())
                 .on_hover_text("Fit to Content")
                 .clicked()
             {
-                zoom_state.enable_auto_fit();
+                if let (Some(config), Some(atoms)) = (config, atoms) {
+                    zoom_state.reset_zoom(config, atoms);
+                } else {
+                    // Fallback for when context is not available
+                    zoom_state.zoom_level = 1.0;
+                    zoom_state.zoom_center = (0.0, 0.0);
+                    zoom_state.auto_fit = true;
+                }
                 changed = true;
             }
 
-            // Zoom level display
-            ui.label(format!("{:.0}%", zoom_state.zoom_level * 100.0));
-
-            // Auto-fit indicator
-            if zoom_state.auto_fit {
-                ui.label("📐").on_hover_text("Auto-fit enabled");
+            // Zoom level display (only show when not in auto-fit mode)
+            if !zoom_state.auto_fit {
+                ui.label(format!("{:.0}%", zoom_state.zoom_level * 100.0));
+            } else {
+                ui.label("Auto");
             }
         });
 
         changed
+    }
+
+    /// Draw zoom controls in the UI (fallback without context)
+    pub fn draw(ui: &mut Ui, zoom_state: &mut ZoomState) -> bool {
+        Self::draw_with_context(ui, zoom_state, None, None)
     }
 
     /// Handle mouse interactions for zoom and pan
@@ -296,57 +392,23 @@ impl ZoomControls {
         if ui.rect_contains_pointer(ui.max_rect()) {
             let input = ui.input(|i| i.clone());
 
-            // Handle scroll wheel for zooming
-            let scroll_delta = input.smooth_scroll_delta;
-            if scroll_delta.y != 0.0 {
-                let zoom_factor = if scroll_delta.y > 0.0 { 1.1 } else { 1.0 / 1.1 };
-
-                // Get mouse position relative to the content
-                if let Some(pointer_pos) = input.pointer.hover_pos() {
-                    let rect = ui.max_rect();
-                    let relative_pos = Vec2::new(
-                        (pointer_pos.x - rect.left()) / rect.width(),
-                        (pointer_pos.y - rect.top()) / rect.height(),
-                    );
-
-                    // Convert to content coordinates
-                    let content_width = content_extent.1 .0 - content_extent.0 .0;
-                    let content_height = content_extent.1 .1 - content_extent.0 .1;
-                    let content_pos = (
-                        content_extent.0 .0 + relative_pos.x * content_width,
-                        content_extent.0 .1 + relative_pos.y * content_height,
-                    );
-
-                    // Zoom towards the mouse position
-                    let old_zoom = zoom_state.zoom_level;
-                    if scroll_delta.y > 0.0 {
-                        zoom_state.zoom_in(zoom_factor);
-                    } else {
-                        zoom_state.zoom_out(zoom_factor);
-                    }
-                    let new_zoom = zoom_state.zoom_level;
-
-                    // Adjust center to keep the mouse position stable
-                    let zoom_ratio = old_zoom / new_zoom;
-                    let dx = (content_pos.0 - zoom_state.zoom_center.0) * (1.0 - zoom_ratio);
-                    let dy = (content_pos.1 - zoom_state.zoom_center.1) * (1.0 - zoom_ratio);
-                    zoom_state.zoom_center.0 += dx;
-                    zoom_state.zoom_center.1 += dy;
-
-                    changed = true;
-                }
-            }
-
-            // Handle middle mouse button dragging for panning
-            if input.pointer.middle_down() {
+            // Handle left mouse button dragging for panning
+            if input.pointer.primary_down() {
                 let delta = input.pointer.delta();
                 if delta != Vec2::ZERO {
+                    // Convert screen space delta to content space delta
+                    // Use the current zoom level to scale the movement properly
                     let rect = ui.max_rect();
                     let content_width = content_extent.1 .0 - content_extent.0 .0;
                     let content_height = content_extent.1 .1 - content_extent.0 .1;
 
-                    let pan_x = -(delta.x / rect.width()) * content_width / zoom_state.zoom_level;
-                    let pan_y = -(delta.y / rect.height()) * content_height / zoom_state.zoom_level;
+                    // Calculate the scale factor from screen to content coordinates
+                    let scale_x = content_width / rect.width();
+                    let scale_y = content_height / rect.height();
+
+                    // Apply the delta with proper scaling
+                    let pan_x = -delta.x * scale_x;
+                    let pan_y = -delta.y * scale_y;
 
                     zoom_state.pan((pan_x, pan_y));
                     changed = true;

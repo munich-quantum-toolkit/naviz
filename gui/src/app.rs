@@ -723,7 +723,22 @@ impl eframe::App for App {
         egui::TopBottomPanel::top("zoom_controls").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Zoom:");
-                crate::zoom::ZoomControls::draw(ui, &mut self.state.zoom_state);
+
+                // Get animator state for zoom operations that need config/atoms data
+                let animator_state = self.state.animator_adapter.peek();
+
+                if let Some(animator_state) = &animator_state {
+                    // Use the new draw_with_context method from ZoomControls
+                    crate::zoom::ZoomControls::draw_with_context(
+                        ui,
+                        &mut self.state.zoom_state,
+                        Some(animator_state.config()),
+                        Some(&animator_state.state().atoms),
+                    );
+                } else {
+                    // Fallback to basic controls when no animator state available
+                    crate::zoom::ZoomControls::draw(ui, &mut self.state.zoom_state);
+                }
             });
         });
 
