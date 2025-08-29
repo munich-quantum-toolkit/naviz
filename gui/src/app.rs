@@ -441,6 +441,10 @@ impl AppState {
             .map(CurrentMachine::Id)
             .unwrap_or(CurrentMachine::Manual);
         self.animator_adapter.set_machine_config(machine);
+
+        // Reset zoom center to origin initially - it will be updated when animator state becomes available
+        // This prevents using a stale center from a previous machine
+        self.zoom_state.zoom_center = (0.0, 0.0);
     }
 
     /// Set the current machine to the one specified in `data`.
@@ -689,6 +693,16 @@ impl AppState {
     /// Updates the zoom state to fit the content to the current atoms
     pub fn update_zoom_for_content(&mut self) {
         if let Some(animator_state) = self.animator_adapter.get() {
+            // Initialize zoom center to machine center if it's still at origin (0,0)
+            // This handles the case when a machine is first loaded, regardless of auto_fit mode
+            if self.zoom_state.zoom_center == (0.0, 0.0) {
+                let machine_center = self.zoom_state.calculate_machine_center(
+                    animator_state.config(),
+                    &animator_state.state().atoms,
+                );
+                self.zoom_state.zoom_center = machine_center;
+            }
+
             if self.zoom_state.auto_fit {
                 if let Some(_auto_fit_extent) =
                     self.zoom_state.calculate_auto_fit_extent_for_machine(

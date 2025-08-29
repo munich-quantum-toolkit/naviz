@@ -46,6 +46,34 @@ impl ZoomState {
         self.zoom_level = (self.zoom_level / factor).clamp(self.min_zoom, self.max_zoom);
     }
 
+    /// Zoom in by the specified factor, ensuring proper center when transitioning from auto_fit
+    pub fn zoom_in_with_center_check(
+        &mut self,
+        factor: f32,
+        config: &Config,
+        atoms: &[naviz_state::state::AtomState],
+    ) {
+        // If we're transitioning from auto_fit and center is at origin, update to machine center
+        if self.auto_fit && self.zoom_center == (0.0, 0.0) {
+            self.zoom_center = self.calculate_machine_center(config, atoms);
+        }
+        self.zoom_in(factor);
+    }
+
+    /// Zoom out by the specified factor, ensuring proper center when transitioning from auto_fit
+    pub fn zoom_out_with_center_check(
+        &mut self,
+        factor: f32,
+        config: &Config,
+        atoms: &[naviz_state::state::AtomState],
+    ) {
+        // If we're transitioning from auto_fit and center is at origin, update to machine center
+        if self.auto_fit && self.zoom_center == (0.0, 0.0) {
+            self.zoom_center = self.calculate_machine_center(config, atoms);
+        }
+        self.zoom_out(factor);
+    }
+
     /// Zoom in towards a specific point in content coordinates
     pub fn zoom_in_towards(&mut self, factor: f32, target_point: (f32, f32)) {
         let old_zoom = self.zoom_level;
