@@ -77,6 +77,77 @@ impl ZoomState {
         self.zoom_center = center;
     }
 
+    /// Calculate auto-fit extent based on the entire machine layout, not just atoms
+    pub fn calculate_auto_fit_extent_for_machine(
+        &self,
+        config: &Config,
+        atoms: &[naviz_state::state::AtomState],
+    ) -> Option<((f32, f32), (f32, f32))> {
+        let mut min_x = f32::INFINITY;
+        let mut max_x = f32::NEG_INFINITY;
+        let mut min_y = f32::INFINITY;
+        let mut max_y = f32::NEG_INFINITY;
+
+        let mut has_content = false;
+
+        // Include atom positions
+        for atom in atoms {
+            let (x, y) = atom.position;
+            let radius = atom.size;
+
+            min_x = min_x.min(x - radius);
+            max_x = max_x.max(x + radius);
+            min_y = min_y.min(y - radius);
+            max_y = max_y.max(y + radius);
+            has_content = true;
+        }
+
+        // Include trap positions
+        for &trap_pos in &config.machine.traps.positions {
+            let radius = config.machine.traps.radius;
+            min_x = min_x.min(trap_pos.0 - radius);
+            max_x = max_x.max(trap_pos.0 + radius);
+            min_y = min_y.min(trap_pos.1 - radius);
+            max_y = max_y.max(trap_pos.1 + radius);
+            has_content = true;
+        }
+
+        // Include zone boundaries
+        for zone in &config.machine.zones {
+            let zone_min_x = zone.start.0;
+            let zone_max_x = zone.start.0 + zone.size.0;
+            let zone_min_y = zone.start.1;
+            let zone_max_y = zone.start.1 + zone.size.1;
+
+            min_x = min_x.min(zone_min_x);
+            max_x = max_x.max(zone_max_x);
+            min_y = min_y.min(zone_min_y);
+            max_y = max_y.max(zone_max_y);
+            has_content = true;
+        }
+
+        // If no content found, fall back to original content extent
+        if !has_content {
+            return Some(config.content_extent);
+        }
+
+        // Ensure we include at least some grid lines for context
+        let grid_step_x = config.machine.grid.step.0;
+        let grid_step_y = config.machine.grid.step.1;
+
+        // Align to grid boundaries and add some grid padding
+        let grid_padding_x = grid_step_x * 2.0;
+        let grid_padding_y = grid_step_y * 2.0;
+
+        // Align boundaries to grid steps
+        min_x = (min_x / grid_step_x).floor() * grid_step_x - grid_padding_x;
+        max_x = (max_x / grid_step_x).ceil() * grid_step_x + grid_padding_x;
+        min_y = (min_y / grid_step_y).floor() * grid_step_y - grid_padding_y;
+        max_y = (max_y / grid_step_y).ceil() * grid_step_y + grid_padding_y;
+
+        Some(((min_x, min_y), (max_x, max_y)))
+    }
+
     /// Calculate the effective content extent based on zoom state and config
     pub fn calculate_effective_extent(&self, config: &Config) -> ((f32, f32), (f32, f32)) {
         let original_extent = config.content_extent;
@@ -85,7 +156,10 @@ impl ZoomState {
             // Return the original extent for auto-fit mode
             original_extent
         } else {
-            // Calculate zoomed extent
+            // Calculate zoomed extent aligned to grid
+            let grid_step_x = config.machine.grid.step.0;
+            let grid_step_y = config.machine.grid.step.1;
+
             let original_width = original_extent.1 .0 - original_extent.0 .0;
             let original_height = original_extent.1 .1 - original_extent.0 .1;
 
@@ -98,10 +172,18 @@ impl ZoomState {
             let half_width = zoomed_width / 2.0;
             let half_height = zoomed_height / 2.0;
 
-            (
-                (center_x - half_width, center_y - half_height),
-                (center_x + half_width, center_y + half_height),
-            )
+            let mut min_x = center_x - half_width;
+            let mut max_x = center_x + half_width;
+            let mut min_y = center_y - half_height;
+            let mut max_y = center_y + half_height;
+
+            // Align to grid boundaries to maintain coordinate system alignment
+            min_x = (min_x / grid_step_x).floor() * grid_step_x;
+            max_x = (max_x / grid_step_x).ceil() * grid_step_x;
+            min_y = (min_y / grid_step_y).floor() * grid_step_y;
+            max_y = (max_y / grid_step_y).ceil() * grid_step_y;
+
+            ((min_x, min_y), (max_x, max_y))
         }
     }
 

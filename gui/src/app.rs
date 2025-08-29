@@ -690,9 +690,11 @@ impl AppState {
     pub fn update_zoom_for_content(&mut self) {
         if let Some(animator_state) = self.animator_adapter.get() {
             if self.zoom_state.auto_fit {
-                if let Some(_auto_fit_extent) = self
-                    .zoom_state
-                    .calculate_auto_fit_extent(&animator_state.state().atoms)
+                if let Some(_auto_fit_extent) =
+                    self.zoom_state.calculate_auto_fit_extent_for_machine(
+                        animator_state.config(),
+                        &animator_state.state().atoms,
+                    )
                 {
                     // Update the animator with the new content extent for auto-fit
                     let _config = animator_state.config().clone();
@@ -860,8 +862,11 @@ impl CallbackTrait for RendererAdapter {
             let zoom_extent = if let Some(zoom_state) = &self.zoom_state {
                 let config = self.animator_state.config();
                 if zoom_state.auto_fit {
-                    // Calculate auto-fit extent based on current atoms
-                    zoom_state.calculate_auto_fit_extent(&self.animator_state.state().atoms)
+                    // Calculate auto-fit extent based on the entire machine layout
+                    zoom_state.calculate_auto_fit_extent_for_machine(
+                        config,
+                        &self.animator_state.state().atoms,
+                    )
                 } else {
                     // Use manually set zoom extent
                     Some(zoom_state.calculate_effective_extent(config))
