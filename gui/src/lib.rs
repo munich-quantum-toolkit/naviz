@@ -17,4 +17,5 @@ pub mod init;
 mod menu;
 mod progress_bar;
 mod util;
+mod zoom;
 pub use app::App;

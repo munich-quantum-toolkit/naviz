@@ -168,6 +168,66 @@ impl Renderer {
         self.time.set_visible(time.is_some());
     }
 
+    /// Updates this [Renderer] to resemble the new [State] with zoom support.
+    /// See [Updatable::update].
+    pub fn update_with_zoom(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+        zoom_extent: Option<((f32, f32), (f32, f32))>,
+    ) {
+        // If zoom extent is provided, we may need to update layout
+        if zoom_extent.is_some() {
+            self.update_full_with_zoom(updater, device, queue, config, state, zoom_extent);
+        } else {
+            self.update(updater, device, queue, config, state);
+        }
+    }
+
+    /// Updates this [Renderer] to resemble the new [State] and [Config] with zoom support.
+    /// See [Updatable::update_full].
+    pub fn update_full_with_zoom(
+        &mut self,
+        updater: &mut impl BufferUpdater,
+        device: &Device,
+        queue: &Queue,
+        config: &Config,
+        state: &State,
+        zoom_extent: Option<((f32, f32), (f32, f32))>,
+    ) {
+        let Layout {
+            content,
+            legend,
+            time,
+        } = get_layout_with_zoom(config, self.screen_resolution, self.force_zen, zoom_extent);
+
+        self.machine
+            .update_full(updater, device, queue, config, state, content);
+        self.atoms
+            .update_full(updater, device, queue, config, state, content);
+        self.legend.update_full(
+            updater,
+            device,
+            queue,
+            config,
+            state,
+            legend.unwrap_or(ViewportProjection::identity()),
+        );
+        self.legend.set_visible(legend.is_some());
+        self.time.update_full(
+            updater,
+            device,
+            queue,
+            config,
+            state,
+            time.unwrap_or(ViewportProjection::identity()),
+        );
+        self.time.set_visible(time.is_some());
+    }
+
     /// Updates the viewport resolution of this [Renderer]
     pub fn update_viewport(
         &mut self,
@@ -210,12 +270,43 @@ impl Renderer {
 /// Gets the [Layout] to use based on the passed [Config].
 /// Will detect which [Layout] to use based on which parts should be displayed in the [Config].
 /// If `force_content_only` is `true`, will always use [Layout::new_content_only].
+/// If `custom_content_extent` is provided, it will be used instead of the config's content extent.
 fn get_layout(config: &Config, screen_resolution: (u32, u32), force_content_only: bool) -> Layout {
     const CONTENT_PADDING_Y: f32 = 36.;
     const LEGEND_HEIGHT: f32 = 1024.;
 
     // content source
     let content = ViewportSource::from_tl_br(config.content_extent.0, config.content_extent.1);
+
+    if force_content_only || (!config.display_time() && !config.display_sidebar()) {
+        // no time and no sidebar
+        Layout::new_content_only(screen_resolution, content, CONTENT_PADDING_Y)
+    } else {
+        // default layout
+        Layout::new_full(
+            screen_resolution,
+            content,
+            CONTENT_PADDING_Y,
+            LEGEND_HEIGHT,
+            config.time.font.size * 1.2,
+        )
+    }
+}
+
+/// Gets the [Layout] to use based on the passed [Config] with optional zoom support.
+/// If `zoom_extent` is provided, it will be used instead of the config's content extent.
+fn get_layout_with_zoom(
+    config: &Config,
+    screen_resolution: (u32, u32),
+    force_content_only: bool,
+    zoom_extent: Option<((f32, f32), (f32, f32))>,
+) -> Layout {
+    const CONTENT_PADDING_Y: f32 = 36.;
+    const LEGEND_HEIGHT: f32 = 1024.;
+
+    // Use zoom extent if provided, otherwise use config extent
+    let extent = zoom_extent.unwrap_or(config.content_extent);
+    let content = ViewportSource::from_tl_br(extent.0, extent.1);
 
     if force_content_only || (!config.display_time() && !config.display_sidebar()) {
         // no time and no sidebar

@@ -47,27 +47,38 @@ pub struct AnimatorState {
 }
 
 impl AnimatorState {
-    /// Updates the passed [Renderer] to represent the current animator-state
-    pub fn update(
+    /// Updates the passed [Renderer] to represent the current animator-state with zoom support
+    pub fn update_with_zoom(
         &self,
         renderer: &mut Renderer,
         updater: &mut impl BufferUpdater,
         device: &Device,
         queue: &Queue,
+        zoom_extent: Option<((f32, f32), (f32, f32))>,
     ) {
         let config = &self.config;
         let state = &self.state;
         if self.update_full {
             renderer.set_force_zen(self.force_zen);
-            renderer.update_full(updater, device, queue, config, state);
+            renderer.update_full_with_zoom(updater, device, queue, config, state, zoom_extent);
         } else {
-            renderer.update(updater, device, queue, config, state);
+            renderer.update_with_zoom(updater, device, queue, config, state, zoom_extent);
         }
     }
 
     /// Gets the background-color of this [AnimatorState]
     pub fn background(&self) -> [u8; 4] {
         self.background
+    }
+
+    /// Gets the current state
+    pub fn state(&self) -> &State {
+        &self.state
+    }
+
+    /// Gets the current config
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 }
 

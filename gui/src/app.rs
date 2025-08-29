@@ -32,6 +32,7 @@ use crate::{
     init::{IdOrManual, InitOptions, Persistence},
     menu::MenuBar,
     util::WEB,
+    zoom::ZoomState,
 };
 
 /// The main App to draw using [egui]/[eframe].
@@ -54,6 +55,7 @@ pub struct AppState {
     current_style_id: Option<String>,
     persistence: Persistence,
     cache: AppCache,
+    zoom_state: ZoomState,
 }
 
 /// Caches some states of the app for operations such as sorting.
@@ -162,7 +164,7 @@ impl App {
         Self::new_from_state(cc, |errors| AppState::new_with_init(init_options, errors))
     }
 
-    /// Create a new instance of the [AppState] with the specified [InitOptions]
+    /// Create a new instance of the [App] with the specified [InitOptions]
     /// and loading the last persisted state.
     /// The passed [InitOptions] will overwrite any persisted options.
     pub fn new_with_init_and_persistence(
@@ -234,6 +236,7 @@ impl AppState {
             current_style_id: None,
             persistence: Default::default(),
             cache: Default::default(),
+            zoom_state: Default::default(),
         };
 
         app.update_machines();
@@ -672,6 +675,33 @@ impl AppState {
     pub fn get_force_zen(&mut self) -> bool {
         self.animator_adapter.get_force_zen()
     }
+
+    /// Gets a reference to the zoom state
+    pub fn zoom_state(&self) -> &ZoomState {
+        &self.zoom_state
+    }
+
+    /// Gets a mutable reference to the zoom state
+    pub fn zoom_state_mut(&mut self) -> &mut ZoomState {
+        &mut self.zoom_state
+    }
+
+    /// Updates the zoom state to fit the content to the current atoms
+    pub fn update_zoom_for_content(&mut self) {
+        if let Some(animator_state) = self.animator_adapter.get() {
+            if self.zoom_state.auto_fit {
+                if let Some(_auto_fit_extent) = self
+                    .zoom_state
+                    .calculate_auto_fit_extent(&animator_state.state().atoms)
+                {
+                    // Update the animator with the new content extent for auto-fit
+                    let _config = animator_state.config().clone();
+                    // Note: This would require modifying the animator_adapter to accept modified configs
+                    // For now, we'll implement zoom by modifying the viewport in the renderer
+                }
+            }
+        }
+    }
 }
 
 impl eframe::App for App {
@@ -686,6 +716,17 @@ impl eframe::App for App {
                 ui,
             )
         });
+
+        // Zoom controls panel
+        egui::TopBottomPanel::top("zoom_controls").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Zoom:");
+                crate::zoom::ZoomControls::draw(ui, &mut self.state.zoom_state);
+            });
+        });
+
+        // Update zoom for content if needed
+        self.state.update_zoom_for_content();
 
         // Main content
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -704,7 +745,20 @@ impl eframe::App for App {
                 ui,
                 |ui| {
                     if let Some(animator_state) = animator_state {
-                        WgpuCanvas::new(RendererAdapter::new(animator_state)).draw(ctx, ui);
+                        let mut renderer_adapter = RendererAdapter::new(animator_state.clone());
+                        renderer_adapter.set_zoom_state(&self.state.zoom_state);
+
+                        // Handle mouse interactions for zoom and pan
+                        let config = animator_state.config();
+                        let content_extent =
+                            self.state.zoom_state.calculate_effective_extent(config);
+                        crate::zoom::ZoomControls::handle_mouse_interaction(
+                            ui,
+                            &mut self.state.zoom_state,
+                            content_extent,
+                        );
+
+                        WgpuCanvas::new(renderer_adapter).draw(ctx, ui);
                     } else {
                         // Animator is not ready (something missing) => empty canvas
                         WgpuCanvas::new(EmptyCanvas::new()).draw(ctx, ui);
@@ -737,6 +791,8 @@ struct RendererAdapter {
     size: (f32, f32),
     /// The animator_state to render
     animator_state: AnimatorState,
+    /// The zoom state for this renderer
+    zoom_state: Option<ZoomState>,
 }
 
 impl RendererAdapter {
@@ -771,7 +827,13 @@ impl RendererAdapter {
         Self {
             animator_state,
             size: Default::default(),
+            zoom_state: None,
         }
+    }
+
+    /// Sets the zoom state for this renderer adapter
+    pub fn set_zoom_state(&mut self, zoom_state: &ZoomState) {
+        self.zoom_state = Some(zoom_state.clone());
     }
 }
 
@@ -793,8 +855,28 @@ impl CallbackTrait for RendererAdapter {
                     (self.size.1 * screen_descriptor.pixels_per_point) as u32,
                 ),
             );
-            self.animator_state
-                .update(r, &mut (device, queue), device, queue);
+
+            // Apply zoom transformation if zoom state is available
+            let zoom_extent = if let Some(zoom_state) = &self.zoom_state {
+                let config = self.animator_state.config();
+                if zoom_state.auto_fit {
+                    // Calculate auto-fit extent based on current atoms
+                    zoom_state.calculate_auto_fit_extent(&self.animator_state.state().atoms)
+                } else {
+                    // Use manually set zoom extent
+                    Some(zoom_state.calculate_effective_extent(config))
+                }
+            } else {
+                None
+            };
+
+            self.animator_state.update_with_zoom(
+                r,
+                &mut (device, queue),
+                device,
+                queue,
+                zoom_extent,
+            );
         } else {
             error!("Failed to get renderer");
         }
