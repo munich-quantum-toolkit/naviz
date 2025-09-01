@@ -13,6 +13,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - uses: actions/checkout@v5
+      - id: read-release-drafter-categories
+        run: |
+          JSON_CONTENT=$(cat .github/workflow_inputs/release_drafter_categories.json | jq -c .)
+          echo "release_drafter_categories=$JSON_CONTENT" >> $GITHUB_OUTPUT
       - id: create-token
         uses: actions/create-github-app-token@v2
         with:
@@ -28,3 +33,4 @@ jobs:
           has-changelog-and-upgrade-guide: false
           synchronize-contribution-guide: false
           synchronize-installation-guide: false
+          release-drafter-categories: ${{ steps.read-release-drafter-categories.outputs.release_drafter_categories }}
