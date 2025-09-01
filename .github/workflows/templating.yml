@@ -1,0 +1,36 @@
+name: Templating
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/templating.yml"
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  render-template:
+    name: Render template
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+      - id: read-release-drafter-categories
+        run: |
+          JSON_CONTENT=$(cat .github/workflow_inputs/release_drafter_categories.json | jq -c .)
+          echo "release_drafter_categories=$JSON_CONTENT" >> $GITHUB_OUTPUT
+      - id: create-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: munich-quantum-toolkit/templates@0480e463d360399c4f1fdf1464521f8593d583d5 # v1.1.3
+        with:
+          token: ${{ steps.create-token.outputs.token }}
+          name: NAViz
+          organization: ${{ github.repository_owner }}
+          project-type: other
+          repository: ${{ github.event.repository.name }}
+          has-changelog-and-upgrade-guide: false
+          synchronize-contribution-guide: false
+          synchronize-installation-guide: false
+          release-drafter-categories: ${{ steps.read-release-drafter-categories.outputs.release_drafter_categories }}
