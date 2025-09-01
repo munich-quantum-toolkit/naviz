@@ -1,7 +1,7 @@
 # MQT NAViz - A Visualizer for Neutral Atom Quantum Computers
 
 MQT NAViz is an open-source Rust and Python library to visualize atom movements of neutral atom quantum computers.
-It is developed as part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_ by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de).
+It is part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_.
 
 :::{note}
 
@@ -19,28 +19,29 @@ self
 ```
 
 ```{toctree}
-:maxdepth: 1
 :caption: User Guide
+:glob:
 :hidden:
+:maxdepth: 1
 
 file_format
 ```
 
 ```{toctree}
-:maxdepth: 1
-:titlesonly:
 :caption: Developers
 :glob:
 :hidden:
+:maxdepth: 1
 
 contributing
 support
 ```
 
 ```{toctree}
+:caption: API Reference
+:glob:
 :hidden:
 :maxdepth: 6
-:caption: API Reference
 
 api/mqt/naviz/index
 crates/animator/lib
