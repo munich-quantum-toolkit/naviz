@@ -18,13 +18,13 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-      - uses: munich-quantum-toolkit/templates@aa244c8b5ea6b44f4834aebc8f8269c75e10be96 # v1.1.2
+      - uses: munich-quantum-toolkit/templates@prepare-release-1-1-3 # v1.1.3
         with:
           token: ${{ steps.create-token.outputs.token }}
           name: NAViz
           organization: ${{ github.repository_owner }}
-          project-type: c++-python # Placeholder until a more fitting project type is defined
+          project-type: other
           repository: ${{ github.event.repository.name }}
+          has-changelog-and-upgrade-guide: false
           synchronize-contribution-guide: false
           synchronize-installation-guide: false
-          synchronize-pull-request-template: false
