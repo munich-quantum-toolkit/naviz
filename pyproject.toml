@@ -124,6 +124,18 @@ reinstall-package = ["mqt-naviz"]
 mqt-naviz = { workspace = true }
 
 
+[tool.typos]
+default.extend-ignore-re = [
+  "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",  # ignore line
+  "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on" # ignore block
+]
+[tool.typos.default.extend-words]
+wille = "wille"
+anc = "anc"
+mch = "mch"
+ket = "ket"
+
+
 [tool.repo-review]
 ignore = [
     "GH200", # We do not have a .github/dependabot.yml file because we use renovate for dependency management
