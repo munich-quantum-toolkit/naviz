@@ -1,3 +1,6 @@
+# This file has been generated from an external template. Please do not modify it directly.
+# Changes should be contributed to https://github.com/munich-quantum-toolkit/templates.
+
 name: 🐛 Bug Report
 description: Report a problem or unexpected behavior
 title: "🐛 <brief description of the issue>"
@@ -10,17 +13,19 @@ body:
         ⚠ Before submitting:
         1. Search [existing issues](https://github.com/munich-quantum-toolkit/naviz/search?q=is%3Aissue&type=issues) to avoid duplicates
         2. For questions or discussions, please use our [discussions forum](https://github.com/munich-quantum-toolkit/naviz/discussions)
+
   - type: textarea
     attributes:
       label: System Information
       description: Please provide details about your environment
       placeholder: |
-        - Operating System (including version):
+        - Operating system (including version):
         - MQT NAViz version:
-        - Python/Rust compiler version (if applicable):
+        - Python/C++ version (if applicable):
         - Any relevant dependencies and their versions:
     validations:
       required: true
+
   - type: textarea
     attributes:
       label: Bug Description
@@ -31,6 +36,7 @@ body:
         Include any error messages or unexpected behavior you observed.
     validations:
       required: true
+
   - type: textarea
     attributes:
       label: Steps to Reproduce
