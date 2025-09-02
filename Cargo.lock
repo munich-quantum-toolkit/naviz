@@ -2218,7 +2218,6 @@ dependencies = [
  "log",
  "num-traits",
  "once_cell",
- "pp-rs",
  "rustc-hash 1.1.0",
  "spirv",
  "strum",
@@ -2227,16 +2226,42 @@ dependencies = [
 ]
 
 [[package]]
-name = "naga_oil"
-version = "0.18.0"
+name = "naga"
+version = "26.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2df3a8d9ab892497ff7f88843786da6d0d92025ddb0af87922f279851831b6ce"
+checksum = "916cbc7cb27db60be930a4e2da243cf4bc39569195f22fd8ee419cd31d5b662c"
+dependencies = [
+ "arrayvec",
+ "bit-set",
+ "bitflags 2.9.3",
+ "cfg-if",
+ "cfg_aliases",
+ "codespan-reporting",
+ "half",
+ "hashbrown",
+ "hexf-parse",
+ "indexmap",
+ "libm",
+ "log",
+ "num-traits",
+ "once_cell",
+ "pp-rs",
+ "rustc-hash 1.1.0",
+ "thiserror 2.0.16",
+ "unicode-ident",
+]
+
+[[package]]
+name = "naga_oil"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6033a4d9970a55d8819f57e0dbdf36c23448326e10bfc9bacb7d00b1caca721"
 dependencies = [
  "bit-set",
  "codespan-reporting",
  "data-encoding",
  "indexmap",
- "naga",
+ "naga 26.0.0",
  "once_cell",
  "regex",
  "regex-syntax",
@@ -4373,7 +4398,7 @@ dependencies = [
  "hashbrown",
  "js-sys",
  "log",
- "naga",
+ "naga 25.0.1",
  "parking_lot",
  "portable-atomic",
  "profiling",
@@ -4403,7 +4428,7 @@ dependencies = [
  "hashbrown",
  "indexmap",
  "log",
- "naga",
+ "naga 25.0.1",
  "once_cell",
  "parking_lot",
  "portable-atomic",
@@ -4484,7 +4509,7 @@ dependencies = [
  "libloading",
  "log",
  "metal",
- "naga",
+ "naga 25.0.1",
  "ndk-sys 0.5.0+25.2.9519653",
  "objc",
  "ordered-float",
