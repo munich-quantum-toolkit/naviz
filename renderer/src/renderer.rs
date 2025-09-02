@@ -198,12 +198,6 @@ impl Renderer {
         state: &State,
         zoom_extent: Option<((f32, f32), (f32, f32))>,
     ) {
-        let Layout {
-            content,
-            legend,
-            time,
-        } = get_layout_with_zoom(config, self.screen_resolution, self.force_zen, zoom_extent);
-
         // Calculate zoom level for adaptive grid scaling
         let zoom_level = if let Some(extent) = zoom_extent {
             let original_extent = config.content_extent;
@@ -214,9 +208,28 @@ impl Renderer {
             1.0 // No zoom
         };
 
+        let Layout {
+            content,
+            legend,
+            time,
+        } = get_layout_with_zoom(
+            config,
+            self.screen_resolution,
+            self.force_zen,
+            zoom_extent,
+            zoom_level,
+        );
+
         // Update machine with zoom-aware grid
-        self.machine
-            .update_full_with_zoom(updater, device, queue, config, state, content, zoom_level);
+        self.machine.update_full_with_zoom(
+            updater,
+            device,
+            queue,
+            config,
+            state,
+            content,
+            zoom_level.powf(2.0),
+        );
         self.atoms
             .update_full(updater, device, queue, config, state, content);
         self.legend.update_full(
@@ -365,6 +378,7 @@ fn get_layout_with_zoom(
     screen_resolution: (u32, u32),
     force_content_only: bool,
     zoom_extent: Option<((f32, f32), (f32, f32))>,
+    zoom_level: f32,
 ) -> Layout {
     const LEGEND_HEIGHT: f32 = 1024.;
 
@@ -372,9 +386,19 @@ fn get_layout_with_zoom(
     let extent = zoom_extent.unwrap_or(config.content_extent);
     let content = ViewportSource::from_tl_br(extent.0, extent.1);
 
-    // Calculate dynamic content padding based on grid legend configuration
+    // When zoomed in, use original content dimensions for padding calculation
+    // to keep padding stable.
+    // Otherwise, use the potentially larger (auto-fit, zoom-out) dimensions.
+    let (padding_w, padding_h) = if zoom_level > 1.0 {
+        (
+            config.content_extent.1 .0 - config.content_extent.0 .0,
+            config.content_extent.1 .1 - config.content_extent.0 .1,
+        )
+    } else {
+        (content.width, content.height)
+    };
     let content_padding_y =
-        calculate_content_padding(&config.machine.grid.legend, content.width, content.height);
+        calculate_content_padding(&config.machine.grid.legend, padding_w, padding_h);
 
     if force_content_only || (!config.display_time() && !config.display_sidebar()) {
         // no time and no sidebar
