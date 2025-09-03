@@ -68,6 +68,16 @@ To support this endeavor, please consider:
   </a>
 </p>
 
+## Getting Started
+
+TODO.
+See, for example, https://github.com/munich-quantum-toolkit/core/blob/main/README.md#getting-started.
+
+## System Requirements
+
+TODO.
+See, for example, https://github.com/munich-quantum-toolkit/core/blob/main/README.md#system-requirements.
+
 ## Cite This
 
 When discussing the overall MQT project or its ecosystem, please cite the MQT Handbook:
