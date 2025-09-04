@@ -241,11 +241,12 @@ fn get_specs_with_zoom<'a>(
     let traps = get_trap_specs(traps);
 
     // Build labels with ORIGINAL steps to maintain consistent text size and spacing
-    build_number_labels(grid, text_buffer, viewport_source);
-    let texts = add_grid_legend(
+    build_number_labels_with_zoom(grid, text_buffer, viewport_source, zoom_level);
+    let texts = add_grid_legend_with_zoom(
         grid,
         viewport_source,
         text_buffer.iter().map(|(t, p, a)| (t.as_str(), *p, *a)),
+        zoom_level,
     );
 
     let zones = get_zone_specs(zones);
@@ -255,7 +256,7 @@ fn get_specs_with_zoom<'a>(
         traps,
         labels: TextSpec {
             viewport_projection,
-            font_size: grid.legend.font.size, // Keep original font size
+            font_size: grid.legend.font.size / zoom_level,
             font_family: &grid.legend.font.family,
             texts,
             color: grid.legend.font.color,
@@ -440,6 +441,57 @@ fn build_number_labels(
         .collect();
 }
 
+/// Fill the `text_buffer` with the strings for the legend numbers in x- and y-direction, while accounting for the zoom level.
+fn build_number_labels_with_zoom(
+    grid: &GridConfig,
+    text_buffer: &mut Vec<(String, (f32, f32), Alignment)>,
+    vp: ViewportSource,
+    zoom_level: f32,
+) {
+    if !grid.legend.display_numbers {
+        // Don't display number labels
+        *text_buffer = Vec::new();
+        return;
+    }
+
+    // The viewport-edges clamped to the grid/legend steps
+    let vp_left_legend = clamp_to(vp.left(), grid.legend.step.0);
+    let vp_top_legend = clamp_to(vp.top(), grid.legend.step.1);
+
+    let label_padding = LABEL_PADDING / zoom_level;
+
+    *text_buffer = range_f32(vp_left_legend, vp.right(), grid.legend.step.0)
+        .map(|x| {
+            (
+                format!("{x}"),
+                (
+                    x,
+                    grid.legend
+                        .position
+                        .0
+                        .get(vp.top() - label_padding, vp.bottom() + label_padding),
+                ),
+                Alignment(HAlignment::Center, get_v_alignment(grid.legend.position.0)),
+            )
+        })
+        .chain(
+            range_f32(vp_top_legend, vp.bottom(), grid.legend.step.1).map(|y| {
+                (
+                    format!("{y}"),
+                    (
+                        grid.legend
+                            .position
+                            .1
+                            .get(vp.left() - label_padding, vp.right() + label_padding),
+                        y,
+                    ),
+                    Alignment(get_h_alignment(grid.legend.position.1), VAlignment::Center),
+                )
+            }),
+        )
+        .collect();
+}
+
 /// Add the grid legends to the `texts`
 #[inline]
 fn add_grid_legend<'a>(
@@ -481,6 +533,59 @@ fn add_grid_legend<'a>(
                     .0
                     .inverse()
                     .get(vp.top() - LABEL_PADDING, vp.bottom() + LABEL_PADDING),
+            ),
+            Alignment(
+                HAlignment::Center,
+                get_v_alignment(grid.legend.position.0.inverse()),
+            ),
+        ),
+    ])
+}
+
+/// Add the grid legends to the `texts`, while accountung for the zoom level.
+#[inline]
+fn add_grid_legend_with_zoom<'a>(
+    grid: &'a GridConfig,
+    vp: ViewportSource,
+    texts: impl IntoIterator<Item = (&'a str, (f32, f32), Alignment)>,
+    zoom_level: f32,
+) -> impl Iterator<Item = (&'a str, (f32, f32), Alignment)> {
+    let texts = texts.into_iter();
+
+    if !grid.legend.display_labels {
+        // Don't display any labels
+        // Still need to chain (empty) vector to produce same output type
+        return texts.chain(Vec::new());
+    }
+
+    let label_padding = LABEL_PADDING / zoom_level;
+
+    // Add axis labels
+    texts.chain(vec![
+        (
+            grid.legend.labels.0.as_str(),
+            (
+                grid.legend
+                    .position
+                    .1
+                    .inverse()
+                    .get(vp.left() - label_padding, vp.right() + label_padding),
+                grid.legend.position.0.get(vp.top(), vp.bottom()),
+            ),
+            Alignment(
+                get_h_alignment(grid.legend.position.1.inverse()),
+                VAlignment::Center,
+            ),
+        ),
+        (
+            grid.legend.labels.1.as_str(),
+            (
+                grid.legend.position.1.get(vp.left(), vp.right()),
+                grid.legend
+                    .position
+                    .0
+                    .inverse()
+                    .get(vp.top() - label_padding, vp.bottom() + label_padding),
             ),
             Alignment(
                 HAlignment::Center,

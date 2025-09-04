@@ -221,15 +221,8 @@ impl Renderer {
         );
 
         // Update machine with zoom-aware grid
-        self.machine.update_full_with_zoom(
-            updater,
-            device,
-            queue,
-            config,
-            state,
-            content,
-            zoom_level.powf(2.0),
-        );
+        self.machine
+            .update_full_with_zoom(updater, device, queue, config, state, content, zoom_level);
         self.atoms
             .update_full(updater, device, queue, config, state, content);
         self.legend.update_full(
@@ -386,19 +379,8 @@ fn get_layout_with_zoom(
     let extent = zoom_extent.unwrap_or(config.content_extent);
     let content = ViewportSource::from_tl_br(extent.0, extent.1);
 
-    // When zoomed in, use original content dimensions for padding calculation
-    // to keep padding stable.
-    // Otherwise, use the potentially larger (auto-fit, zoom-out) dimensions.
-    let (padding_w, padding_h) = if zoom_level > 1.0 {
-        (
-            config.content_extent.1 .0 - config.content_extent.0 .0,
-            config.content_extent.1 .1 - config.content_extent.0 .1,
-        )
-    } else {
-        (content.width, content.height)
-    };
     let content_padding_y =
-        calculate_content_padding(&config.machine.grid.legend, padding_w, padding_h);
+        calculate_content_padding(&config.machine.grid.legend, content.width, content.height);
 
     if force_content_only || (!config.display_time() && !config.display_sidebar()) {
         // no time and no sidebar
@@ -408,7 +390,7 @@ fn get_layout_with_zoom(
         Layout::new_full(
             screen_resolution,
             content,
-            content_padding_y,
+            content_padding_y / zoom_level,
             LEGEND_HEIGHT,
             config.time.font.size * 1.2,
         )
