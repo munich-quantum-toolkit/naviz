@@ -399,49 +399,12 @@ fn build_number_labels(
     text_buffer: &mut Vec<(String, (f32, f32), Alignment)>,
     vp: ViewportSource,
 ) {
-    if !grid.legend.display_numbers {
-        // Don't display number labels
-        *text_buffer = Vec::new();
-        return;
-    }
-
-    // The viewport-edges clamped to the grid/legend steps
-    let vp_left_legend = clamp_to(vp.left(), grid.legend.step.0);
-    let vp_top_legend = clamp_to(vp.top(), grid.legend.step.1);
-
-    *text_buffer = range_f32(vp_left_legend, vp.right(), grid.legend.step.0)
-        .map(|x| {
-            (
-                format!("{x}"),
-                (
-                    x,
-                    grid.legend
-                        .position
-                        .0
-                        .get(vp.top() - LABEL_PADDING, vp.bottom() + LABEL_PADDING),
-                ),
-                Alignment(HAlignment::Center, get_v_alignment(grid.legend.position.0)),
-            )
-        })
-        .chain(
-            range_f32(vp_top_legend, vp.bottom(), grid.legend.step.1).map(|y| {
-                (
-                    format!("{y}"),
-                    (
-                        grid.legend
-                            .position
-                            .1
-                            .get(vp.left() - LABEL_PADDING, vp.right() + LABEL_PADDING),
-                        y,
-                    ),
-                    Alignment(get_h_alignment(grid.legend.position.1), VAlignment::Center),
-                )
-            }),
-        )
-        .collect();
+    build_number_labels_with_zoom(grid, text_buffer, vp, 1.0);
 }
 
-/// Fill the `text_buffer` with the strings for the legend numbers in x- and y-direction, while accounting for the zoom level.
+/// Fill the `text_buffer` with the strings for the legend numbers in x- and y-direction.
+///
+/// The padding for the labels is adjusted based on the `zoom_level`.
 fn build_number_labels_with_zoom(
     grid: &GridConfig,
     text_buffer: &mut Vec<(String, (f32, f32), Alignment)>,
@@ -499,50 +462,12 @@ fn add_grid_legend<'a>(
     vp: ViewportSource,
     texts: impl IntoIterator<Item = (&'a str, (f32, f32), Alignment)>,
 ) -> impl Iterator<Item = (&'a str, (f32, f32), Alignment)> {
-    let texts = texts.into_iter();
-
-    if !grid.legend.display_labels {
-        // Don't display any labels
-        // Still need to chain (empty) vector to produce same output type
-        return texts.chain(Vec::new());
-    }
-
-    // Add axis labels
-    texts.chain(vec![
-        (
-            grid.legend.labels.0.as_str(),
-            (
-                grid.legend
-                    .position
-                    .1
-                    .inverse()
-                    .get(vp.left() - LABEL_PADDING, vp.right() + LABEL_PADDING),
-                grid.legend.position.0.get(vp.top(), vp.bottom()),
-            ),
-            Alignment(
-                get_h_alignment(grid.legend.position.1.inverse()),
-                VAlignment::Center,
-            ),
-        ),
-        (
-            grid.legend.labels.1.as_str(),
-            (
-                grid.legend.position.1.get(vp.left(), vp.right()),
-                grid.legend
-                    .position
-                    .0
-                    .inverse()
-                    .get(vp.top() - LABEL_PADDING, vp.bottom() + LABEL_PADDING),
-            ),
-            Alignment(
-                HAlignment::Center,
-                get_v_alignment(grid.legend.position.0.inverse()),
-            ),
-        ),
-    ])
+    add_grid_legend_with_zoom(grid, vp, texts, 1.0)
 }
 
-/// Add the grid legends to the `texts`, while accountung for the zoom level.
+/// Add the grid legends to the `texts`.
+///
+/// The padding for the labels is adjusted based on the `zoom_level`.
 #[inline]
 fn add_grid_legend_with_zoom<'a>(
     grid: &'a GridConfig,
