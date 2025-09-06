@@ -2024,9 +2024,9 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "konst"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1b7495a4af30134f36ab2018716ba98b092019a6c5dc2126b94e3241c170748"
+checksum = "64896bdfd7906cfb0b57bc04f08bde408bcd6aaf71ff438ee471061cd16f2e86"
 dependencies = [
  "const_panic",
  "konst_proc_macros",
