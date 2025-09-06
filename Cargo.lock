@@ -939,9 +939,9 @@ dependencies = [
 
 [[package]]
 name = "eframe"
-version = "0.32.1"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34037a80dc03a4147e1684bff4e4fdab2b1408d715d7b78470cd3179258964b9"
+checksum = "990e96866be6346eff496e4f450616f2a00e462742ad64d955454842dd7aa006"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -999,9 +999,9 @@ dependencies = [
 
 [[package]]
 name = "egui-wgpu"
-version = "0.32.1"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64c7277a171ec1b711080ddb3b0bfa1b3aa9358834d5386d39e83fbc16d61212"
+checksum = "80b8ac3f985e46f485daa9c2c357311ac0d13098e08630ec55f3a6ad95192717"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1019,9 +1019,9 @@ dependencies = [
 
 [[package]]
 name = "egui-winit"
-version = "0.32.1"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe6d8b0f8d6de4d43e794e343f03bacc3908aada931f0ed6fd7041871388a590"
+checksum = "1abd8326d2be6d0e945dcfe8acd2c07d64be4c977c5e1115f902dc9cd3ff7bf5"
 dependencies = [
  "accesskit_winit",
  "ahash",
@@ -1054,9 +1054,9 @@ dependencies = [
 
 [[package]]
 name = "egui_glow"
-version = "0.32.1"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ab645760288e42eab70283a5cccf44509a6f43b554351855d3c73594bfe3c23"
+checksum = "7baca67871a8b808e2eb0849282f56149673b6842702306860916bf2dd83fca1"
 dependencies = [
  "ahash",
  "bytemuck",
