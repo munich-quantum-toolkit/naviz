@@ -33,6 +33,8 @@ jobs:
             arch: aarch64
           - image: windows-2022
             arch: x86_64
+          - image: windows-11-arm
+            arch: aarch64
     name: Build target ${{ matrix.arch }} on ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
     steps:
