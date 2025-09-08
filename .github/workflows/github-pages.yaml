@@ -17,9 +17,8 @@ on:
   merge_group:
   workflow_dispatch:
 
-# Cancel any old builds when starting a new build
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:
