@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v4^
       - name: Setup Python Toolchain
         # Setup a compatible python-toolchain for the python-bindings
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version-file: "pyproject.toml"
       - name: Setup Rust Toolchain
