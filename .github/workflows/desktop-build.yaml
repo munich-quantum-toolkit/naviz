@@ -39,7 +39,7 @@ jobs:
         run: ${{ matrix.prepare }}
         if: ${{ matrix.prepare }}
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           # fetch full history with tags
           fetch-depth: 0
@@ -48,7 +48,7 @@ jobs:
           # https://github.com/actions/checkout/issues/882#issuecomment-2153087319
           ref: ${{ github.ref }}
       - name: Setup Rust Toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@ac90e63697ac2784f4ecfe2964e1a285c304003a # v1
         with:
           cache-key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
           target: ${{ matrix.target }}
@@ -56,7 +56,7 @@ jobs:
         working-directory: gui
         run: cargo build --release --target ${{ matrix.target }}
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           path: |
             ./target/${{ matrix.target }}/release/naviz-gui${{ matrix.app-suffix }}
