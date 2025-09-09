@@ -27,6 +27,7 @@ pub struct Renderer {
     legend: Hidable<Legend>,
     time: Hidable<Time>,
     screen_resolution: (u32, u32),
+    content_viewport: ViewportProjection,
     /// Whether to force the [content-only-layout][Layout::new_content_only].
     /// Independent of the selected style.
     force_zen: bool,
@@ -102,6 +103,7 @@ impl Renderer {
             .with_visibility(time.is_some()),
             globals,
             screen_resolution,
+            content_viewport: content,
             force_zen: false,
         }
     }
@@ -144,6 +146,7 @@ impl Renderer {
             time,
         } = get_layout(config, self.screen_resolution, self.force_zen);
 
+        self.content_viewport = content;
         self.machine
             .update_full(updater, device, queue, config, state, content);
         self.atoms
@@ -220,6 +223,7 @@ impl Renderer {
             zoom_level,
         );
 
+        self.content_viewport = content;
         // Update machine with zoom-aware grid
         self.machine
             .update_full_with_zoom(updater, device, queue, config, state, content, zoom_level);
@@ -265,8 +269,30 @@ impl Renderer {
     pub fn draw(&self, render_pass: &mut RenderPass<'_>) {
         self.rebind(render_pass);
 
+        let (screen_width, screen_height) = self.screen_resolution;
+        let target = self.content_viewport.target;
+
+        let x = (target.x * screen_width as f32).round() as u32;
+        let y = (target.y * screen_height as f32).round() as u32;
+        let width = (target.width * screen_width as f32).round() as u32;
+        let height = (target.height * screen_height as f32).round() as u32;
+
+        // Clamp scissor rect to screen dimensions to prevent validation errors
+        let clamped_x = x.min(screen_width);
+        let clamped_y = y.min(screen_height);
+        // The scissor rect must be contained within the render target.
+        let clamped_width = (x + width).min(screen_width).saturating_sub(clamped_x);
+        let clamped_height = (y + height).min(screen_height).saturating_sub(clamped_y);
+
+        // Set the scissor rectangle to clip the machine and atoms
+        render_pass.set_scissor_rect(clamped_x, clamped_y, clamped_width, clamped_height);
+
         self.machine.draw::<true>(render_pass, self.rebind_fn());
         self.atoms.draw::<true>(render_pass, self.rebind_fn());
+
+        // Reset the scissor rectangle to draw the rest of the UI
+        render_pass.set_scissor_rect(0, 0, screen_width, screen_height);
+
         self.legend.draw::<false>(render_pass, self.rebind_fn()); // No rebind: time does not need globals
         self.time.draw::<false>(render_pass, self.rebind_fn());
     }
