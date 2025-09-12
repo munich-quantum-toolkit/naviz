@@ -89,7 +89,7 @@ ignore = [
 future-annotations = true
 
 [tool.ruff.lint.isort]
-known-first-party = ["mqt.yaqs"]
+known-first-party = ["mqt.naviz"]
 
 [tool.ruff.lint.per-file-ignores]
 "docs/**" = ["INP001"]
