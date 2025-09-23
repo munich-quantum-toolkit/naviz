@@ -48,7 +48,7 @@ jobs:
           # https://github.com/actions/checkout/issues/882#issuecomment-2153087319
           ref: ${{ github.ref }}
       - name: Setup Rust Toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@ac90e63697ac2784f4ecfe2964e1a285c304003a # v1
+        uses: actions-rust-lang/setup-rust-toolchain@2fcdc490d667999e01ddbbf0f2823181beef6b39 # v1.15.0
         with:
           cache-key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
           target: ${{ matrix.target }}
