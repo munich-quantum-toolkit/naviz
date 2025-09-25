@@ -22,6 +22,8 @@ jobs:
             prepare: sudo apt install -y gcc-aarch64-linux-gnu
             env:
               CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          - image: macos-15-intel
+            target: x86_64-apple-darwin
           - image: macos-14
             target: aarch64-apple-darwin
           - image: windows-2022
