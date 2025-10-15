@@ -81,7 +81,7 @@ $ cargo run -p naviz-gui
 
 ## System Requirements
 
-Building MQT NAViz requires version 1.89 of the Rust toolchain.
+Building MQT NAViz requires Rust 1.89 or newer (MSRV).
 
 ## Cite This
 
