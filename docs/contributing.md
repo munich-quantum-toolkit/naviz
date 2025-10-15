@@ -61,8 +61,6 @@ Please adhere to the following guidelines to help the project grow sustainably.
   Split multiple features into separate contributions.
 - Add tests for new features to ensure they work as intended.
 - Document new features.
-  For user-facing changes, add a changelog entry; for breaking changes, update the upgrade guide.
-  For details, see {ref}`maintaining-changelog-upgrade-guide`.
 - Add tests for bug fixes to demonstrate the fix.
 - Document your code thoroughly and ensure it is readable.
 - Keep your code clean by removing debug statements, leftover comments, and unrelated code.

@@ -74,7 +74,7 @@ To support this endeavor, please consider:
 After cloning the repository, run the following command to start the MQT NAViz GUI:
 
 ```console
-$ cargo run -p naviz-gui
+cargo run -p naviz-gui
 ```
 
 **Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/naviz).**
