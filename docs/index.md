@@ -3,7 +3,11 @@
 MQT NAViz is an open-source Rust and Python library to visualize atom movements of neutral atom quantum computers.
 It is part of the _{doc}`Munich Quantum Toolkit (MQT) <mqt:index>`_.
 
-TODO.
+We recommend read the {doc}`usage guide <usage>` and the {doc}`documentation of the file format <file_format>`.
+
+We appreciate any feedback and contributions to the project.
+If you want to contribute, you can find more information in the {doc}`contribution guide <contributing>`.
+If you are having trouble with the installation or the usage of MQT SyReC Synthesizer, please let us know on our {doc}`support page <support>`.
 
 ```{toctree}
 :hidden:
