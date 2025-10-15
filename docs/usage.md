@@ -13,7 +13,7 @@ When the animation plays, the progress bar at the bottom of the window can be us
 
 ## Python Package
 
-The python library currently only exports a simple functionality to export a visualization as a video.
+The Python library currently only has a simple functionality to export a visualization as a video.
 An example can be seen below:
 
 ```python
