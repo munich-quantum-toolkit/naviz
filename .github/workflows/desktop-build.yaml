@@ -15,22 +15,22 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: aarch64-apple-darwin
-            image: macos-latest
-          - target: x86_64-apple-darwin
-            image: macos-latest
-          - target: aarch64-unknown-linux-gnu
-            image: ubuntu-latest
+          - image: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - image: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
             prepare: sudo apt install -y gcc-aarch64-linux-gnu
             env:
               CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          - target: x86_64-unknown-linux-gnu
-            image: ubuntu-latest
-          - target: aarch64-pc-windows-msvc
-            image: windows-latest
+          - image: macos-15-intel
+            target: x86_64-apple-darwin
+          - image: macos-14
+            target: aarch64-apple-darwin
+          - image: windows-2022
+            target: x86_64-pc-windows-msvc
             app-suffix: .exe
-          - target: x86_64-pc-windows-msvc
-            image: windows-latest
+          - image: windows-11-arm
+            target: aarch64-pc-windows-msvc
             app-suffix: .exe
       fail-fast: false
     name: Build ${{ matrix.target }}
@@ -41,7 +41,7 @@ jobs:
         run: ${{ matrix.prepare }}
         if: ${{ matrix.prepare }}
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           # fetch full history with tags
           fetch-depth: 0
@@ -50,7 +50,7 @@ jobs:
           # https://github.com/actions/checkout/issues/882#issuecomment-2153087319
           ref: ${{ github.ref }}
       - name: Setup Rust Toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c # v1.15.2
         with:
           cache-key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
           target: ${{ matrix.target }}
@@ -58,7 +58,7 @@ jobs:
         working-directory: gui
         run: cargo build --release --target ${{ matrix.target }}
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           path: |
             ./target/${{ matrix.target }}/release/naviz-gui${{ matrix.app-suffix }}

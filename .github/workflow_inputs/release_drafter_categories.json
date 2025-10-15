@@ -1,0 +1,28 @@
+{
+  "🧑‍💻 Updates to the CLI": ["Area: CLI"],
+  "📱 Updates to the GUI": ["Area: GUI"],
+  "🐍 Updates to the Python Integration": ["Area: Python"],
+  "📼 Updates to the Video Export": ["Area: Video Export"],
+  "💫 Updates related to animation": ["Area: Animation"],
+  "🔍️ Updates related to file parsing": ["Area: File Parser"],
+  "🔗 Updates related to supported import formats": ["Area: Import"],
+  "🖼️ Updates related to rendering": ["Area: Renderer"],
+  "🔧 Updates related to the machine repository": ["Area: Repository"],
+  "🚀 Features and Enhancements": [
+    "enhancement",
+    "feature",
+    "refactor",
+    "usability"
+  ],
+  "🐛 Bug Fixes": ["bug", "fix"],
+  "📄 Documentation": ["documentation"],
+  "🤖 CI": ["continuous integration"],
+  "📦 Packaging": ["packaging"],
+  "🧹 Code Quality": ["code quality"],
+  "⬆️ Dependencies": [
+    "dependencies",
+    "github-actions",
+    "pre-commit",
+    "submodules"
+  ]
+}
