@@ -3,7 +3,7 @@
 Thank you for your interest in contributing to MQT NAViz!
 This document outlines the development guidelines and how to contribute.
 
-We use GitHub to [host code](https://github.com/munich-quantum-toolkit/naviz), to [track issues and feature requests][issues], as well as accept [pull requests](https://github.com/munich-quantum-toolkit/naviz/pulls).
+We use GitHub to [host code](https://github.com/munich-quantum-toolkit/naviz), to [track issues and feature requests](https://github.com/munich-quantum-toolkit/naviz/issues), as well as accept [pull requests](https://github.com/munich-quantum-toolkit/naviz/pulls).
 See <https://docs.github.com/en/get-started/quickstart> for a general introduction to working with GitHub and contributing to projects.
 
 ## Types of Contributions
@@ -17,7 +17,7 @@ Pick the path that fits your time and interests:
 
 - 🛠️ Fix bugs:
 
-  Browse [issues][issues], especially those labeled "bug", "help wanted", or "good first issue".
+  Browse [issues](https://github.com/munich-quantum-toolkit/naviz/issues), especially those labeled "bug", "help wanted", or "good first issue".
   Open a draft PR early to get feedback.
 
 - 💡 Propose features:
