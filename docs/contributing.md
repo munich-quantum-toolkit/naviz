@@ -37,7 +37,7 @@ Pick the path that fits your time and interests:
 
 - ⚡️ Performance and reliability:
 
-  Profile hot paths, add navizmarks, reduce allocations, deflake tests, and improve error messages.
+  Profile hot paths, add benchmarks, reduce allocations, deflake tests, and improve error messages.
 
 - 📦 Packaging and tooling:
 

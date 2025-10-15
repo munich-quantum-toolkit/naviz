@@ -8,7 +8,7 @@ We recommend reading the {doc}`usage guide <usage>` and the {doc}`documentation 
 
 We appreciate any feedback and contributions to the project.
 If you want to contribute, you can find more information in the {doc}`contribution guide <contributing>`.
-If you are having trouble with the installation or the usage of MQT NAViz, please let us know on our {doc}`support page <support>`.
+If you are having trouble with the installation or usage of MQT NAViz, please let us know on our {doc}`support page <support>`.
 
 ```{toctree}
 :hidden:
