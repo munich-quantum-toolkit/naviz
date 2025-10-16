@@ -1217,19 +1217,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "windows-sys 0.61.2",
-=======
-<<<<<<< HEAD
- "windows-sys 0.52.0",
-=======
- "windows-sys 0.61.2",
->>>>>>> 54551c8 (Update more dependencies)
->>>>>>> 5252bd1 (Update more dependencies)
-=======
- "windows-sys 0.61.2",
->>>>>>> bf7ba9d (Update lockfile)
 ]
 
 [[package]]
@@ -1342,11 +1330,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
-<<<<<<< HEAD
-name = "font-types"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-=======
 name = "foldhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1356,7 +1339,6 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 name = "font-types"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
->>>>>>> 5252bd1 (Update more dependencies)
 checksum = "511e2c18a516c666d27867d2f9821f76e7d591f762e9fc41dd6cc5c90fe54b0b"
 dependencies = [
  "bytemuck",
@@ -1780,12 +1762,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hashbrown"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
-
-[[package]]
 name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2131,19 +2107,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7c4b02199fee7c5d21a5ae7d8cfa79a6ef5bb2fc834d6e9058e89c825efdc55"
 dependencies = [
  "cfg-if",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "windows-link 0.2.1",
-=======
-<<<<<<< HEAD
- "windows-targets 0.52.6",
-=======
- "windows-link 0.2.1",
->>>>>>> 54551c8 (Update more dependencies)
->>>>>>> 5252bd1 (Update more dependencies)
-=======
- "windows-link 0.2.1",
->>>>>>> bf7ba9d (Update lockfile)
 ]
 
 [[package]]
@@ -2366,10 +2330,6 @@ dependencies = [
  "once_cell",
  "rustc-hash 1.1.0",
  "spirv",
-<<<<<<< HEAD
- "strum",
-=======
->>>>>>> 5252bd1 (Update more dependencies)
  "thiserror 2.0.17",
  "unicode-ident",
 ]
@@ -3579,23 +3539,8 @@ dependencies = [
  "bitflags 2.9.4",
  "errno",
  "libc",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "linux-raw-sys 0.11.0",
  "windows-sys 0.61.2",
-=======
-<<<<<<< HEAD
- "linux-raw-sys 0.9.4",
- "windows-sys 0.52.0",
-=======
- "linux-raw-sys 0.11.0",
- "windows-sys 0.61.2",
->>>>>>> 54551c8 (Update more dependencies)
->>>>>>> 5252bd1 (Update more dependencies)
-=======
- "linux-raw-sys 0.11.0",
- "windows-sys 0.61.2",
->>>>>>> bf7ba9d (Update lockfile)
 ]
 
 [[package]]
@@ -3958,23 +3903,8 @@ dependencies = [
  "fastrand",
  "getrandom 0.3.4",
  "once_cell",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "rustix 1.1.2",
  "windows-sys 0.61.2",
-=======
-<<<<<<< HEAD
- "rustix 1.0.8",
- "windows-sys 0.52.0",
-=======
- "rustix 1.1.2",
- "windows-sys 0.61.2",
->>>>>>> 54551c8 (Update more dependencies)
->>>>>>> 5252bd1 (Update more dependencies)
-=======
- "rustix 1.1.2",
- "windows-sys 0.61.2",
->>>>>>> bf7ba9d (Update lockfile)
 ]
 
 [[package]]
@@ -4667,8 +4597,6 @@ dependencies = [
  "rustc-hash 1.1.0",
  "smallvec",
  "thiserror 2.0.17",
-<<<<<<< HEAD
-=======
  "wgpu-core-deps-windows-linux-android 25.0.0",
  "wgpu-hal 25.0.2",
  "wgpu-types 25.0.0",
@@ -4699,7 +4627,6 @@ dependencies = [
  "rustc-hash 1.1.0",
  "smallvec",
  "thiserror 2.0.17",
->>>>>>> 5252bd1 (Update more dependencies)
  "wgpu-core-deps-apple",
  "wgpu-core-deps-emscripten",
  "wgpu-core-deps-wasm",
@@ -4793,11 +4720,7 @@ dependencies = [
  "gpu-alloc",
  "gpu-allocator",
  "gpu-descriptor",
-<<<<<<< HEAD
- "hashbrown 0.15.5",
-=======
  "hashbrown 0.16.0",
->>>>>>> 5252bd1 (Update more dependencies)
  "js-sys",
  "khronos-egl",
  "libc",
@@ -4836,8 +4759,6 @@ dependencies = [
  "js-sys",
  "log",
  "thiserror 2.0.17",
-<<<<<<< HEAD
-=======
  "web-sys",
 ]
 
@@ -4852,7 +4773,6 @@ dependencies = [
  "js-sys",
  "log",
  "thiserror 2.0.17",
->>>>>>> 5252bd1 (Update more dependencies)
  "web-sys",
 ]
 
