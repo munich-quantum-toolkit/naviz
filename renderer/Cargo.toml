@@ -7,7 +7,7 @@ keywords = ["naviz", "renderer"]
 license.workspace = true
 name = "naviz-renderer"
 repository.workspace = true
-version = "0.5.1"
+version = "0.6.0"
 
 [dependencies]
 bytemuck = "1.18.0"

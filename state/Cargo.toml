@@ -7,6 +7,6 @@ keywords = ["naviz", "state"]
 license.workspace = true
 name = "naviz-state"
 repository.workspace = true
-version = "0.5.0"
+version = "0.6.0"
 
 [dependencies]
