@@ -1933,9 +1933,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.11.4"
+version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b0f83760fb341a774ed326568e19f5a863af4a952def8c39f9ab92fd95b88e5"
+checksum = "6717a8d2a5a929a1a2eb43a12812498ed141a0bcfb7e8f7844fbdbe4303bba9f"
 dependencies = [
  "equivalent",
  "hashbrown 0.16.0",
@@ -2286,7 +2286,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-animator"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "fraction",
  "naviz-parser",
@@ -2297,7 +2297,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-bindings"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "futures",
  "naviz-animator",
@@ -2312,7 +2312,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-gui"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "constcat",
  "eframe",
@@ -2339,7 +2339,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-import"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "fraction",
  "naviz-parser",
@@ -2349,7 +2349,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-parser"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "fraction",
  "itertools",
@@ -2359,7 +2359,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-renderer"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "bytemuck",
  "glam",
@@ -2373,7 +2373,7 @@ dependencies = [
 
 [[package]]
 name = "naviz-repository"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "directories",
  "include_dir",
@@ -2383,11 +2383,11 @@ dependencies = [
 
 [[package]]
 name = "naviz-state"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "naviz-video"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "naviz-animator",
  "naviz-renderer",
@@ -2538,9 +2538,9 @@ dependencies = [
 
 [[package]]
 name = "num_enum"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a973b4e44ce6cad84ce69d797acf9a044532e4184c4f267913d1b546a0727b7a"
+checksum = "b1207a7e20ad57b847bbddc6776b968420d38292bbfe2089accff5e19e82454c"
 dependencies = [
  "num_enum_derive",
  "rustversion",
@@ -2548,9 +2548,9 @@ dependencies = [
 
 [[package]]
 name = "num_enum_derive"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77e878c846a8abae00dd069496dbe8751b16ac1c3d6bd2a7283a938e8228f90d"
+checksum = "ff32365de1b6743cb203b710788263c44a03de03802daf96092f2da4fe6ba4d7"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -3476,9 +3476,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.32"
+version = "0.23.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd3c25631629d034ce7cd9940adc9d45762d46de2b0f57193c4443b92c6d4d40"
+checksum = "751e04a496ca00bb97a5e043158d23d66b5aabf2e1d5aa2a0aaebb1aafe6f82c"
 dependencies = [
  "log",
  "once_cell",
@@ -3790,9 +3790,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.106"
+version = "2.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ede7c438028d4436d71104916910f5bb611972c5cfd7f89b8300a8186e6fada6"
+checksum = "2a26dbd934e5451d21ef060c018dae56fc073894c5a7896f882928a76e6d081b"
 dependencies = [
  "proc-macro2",
  "quote",
