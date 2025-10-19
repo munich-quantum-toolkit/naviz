@@ -4,7 +4,7 @@ name: Build Releases
 
 on:
   release:
-    types: [published]
+    types: [created, edited]
   workflow_dispatch:
 
 env:
