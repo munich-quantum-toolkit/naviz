@@ -1,3 +1,9 @@
+#!/usr/bin/env -S uv run --script --quiet
+
+# /// script
+# dependencies = ["nox"]
+# ///
+
 """Nox sessions."""
 
 from __future__ import annotations
@@ -6,7 +12,7 @@ import argparse
 
 import nox
 
-nox.needs_version = ">=2024.3.2"
+nox.needs_version = ">=2025.10.16"
 nox.options.default_venv_backend = "uv"
 
 
@@ -53,3 +59,7 @@ def docs(session: nox.Session) -> None:
         *shared_args,
         env=env,
     )
+
+
+if __name__ == "__main__":
+    nox.main()
