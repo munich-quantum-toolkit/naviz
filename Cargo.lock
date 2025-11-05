@@ -3603,10 +3603,11 @@ dependencies = [
 
 [[package]]
 name = "serde-pyobject"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "424dd69a64fdbb0ee21f22d74c4a0d92a957330c4dd439a3e390c4e70d7cb548"
+checksum = "5614e792b7c36d3feeb45b8287ea2dc615f063896e59258d11ef5015c18bdf6a"
 dependencies = [
+ "log",
  "pyo3",
  "serde",
 ]
