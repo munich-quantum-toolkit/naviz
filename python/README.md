@@ -16,7 +16,7 @@ from naviz import *
 
 # Get machine and style from repository
 machine = Repository.machines().get("example")
-style = Repository.machines().get("tum")
+style = Repository.styles().get("tum")
 
 # Alternatively, you can also use manual configurations
 machine = "<...>"
