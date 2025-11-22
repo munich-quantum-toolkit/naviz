@@ -116,7 +116,7 @@ filterwarnings = [
     "error",
 ]
 xfail_strict = true
-log_cli_level = "INFO"
+log_level = "INFO"
 testpaths = ["test/python"]
 
 
