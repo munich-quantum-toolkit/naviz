@@ -9,11 +9,21 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 
 import nox
 
 nox.needs_version = ">=2025.10.16"
 nox.options.default_venv_backend = "uv"
+
+
+@nox.session(reuse_venv=True, default=True)
+def lint(session: nox.Session) -> None:
+    """Run the linter."""
+    if shutil.which("prek") is None:
+        session.install("prek")
+
+    session.run("prek", "run", "--all-files", *session.posargs, external=True)
 
 
 @nox.session(reuse_venv=True)
