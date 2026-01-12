@@ -131,7 +131,8 @@ ket = "ket"
 
 [tool.repo-review]
 ignore = [
-    "GH200", # We use Renovate instead of dependabot
+    "GH200", # We use Renovate instead of Dependabot
+    "PC160", # We use a mirror of crate-ci/typos
     "PP301", # We do not have tests yet
     "PY005", # We do not have tests yet
 ]
