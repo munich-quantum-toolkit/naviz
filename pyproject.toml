@@ -17,7 +17,7 @@ authors = [
 ]
 keywords = ["MQT", "quantum-computing", "design-automation", "compiler", "visualization", "neutral-atoms"]
 license = "MIT"
-license-files = ["LICENSE.md"]
+license-files = ["python/LICENSE"]
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -27,6 +27,7 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -131,7 +132,8 @@ ket = "ket"
 
 [tool.repo-review]
 ignore = [
-    "GH200", # We use Renovate instead of dependabot
+    "GH200", # We use Renovate instead of Dependabot
+    "PC160", # We use a mirror of crate-ci/typos
     "PP301", # We do not have tests yet
     "PY005", # We do not have tests yet
 ]

@@ -11,7 +11,7 @@ release = version.split("+")[0]
 project = "MQT NAViz"
 author = "Chair for Design Automation, TUM & Munich Quantum Software Company"
 language = "en"
-project_copyright = "2023 - 2025 Chair for Design Automation, TUM & 2025 Munich Quantum Software Company"
+project_copyright = "2025 - 2026 Chair for Design Automation, TUM & 2025 - 2026 Munich Quantum Software Company"
 
 master_doc = "index"
 
