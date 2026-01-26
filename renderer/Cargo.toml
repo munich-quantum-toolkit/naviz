@@ -11,7 +11,7 @@ version = "0.6.0"
 
 [dependencies]
 bytemuck = "1.18.0"
-glam = {version = "0.30.0", features = ["bytemuck"]}
+glam = {version = "0.31.0", features = ["bytemuck"]}
 glyphon = "0.9"
 log = "0.4.22"
 naga_oil = "0.18"
