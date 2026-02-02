@@ -16,3 +16,6 @@ jobs:
   python-linter:
     name: 🐍 Lint
     uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@d6314c45667c131055a0389afc110e8dedc6da3f # v1.17.11
+    with:
+      enable-mypy: false
+      enable-ty: true
