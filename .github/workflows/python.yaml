@@ -29,11 +29,11 @@ jobs:
           - image: ubuntu-24.04-arm
             arch: aarch64
             manylinux: auto
+          - image: macos-15
+            arch: aarch64
           - image: macos-15-intel
             arch: x86_64-apple-darwin
-          - image: macos-14
-            arch: aarch64
-          - image: windows-2022
+          - image: windows-2025
             arch: x86_64
     name: Build target ${{ matrix.arch }} on ${{ matrix.image }}
     runs-on: ${{ matrix.image }}

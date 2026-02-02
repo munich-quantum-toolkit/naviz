@@ -26,11 +26,11 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - image: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
+          - image: macos-15
+            target: aarch64-apple-darwin
           - image: macos-15-intel
             target: x86_64-apple-darwin
-          - image: macos-14
-            target: aarch64-apple-darwin
-          - image: windows-2022
+          - image: windows-2025
             target: x86_64-pc-windows-msvc
           - image: windows-11-arm
             target: aarch64-pc-windows-msvc
@@ -39,7 +39,7 @@ jobs:
     runs-on: ${{ matrix.image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4^
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Setup Python Toolchain
         # Setup a compatible python-toolchain for the python-bindings
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
