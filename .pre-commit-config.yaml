@@ -50,7 +50,7 @@ repos:
       - id: disallow-caps
         name: Disallow improper capitalization
         language: pygrep
-        entry: Numpy|Github|PyTest|Tum
+        entry: '\b(?:Numpy|Github|PyTest|Tum)\b'
         exclude: .pre-commit-config.yaml
         priority: 0
 
@@ -105,7 +105,7 @@ repos:
         entry: cargo fmt
         language: unsupported
         types: [rust]
-        pass_filenames: false # Running it on the whole project makes it a lot faster
+        pass_filenames: false
         priority: 1
 
   ## Format configuration files with prettier
@@ -148,4 +148,5 @@ repos:
         require_serial: true
         types_or: [python, pyi, jupyter]
         exclude: ^(docs/)
+        pass_filenames: false
         priority: 3
