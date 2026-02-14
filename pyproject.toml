@@ -163,5 +163,5 @@ docs = [
 dev = [
     {include-group = "build"},
     "nox>=2025.11.12",
-    "ty==0.0.15",
+    "ty==0.0.17",
 ]
