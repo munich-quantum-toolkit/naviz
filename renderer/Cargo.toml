@@ -12,7 +12,7 @@ version = "0.6.0"
 [dependencies]
 bytemuck = "1.18.0"
 glam = {version = "0.32.0", features = ["bytemuck"]}
-glyphon = "0.9"
+glyphon = "0.10"
 log = "0.4.22"
 naga_oil = "0.18"
 naviz-state = {workspace = true}
