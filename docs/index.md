@@ -33,6 +33,7 @@ file_format
 :maxdepth: 1
 
 contributing
+ai_usage
 support
 ```
 
