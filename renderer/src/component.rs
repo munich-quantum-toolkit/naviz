@@ -131,7 +131,7 @@ impl<Spec: bytemuck::NoUninit> Component<Spec> {
                 viewport.bind_group_layout(),
                 &bind_group_layout,
             ],
-            push_constant_ranges: &[],
+            immediate_size: 0,
         });
 
         let render_pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
@@ -167,7 +167,7 @@ impl<Spec: bytemuck::NoUninit> Component<Spec> {
             },
             depth_stencil: None,
             multisample: MultisampleState::default(),
-            multiview: None,
+            multiview_mask: None,
             cache: None,
         });
 

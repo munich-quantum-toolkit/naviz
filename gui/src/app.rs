@@ -675,20 +675,22 @@ impl AppState {
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx().clone();
+
         // Menu
-        egui::TopBottomPanel::top("app_menu").show(ctx, |ui| {
+        egui::Panel::top("app_menu").show_inside(ui, |ui| {
             self.ui.menu_bar.draw(
                 &mut self.state,
                 &mut self.ui.errors,
                 &self.future_helper,
-                ctx,
+                &ctx,
                 ui,
             )
         });
 
         // Main content
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show_inside(ui, |ui| {
             let padding = ui.style().spacing.item_spacing.y;
             let (_, space) = ui.allocate_space(ui.available_size());
             let panel = AspectPanel {
@@ -704,10 +706,10 @@ impl eframe::App for App {
                 ui,
                 |ui| {
                     if let Some(animator_state) = animator_state {
-                        WgpuCanvas::new(RendererAdapter::new(animator_state)).draw(ctx, ui);
+                        WgpuCanvas::new(RendererAdapter::new(animator_state)).draw(&ctx, ui);
                     } else {
                         // Animator is not ready (something missing) => empty canvas
-                        WgpuCanvas::new(EmptyCanvas::new()).draw(ctx, ui);
+                        WgpuCanvas::new(EmptyCanvas::new()).draw(&ctx, ui);
                     }
                 },
                 |_| {},
@@ -720,7 +722,7 @@ impl eframe::App for App {
             );
         });
 
-        self.ui.errors.draw(ctx);
+        self.ui.errors.draw(&ctx);
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {

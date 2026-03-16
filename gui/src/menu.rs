@@ -135,7 +135,7 @@ impl MenuBar {
     /// If text was pasted,
     /// will load that text as instructions.
     fn handle_clipboard(&mut self, ctx: &egui::Context, state: &mut AppState, errors: &mut Errors) {
-        if ctx.wants_keyboard_input() {
+        if ctx.egui_wants_keyboard_input() {
             // some widgets is listening for keyboard input,
             // therefore it also consumes paste events.
             // When something is pasted, it should only go to that widget
