@@ -56,6 +56,7 @@ async fn create_device() -> (Device, Queue) {
             required_limits: Limits::default(),
             memory_hints: MemoryHints::default(),
             trace: wgpu::Trace::default(),
+            experimental_features: wgpu::ExperimentalFeatures::default(),
         })
         .await
         .expect("Failed to create device")
@@ -212,7 +213,7 @@ impl VideoExport {
 
     /// Renders the current frame and gets the resulting data as a [BufferView].
     /// [Self::output_buffer] will need to be [unmapped][Buffer::unmap] after the [BufferView] was used.
-    fn get_frame(&self) -> BufferView<'_> {
+    fn get_frame(&self) -> BufferView {
         let mut encoder = self
             .device
             .create_command_encoder(&CommandEncoderDescriptor { label: None });
@@ -232,10 +233,12 @@ impl VideoExport {
                         }),
                         store: StoreOp::Store,
                     },
+                    depth_slice: None,
                 })],
                 depth_stencil_attachment: None,
                 timestamp_writes: None,
                 occlusion_query_set: None,
+                multiview_mask: None,
             });
             self.renderer.draw(&mut render_pass);
         }
@@ -267,7 +270,7 @@ impl VideoExport {
         buffer_slice.map_async(MapMode::Read, move |result| {
             tx.send(result).unwrap();
         });
-        let _ = self.device.poll(wgpu::MaintainBase::Wait);
+        let _ = self.device.poll(wgpu::PollType::wait_indefinitely());
         rx.recv().unwrap().unwrap();
 
         buffer_slice.get_mapped_range()
