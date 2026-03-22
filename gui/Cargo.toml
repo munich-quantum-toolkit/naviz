@@ -15,7 +15,7 @@ targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [dependencies]
 constcat = "0.6.0"
-eframe = { git = "https://github.com/emilk/egui.git", rev = "41b8f5f4e773543451a99e0c82af2426ecc19c76", default-features = false, features = [
+eframe = { git = "https://github.com/emilk/egui.git", rev = "49fad9a7b2b8f99f0081b105e7fd4f5851238ac5", default-features = false, features = [
   "accesskit", # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
   "default_fonts", # Embed the default egui fonts.
   "persistence", # Persist some data across starts
@@ -23,8 +23,8 @@ eframe = { git = "https://github.com/emilk/egui.git", rev = "41b8f5f4e773543451a
   "wayland",
   "x11",
 ]}
-egui = { git = "https://github.com/emilk/egui.git", rev = "41b8f5f4e773543451a99e0c82af2426ecc19c76" }
-egui_extras = { git = "https://github.com/emilk/egui.git", rev = "41b8f5f4e773543451a99e0c82af2426ecc19c76" }
+egui = { git = "https://github.com/emilk/egui.git", rev = "49fad9a7b2b8f99f0081b105e7fd4f5851238ac5" }
+egui_extras = { git = "https://github.com/emilk/egui.git", rev = "49fad9a7b2b8f99f0081b105e7fd4f5851238ac5" }
 git-version = "0.3.9"
 konst = "0.4.0"
 log = "0.4"
