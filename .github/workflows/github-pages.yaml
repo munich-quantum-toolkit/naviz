@@ -36,7 +36,7 @@ jobs:
           # but only history (treeless)
           filter: "tree:0"
       - name: Setup Rust Toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@a0b538fa0b742a6aa35d6e2c169b4bd06d225a98 # v1.15.3
+        uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606 # v1.15.4
         with:
           cache-key: ${{ env.CACHE_KEY }}
           target: wasm32-unknown-unknown
