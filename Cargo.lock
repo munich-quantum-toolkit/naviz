@@ -2434,7 +2434,7 @@ dependencies = [
  "fraction",
  "naviz-parser",
  "serde",
- "winnow 0.7.15",
+ "winnow 1.0.0",
 ]
 
 [[package]]
@@ -2444,7 +2444,7 @@ dependencies = [
  "fraction",
  "itertools",
  "regex",
- "winnow 0.7.15",
+ "winnow 1.0.0",
 ]
 
 [[package]]
