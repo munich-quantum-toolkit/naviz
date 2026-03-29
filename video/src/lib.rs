@@ -40,7 +40,7 @@ pub enum VideoProgress {
 
 /// Creates a headless rendering [Device] and [Queue]
 async fn create_device() -> (Device, Queue) {
-    let instance = Instance::new(&InstanceDescriptor::default());
+    let instance = Instance::new(InstanceDescriptor::new_without_display_handle());
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {
             power_preference: wgpu::PowerPreference::HighPerformance,

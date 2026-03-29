@@ -127,9 +127,9 @@ impl<Spec: bytemuck::NoUninit> Component<Spec> {
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[
-                globals.bind_group_layout(),
-                viewport.bind_group_layout(),
-                &bind_group_layout,
+                Some(globals.bind_group_layout()),
+                Some(viewport.bind_group_layout()),
+                Some(&bind_group_layout),
             ],
             immediate_size: 0,
         });
