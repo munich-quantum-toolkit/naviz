@@ -51,7 +51,7 @@ fn main() {
     let mut web_options = eframe::WebOptions::default();
     let mut wgpu_setup = match web_options.wgpu_options.wgpu_setup {
         WgpuSetup::CreateNew(setup) => setup,
-        _ => WgpuSetupCreateNew::default(),
+        _ => WgpuSetupCreateNew::without_display_handle(),
     };
     let default_device_descriptor = wgpu_setup.device_descriptor;
     wgpu_setup.device_descriptor =
