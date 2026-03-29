@@ -14,7 +14,7 @@ bytemuck = "1.18.0"
 glam = {version = "0.32.0", features = ["bytemuck"]}
 glyphon = "0.10"
 log = "0.4.22"
-naga_oil = "0.21"
+naga_oil = "0.22"
 naviz-state = {workspace = true}
 wgpu = {version = "28", default-features = false, features = ["wgsl", "naga-ir"]}
 
