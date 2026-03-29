@@ -24,7 +24,7 @@ eframe = { git = "https://github.com/emilk/egui.git", rev = "49fad9a7b2b8f99f008
   "x11",
 ]}
 egui = { git = "https://github.com/emilk/egui.git", rev = "49fad9a7b2b8f99f0081b105e7fd4f5851238ac5" }
-egui_extras = { git = "https://github.com/emilk/egui.git", rev = "49fad9a7b2b8f99f0081b105e7fd4f5851238ac5" }
+egui_extras = { git = "https://github.com/emilk/egui.git", rev = "eb35f7d12f2a941707eee3406aab28e1df0262c9" }
 git-version = "0.3.9"
 konst = "0.4.0"
 log = "0.4"
