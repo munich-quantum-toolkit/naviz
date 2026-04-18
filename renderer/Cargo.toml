@@ -12,7 +12,7 @@ version = "0.6.0"
 [dependencies]
 bytemuck = "1.18.0"
 glam = {version = "0.32.0", features = ["bytemuck"]}
-glyphon = { git = "https://github.com/grovesNL/glyphon", rev = "28f1cb92e120ab790eca9ecc6aeb0ed8c8336fc0" }
+glyphon = { git = "https://github.com/grovesNL/glyphon", rev = "5ac022456ad16ae3ddb60c4f1db1f0f63e412571" }
 log = "0.4.22"
 naga_oil = "0.22"
 naviz-state = {workspace = true}
