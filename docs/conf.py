@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from importlib import metadata
 
+try:
+    version = metadata.version("mqt.naviz")
+except ModuleNotFoundError:
+    msg = "mqt.naviz must be installed to build the documentation"
+    raise ModuleNotFoundError(msg) from None
+
 # Filter git details from version
-version = metadata.version("mqt.naviz")
 release = version.split("+")[0]
 
 project = "MQT NAViz"
