@@ -1202,12 +1202,11 @@ checksum = "dea2df4cf52843e0452895c455a1a2cfbb842a1e7329671acf418fdc53ed4c59"
 
 [[package]]
 name = "etagere"
-version = "0.2.15"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc89bf99e5dc15954a60f707c1e09d7540e5cd9af85fa75caa0b510bc08c5342"
+checksum = "7ecb5c40d5683a270e077688f53a99eac51c1cb1ae5ba63b55590370cb3536bf"
 dependencies = [
  "euclid",
- "svg_fmt",
 ]
 
 [[package]]
@@ -1658,8 +1657,8 @@ dependencies = [
 
 [[package]]
 name = "glyphon"
-version = "0.10.0"
-source = "git+https://github.com/grovesNL/glyphon?rev=28f1cb92e120ab790eca9ecc6aeb0ed8c8336fc0#28f1cb92e120ab790eca9ecc6aeb0ed8c8336fc0"
+version = "0.11.0"
+source = "git+https://github.com/grovesNL/glyphon?rev=5ac022456ad16ae3ddb60c4f1db1f0f63e412571#5ac022456ad16ae3ddb60c4f1db1f0f63e412571"
 dependencies = [
  "cosmic-text",
  "etagere",
@@ -3886,12 +3885,6 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
-
-[[package]]
-name = "svg_fmt"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0193cc4331cfd2f3d2011ef287590868599a2f33c3e69bc22c1a3d3acf9e02fb"
 
 [[package]]
 name = "swash"
