@@ -29,9 +29,9 @@ jobs:
           - image: ubuntu-24.04-arm
             arch: aarch64
             manylinux: auto
-          - image: macos-15
+          - image: macos-26
             arch: aarch64
-          - image: macos-15-intel
+          - image: macos-26-intel
             arch: x86_64-apple-darwin
           - image: windows-2025
             arch: x86_64
