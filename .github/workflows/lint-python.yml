@@ -15,7 +15,7 @@ concurrency:
 jobs:
   python-linter:
     name: 🐍 Lint
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@b17932e07095e11c8f8c0d74298bbcde43f77a15 # v2.1.1
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@e7f84f39ce2d3b6c5d1d04526b8f94f98e455143 # v2.2.0
     with:
       enable-mypy: false
       enable-ty: true
