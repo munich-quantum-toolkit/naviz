@@ -32,7 +32,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinxcontrib_rust",
-    "sphinxcontrib.bibtex",
     "sphinxcontrib.inkscapeconverter",
     "sphinxext.opengraph",
 ]
