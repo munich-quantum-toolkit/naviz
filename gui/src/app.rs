@@ -679,7 +679,7 @@ impl eframe::App for App {
         let ctx = ui.ctx().clone();
 
         // Menu
-        egui::Panel::top("app_menu").show_inside(ui, |ui| {
+        egui::Panel::top("app_menu").show(ui, |ui| {
             self.ui.menu_bar.draw(
                 &mut self.state,
                 &mut self.ui.errors,
@@ -690,7 +690,7 @@ impl eframe::App for App {
         });
 
         // Main content
-        egui::CentralPanel::default().show_inside(ui, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             let padding = ui.style().spacing.item_spacing.y;
             let (_, space) = ui.allocate_space(ui.available_size());
             let panel = AspectPanel {

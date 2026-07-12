@@ -63,7 +63,7 @@ impl ViewportProjection {
 impl From<ViewportProjection> for Mat4 {
     fn from(ViewportProjection { source, target }: ViewportProjection) -> Self {
         // Content -> Between
-        let from_content = glam::Mat4::orthographic_rh(
+        let from_content = glam::camera::rh::proj::directx::orthographic(
             source.left(),
             source.right(),
             source.bottom(),
@@ -74,7 +74,7 @@ impl From<ViewportProjection> for Mat4 {
         // Between -> Viewport
         // Created by inverting the projection Viewport -> Between
         // Can always be inverted, as it is an orthographic projection matrix
-        let to_viewport = glam::Mat4::orthographic_rh(
+        let to_viewport = glam::camera::rh::proj::directx::orthographic(
             target.x,
             target.x + target.width,
             target.y,
