@@ -24,24 +24,24 @@
 
 ## Machine Configuration
 
-Configuration parameters for the machine are set in a `.namachine`-file.
-The file-name will be the machine-id.
-It contains multiple configuration-blocks:
+Configuration parameters for the machine are set in a `.namachine`-file. The
+file-name will be the machine-id. It contains multiple configuration-blocks:
 
 ### Display-name
 
 A human-readable name for the machine can be set in the `name`-field.
 
-```
+```text
 name: <string> // Name of the machine
 ```
 
 ### Movement Speeds
 
 The maximum movement speed of the machine is specified in the `movement`-block.
-The machine will interpolate using constant jerk while respecting this `max_speed`.
+The machine will interpolate using constant jerk while respecting this
+`max_speed`.
 
-```
+```text
 movement {
     max_speed: <number>> // Max speed
 }
@@ -51,7 +51,7 @@ movement {
 
 The `time`-block allows setting the time of the operations.
 
-```
+```text
 time {
     load: <number> // Time to load an atom
     store: <number> // Time to store an atom
@@ -66,7 +66,7 @@ time {
 
 The `distance`-block allows specifying various distances.
 
-```
+```text
 distance {
     interaction: <number> // Interaction-radius for all operations that operate on nearby atoms
     unit: <string> // Displayed distance-unit
@@ -75,10 +75,10 @@ distance {
 
 ### Zones
 
-A zone can be defined with a `zone`-block.
-It should be given a unique ID and bounds.
+A zone can be defined with a `zone`-block. It should be given a unique ID and
+bounds.
 
-```
+```text
 zone <id> {
     from: <position> // First coordinate of rectangle
     to: <position> // Second coordinate of rectangle
@@ -87,10 +87,10 @@ zone <id> {
 
 ### Static Traps
 
-A static trap can be defined with the `trap`-block.
-It should be given a position.
+A static trap can be defined with the `trap`-block. It should be given a
+position.
 
-```
+```text
 trap <id> {
     position: <position> // Position of the trap
 }
@@ -98,14 +98,14 @@ trap <id> {
 
 ## Visual Configuration
 
-Visual configuration can be specified in a `.nastyle`-file.
-It contains the following blocks:
+Visual configuration can be specified in a `.nastyle`-file. It contains the
+following blocks:
 
 ### Display-name
 
 A human-readable name for the style can be set in the `name`-field.
 
-```
+```text
 name: <string> // Name of the style
 ```
 
@@ -113,7 +113,7 @@ name: <string> // Name of the style
 
 The `atom`-block allows specifying settings regarding the appearance of atoms.
 
-```
+```text
 atom {
     trapped {
         color: <color> // Color of a trapped atom
@@ -140,7 +140,7 @@ atom {
 
 The `zone`-block allows specifying settings regarding the appearance of zones.
 
-```
+```text
 zone {
     config <regex> { // The settings below will be applied to all zones matching this regex
         color: <color> // The color of the zone
@@ -162,9 +162,10 @@ zone {
 
 ### Operations
 
-The `operation`-block allows specifying settings regarding the appearance of operations.
+The `operation`-block allows specifying settings regarding the appearance of
+operations.
 
-```
+```text
 operation {
     config {
         ry {
@@ -192,9 +193,10 @@ operation {
 
 ### Machine
 
-The `machine`-block allows specifying settings regarding the appearance of the machine.
+The `machine`-block allows specifying settings regarding the appearance of the
+machine.
 
-```
+```text
 machine {
     trap {
         color: <color> // Color of the traps
@@ -222,9 +224,10 @@ machine {
 
 ### Coordinates
 
-The `coordinate`-block allows specifying settings regarding the appearance of the coordinate system.
+The `coordinate`-block allows specifying settings regarding the appearance of
+the coordinate system.
 
-```
+```text
 coordinate {
     tick {
         x: <number> // Distance of ticks in the x-direction
@@ -271,9 +274,10 @@ coordinate {
 
 ### Sidebar
 
-The `sidebar`-block allows specifying settings regarding the appearance of the sidebar legend.
+The `sidebar`-block allows specifying settings regarding the appearance of the
+sidebar legend.
 
-```
+```text
 sidebar {
     font {
         family: <string> // Font-Family of the sidebar legend
@@ -292,9 +296,10 @@ sidebar {
 
 ### Time
 
-The `time`-block allows specifying settings regarding the appearance of the time.
+The `time`-block allows specifying settings regarding the appearance of the
+time.
 
-```
+```text
 time {
     display: <boolean> // Whether to display the current time
     prefix: <string> // Text to display before the time
@@ -309,9 +314,10 @@ time {
 
 ### Viewport
 
-The `viewport`-block allows specifying settings regarding the appearance of the animation.
+The `viewport`-block allows specifying settings regarding the appearance of the
+animation.
 
-```
+```text
 viewport {
     margin: <number> // Margin around the viewport
     color: <color> // Background-color of the viewport
@@ -322,16 +328,17 @@ viewport {
 
 ### Properties
 
-Some properties can be set using special directives.
-These directives start with the `#`-character.
+Some properties can be set using special directives. These directives start with
+the `#`-character.
 
 #### Target machines
 
-Possible target machines can be specified using the `target`-directive.
-Multiple machines may be specified using multiple `target`-directives.
-This allows the user to select from the supported machines, though they may still force unsupported/unspecified machines.
+Possible target machines can be specified using the `target`-directive. Multiple
+machines may be specified using multiple `target`-directives. This allows the
+user to select from the supported machines, though they may still force
+unsupported/unspecified machines.
 
-```
+```text
 #target <id>
 #target <id>
 #target <id>
@@ -341,35 +348,37 @@ This allows the user to select from the supported machines, though they may stil
 
 #### Atoms
 
-An atom can be defined with the `atom`-instruction.
-It should be given a unique ID and a starting position.
+An atom can be defined with the `atom`-instruction. It should be given a unique
+ID and a starting position.
 
-```
+```text
 atom <position> <id>
 ```
 
 ### Timed Instructions
 
-Some instructions are timed, meaning they start at a specified time.
-This starting-time is specified after an `@`-character at the start of the line.
+Some instructions are timed, meaning they start at a specified time. This
+starting-time is specified after an `@`-character at the start of the line.
 
-```
+```text
 @<time> <instruction>
 ```
 
 #### Loading an atom
 
-An atom can be loaded at its current position using the `load`-command, optionally with a load target position.
+An atom can be loaded at its current position using the `load`-command,
+optionally with a load target position.
 
-```
+```text
 @<time> load [position] <id>
 ```
 
 #### Storing an atom
 
-An atom can be loaded at its current position using the `store`-command, optionally with a load target position.
+An atom can be loaded at its current position using the `store`-command,
+optionally with a load target position.
 
-```
+```text
 @<time> store [position] <id>
 ```
 
@@ -377,7 +386,7 @@ An atom can be loaded at its current position using the `store`-command, optiona
 
 An atom can be moved to a new position using the `move`-command.
 
-```
+```text
 @<time> move <position> <id>
 ```
 
@@ -385,7 +394,7 @@ An atom can be moved to a new position using the `move`-command.
 
 The `rz`-operation can be applied to a target using the `rz`-command.
 
-```
+```text
 @<time> rz <number> <target>
 ```
 
@@ -393,7 +402,7 @@ The `rz`-operation can be applied to a target using the `rz`-command.
 
 The `ry`-operation can be applied to a target using the `ry`-command.
 
-```
+```text
 @<time> ry <number> <target>
 ```
 
@@ -401,7 +410,7 @@ The `ry`-operation can be applied to a target using the `ry`-command.
 
 The `cz`-operation can be applied to a target using the `cz`-command.
 
-```
+```text
 @<time> cz <target>
 ```
 
@@ -409,27 +418,31 @@ The `cz`-operation can be applied to a target using the `cz`-command.
 
 #### Automatic Time / Relative Time
 
-The time may be specified relative to the start or the end of the previous operation.
+The time may be specified relative to the start or the end of the previous
+operation.
 
-- `@+` / `@+0` / `@-` / `@-0`: Execute immediately after end of preceding instruction
+- `@+` / `@+0` / `@-` / `@-0`: Execute immediately after end of preceding
+  instruction
 - `@+n`: Execute `n` time-steps after end of preceding instruction
 - `@-n`: Execute `n` time-steps before end of preceding instruction
-- `@=` / `@=+` / `@=+0` / `@=-` / `@=-0`: Execute immediately at start of preceding instruction
+- `@=` / `@=+` / `@=+0` / `@=-` / `@=-0`: Execute immediately at start of
+  preceding instruction
 - `@=+n`: Execute `n` time-steps after start of preceding instruction
 - `@=-n`: Execute `n` time-steps before start of preceding instruction
 
 #### Grouping
 
-Instructions and times may be grouped by specifying the time/instruction and all group-members in brackets (`[`/`]`).
-A group's end-time (for the relative time of the next instruction) is the latest any of its instructions is finished.
+Instructions and times may be grouped by specifying the time/instruction and all
+group-members in brackets (`[`/`]`). A group's end-time (for the relative time
+of the next instruction) is the latest any of its instructions is finished.
 
-Groups may be variable.
-This is denoted by prepending a `~` to the group start symbol (`~[`/`]`).
-Normal groups make all instructions take the same time.
-A variable group makes all instructions take their minimum time.
-The group's ent-time is not affected by this, only the end-times of its children instructions.
+Groups may be variable. This is denoted by prepending a `~` to the group start
+symbol (`~[`/`]`). Normal groups make all instructions take the same time. A
+variable group makes all instructions take their minimum time. The group's
+ent-time is not affected by this, only the end-times of its children
+instructions.
 
-```
+```text
 @<time> [
     <instruction>
     <instruction>
@@ -463,14 +476,14 @@ The group's ent-time is not affected by this, only the end-times of its children
 
 ## Comments
 
-Comments in files are ignored.
-They can be used to document the code or to temporarily ignore parts of the instructions.
+Comments in files are ignored. They can be used to document the code or to
+temporarily ignore parts of the instructions.
 
 ### Single-line comments
 
 Single-line comments start at `//` and go to the end of the line.
 
-```
+```text
 // This is a comment
 atom (0, 0) atom0 // This is also a comment, but the instruction is executed
 // atom (0, 0) atom0 // The instruction is commented out and ignored
@@ -480,7 +493,7 @@ atom (0, 0) atom0 // This is also a comment, but the instruction is executed
 
 Multi-line comments start at `/*` and go to the next `*/`.
 
-```
+```text
 /*
 
 This is a comment

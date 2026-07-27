@@ -13,9 +13,11 @@
 
 # MQT NAViz - A Visualizer for Neutral Atom Quantum Computers
 
-MQT NAViz is an open-source Rust and Python library to visualize atom movements of neutral atom quantum computers.
-It is available at [https://munich-quantum-toolkit.github.io/naviz/](https://munich-quantum-toolkit.github.io/naviz/).
-MQT NAViz is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
+MQT NAViz is an open-source Rust and Python library to visualize atom movements
+of neutral atom quantum computers. It is available at
+[https://munich-quantum-toolkit.github.io/naviz/](https://munich-quantum-toolkit.github.io/naviz/).
+MQT NAViz is part of the
+[_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
 
 <p align="center">
   <a href="https://mqt.readthedocs.io/projects/naviz">
@@ -32,12 +34,20 @@ MQT NAViz is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedoc
 - Support for different input formats
 - Fully customizable visualization style and clean predefined styles
 
-If you have any questions, feel free to create a [discussion](https://github.com/munich-quantum-toolkit/naviz/discussions) or an [issue](https://github.com/munich-quantum-toolkit/naviz/issues) on [GitHub](https://github.com/munich-quantum-toolkit/naviz).
+If you have any questions, feel free to create a
+[discussion](https://github.com/munich-quantum-toolkit/naviz/discussions) or an
+[issue](https://github.com/munich-quantum-toolkit/naviz/issues) on
+[GitHub](https://github.com/munich-quantum-toolkit/naviz).
 
 ## Contributors and Supporters
 
-The _[Munich Quantum Toolkit (MQT)](https://mqt.readthedocs.io)_ is developed by the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the [Technical University of Munich](https://www.tum.de/) and supported by [MQSC](https://mq.sc).
-Among others, it is part of the [Munich Quantum Software Stack (MQSS)](https://www.munich-quantum-valley.de/research/research-areas/mqss) ecosystem, which is being developed as part of the [Munich Quantum Valley (MQV)](https://www.munich-quantum-valley.de) initiative.
+The _[Munich Quantum Toolkit (MQT)](https://mqt.readthedocs.io)_ is developed by
+the [Chair for Design Automation](https://www.cda.cit.tum.de/) at the
+[Technical University of Munich](https://www.tum.de/) and supported by
+[MQSC](https://mq.sc). Among others, it is part of the
+[Munich Quantum Software Stack (MQSS)](https://www.munich-quantum-valley.de/research/research-areas/mqss)
+ecosystem, which is being developed as part of the
+[Munich Quantum Valley (MQV)](https://www.munich-quantum-valley.de) initiative.
 
 <p align="center">
   <picture>
@@ -54,16 +64,19 @@ Thank you to all the contributors who have helped make MQT NAViz a reality!
 </a>
 </p>
 
-The MQT will remain free, open-source, and permissively licensed—now and in the future.
-We are firmly committed to keeping it open and actively maintained for the quantum computing community.
+The MQT will remain free, open-source, and permissively licensed—now and in the
+future. We are firmly committed to keeping it open and actively maintained for
+the quantum computing community.
 
 To support this endeavor, please consider:
 
-- Starring and sharing our repositories: https://github.com/munich-quantum-toolkit
-- Contributing code, documentation, tests, or examples via issues and pull requests
+- Starring and sharing our repositories:
+  <https://github.com/munich-quantum-toolkit>
+- Contributing code, documentation, tests, or examples via issues and pull
+  requests
 - Citing the MQT in your publications (see [Cite This](#cite-this))
 - Using the MQT in research and teaching, and sharing feedback and use cases
-- Sponsoring us on GitHub: https://github.com/sponsors/munich-quantum-toolkit
+- Sponsoring us on GitHub: <https://github.com/sponsors/munich-quantum-toolkit>
 
 <p align="center">
   <a href="https://github.com/sponsors/munich-quantum-toolkit">
@@ -73,13 +86,15 @@ To support this endeavor, please consider:
 
 ## Getting Started
 
-After cloning the repository, run the following command to start the MQT NAViz GUI:
+After cloning the repository, run the following command to start the MQT NAViz
+GUI:
 
 ```console
 cargo run -p naviz-gui
 ```
 
-**Detailed documentation and examples are available at [ReadTheDocs](https://mqt.readthedocs.io/projects/naviz).**
+**Detailed documentation and examples are available at
+[ReadTheDocs](https://mqt.readthedocs.io/projects/naviz).**
 
 ## System Requirements
 
@@ -87,7 +102,8 @@ Building MQT NAViz requires Rust 1.89 or newer (MSRV).
 
 ## Cite This
 
-When discussing the overall MQT project or its ecosystem, please cite the MQT Handbook:
+When discussing the overall MQT project or its ecosystem, please cite the MQT
+Handbook:
 
 ```bibtex
 @inproceedings{mqt,
@@ -107,7 +123,12 @@ When discussing the overall MQT project or its ecosystem, please cite the MQT Ha
 
 ## Acknowledgements
 
-The Munich Quantum Toolkit has been supported by the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program (grant agreement No. 101001318), the Bavarian State Ministry for Science and Arts through the Distinguished Professorship Program, as well as the Munich Quantum Valley, which is supported by the Bavarian state government with funds from the Hightech Agenda Bayern Plus.
+The Munich Quantum Toolkit has been supported by the European Research Council
+(ERC) under the European Union's Horizon 2020 research and innovation program
+(grant agreement No. 101001318), the Bavarian State Ministry for Science and
+Arts through the Distinguished Professorship Program, as well as the Munich
+Quantum Valley, which is supported by the Bavarian state government with funds
+from the Hightech Agenda Bayern Plus.
 
 <p align="center">
   <picture>
