@@ -5,78 +5,100 @@ name-template: "MQT NAViz $RESOLVED_VERSION Release"
 tag-template: "v$RESOLVED_VERSION"
 categories:
   - title: "🧑‍💻 Updates to the CLI"
-    labels:
-      - "Area: CLI"
+    when:
+      labels:
+        - "Area: CLI"
   - title: "📱 Updates to the GUI"
-    labels:
-      - "Area: GUI"
+    when:
+      labels:
+        - "Area: GUI"
   - title: "🐍 Updates to the Python Integration"
-    labels:
-      - "Area: Python"
+    when:
+      labels:
+        - "Area: Python"
   - title: "📼 Updates to the Video Export"
-    labels:
-      - "Area: Video Export"
+    when:
+      labels:
+        - "Area: Video Export"
   - title: "💫 Updates related to animation"
-    labels:
-      - "Area: Animation"
+    when:
+      labels:
+        - "Area: Animation"
   - title: "🔍️ Updates related to file parsing"
-    labels:
-      - "Area: File Parser"
+    when:
+      labels:
+        - "Area: File Parser"
   - title: "🔗 Updates related to supported import formats"
-    labels:
-      - "Area: Import"
+    when:
+      labels:
+        - "Area: Import"
   - title: "🖼️ Updates related to rendering"
-    labels:
-      - "Area: Renderer"
+    when:
+      labels:
+        - "Area: Renderer"
   - title: "🔧 Updates related to the machine repository"
-    labels:
-      - "Area: Repository"
+    when:
+      labels:
+        - "Area: Repository"
   - title: "🚀 Features and Enhancements"
-    labels:
-      - "enhancement"
-      - "feature"
-      - "refactor"
-      - "usability"
+    when:
+      labels:
+        - "enhancement"
+        - "feature"
+        - "refactor"
+        - "usability"
   - title: "🐛 Bug Fixes"
-    labels:
-      - "bug"
-      - "fix"
+    when:
+      labels:
+        - "bug"
+        - "fix"
   - title: "📄 Documentation"
-    labels:
-      - "documentation"
-  - title: "🤖 CI"
-    labels:
-      - "continuous integration"
+    when:
+      labels:
+        - "documentation"
+  - title: "🤖 CI & Tooling"
+    when:
+      labels:
+        - "continuous integration"
+        - "tooling"
   - title: "📦 Packaging"
-    labels:
-      - "packaging"
+    when:
+      labels:
+        - "packaging"
   - title: "🧹 Code Quality"
-    labels:
-      - "code quality"
+    when:
+      labels:
+        - "code quality"
   - title: "⬆️ Dependencies"
     collapse-after: 5
-    labels:
-      - "dependencies"
-      - "github-actions"
-      - "pre-commit"
-      - "submodules"
+    when:
+      labels:
+        - "dependencies"
+        - "github-actions"
+        - "pre-commit"
+        - "submodules"
+  - type: "pre-exclude"
+    when:
+      labels:
+        - "skip-changelog"
+        - "backport"
+        - "release-prep"
+  - type: "version-resolver"
+    semver-increment: "major"
+    when:
+      label: "major"
+  - type: "version-resolver"
+    semver-increment: "minor"
+    when:
+      label: "minor"
+  - type: "version-resolver"
+    semver-increment: "patch"
+    when:
+      label: "patch"
+  - type: "version-resolver"
+    semver-increment: "patch"
 change-template: "- $TITLE ([#$NUMBER]($URL)) (**@$AUTHOR**)"
 change-title-escapes: '\<*_&'
-exclude-labels:
-  - "skip-changelog"
-  - "backport"
-  - "release-prep"
-version-resolver:
-  major:
-    labels:
-      - "major"
-  minor:
-    labels:
-      - "minor"
-  patch:
-    labels:
-      - "patch"
-  default: patch
 
 template: |
   $CHANGES

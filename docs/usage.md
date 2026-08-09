@@ -2,19 +2,22 @@
 
 ## Standalone Application
 
-NAViz allows opening `.naviz` instruction files or importing instructions from external formats such as `mqt na` under the `File` menu.
-Alternatively, files can simply be dropped onto or pasted into the application.
-For more information on the supported file formats, see {doc}`file_format`.
+NAViz allows opening `.naviz` instruction files or importing instructions from
+external formats such as `mqt na` under the `File` menu. Alternatively, files
+can simply be dropped onto or pasted into the application. For more information
+on the supported file formats, see {doc}`file_format`.
 
-The machine and style can be selected from the `Machine` and `Style` menus respectively.
-These menus allow selecting a config from the loaded configs as well as opening or importing a new config.
+The machine and style can be selected from the `Machine` and `Style` menus
+respectively. These menus allow selecting a config from the loaded configs as
+well as opening or importing a new config.
 
-When the animation plays, the progress bar at the bottom of the window can be used to seek through the visualization.
+When the animation plays, the progress bar at the bottom of the window can be
+used to seek through the visualization.
 
 ## Python Package
 
-The Python library currently only has a simple functionality to export a visualization as a video.
-An example can be seen below:
+The Python library currently only has a simple functionality to export a
+visualization as a video. An example can be seen below:
 
 ```python
 from naviz import *

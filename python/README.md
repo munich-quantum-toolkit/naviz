@@ -2,14 +2,17 @@
 
 ## Building the wheel
 
-This package uses [`maturin`](https://github.com/PyO3/maturin) to export the [`bindings`](./../bindings/) crate as a Python wheel.
-The wheel can be built using `maturin build` or alternatively `maturin develop` for faster development builds.
-For more information on [`maturin`](https://github.com/PyO3/maturin) and the difference between the build commands, see [`maturin`'s README](https://github.com/PyO3/maturin?tab=readme-ov-file#maturin).
+This package uses [`maturin`](https://github.com/PyO3/maturin) to export the
+[`bindings`](./../bindings/) crate as a Python wheel. The wheel can be built
+using `maturin build` or alternatively `maturin develop` for faster development
+builds. For more information on [`maturin`](https://github.com/PyO3/maturin) and
+the difference between the build commands, see
+[`maturin`'s README](https://github.com/PyO3/maturin?tab=readme-ov-file#maturin).
 
 ## Usage
 
-The Python library currently only exports a simple functionality to export a visualization as a video.
-An example can be seen below:
+The Python library currently only exports a simple functionality to export a
+visualization as a video. An example can be seen below:
 
 ```python
 from naviz import *
@@ -40,4 +43,5 @@ export_video(
 
 ## License
 
-The NAViz Python package is licensed under the terms of the [MIT](./LICENSE) license.
+The NAViz Python package is licensed under the terms of the [MIT](./LICENSE)
+license.
