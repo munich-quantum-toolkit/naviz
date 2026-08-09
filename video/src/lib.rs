@@ -46,6 +46,7 @@ async fn create_device() -> (Device, Queue) {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: None,
             force_fallback_adapter: false,
+            apply_limit_buckets: false,
         })
         .await
         .expect("No adapter");
@@ -273,6 +274,8 @@ impl VideoExport {
         let _ = self.device.poll(wgpu::PollType::wait_indefinitely());
         rx.recv().unwrap().unwrap();
 
-        buffer_slice.get_mapped_range()
+        buffer_slice
+            .get_mapped_range()
+            .expect("buffer was just successfully mapped")
     }
 }
