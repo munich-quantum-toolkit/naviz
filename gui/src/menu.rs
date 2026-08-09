@@ -56,7 +56,8 @@ enum MenuEvent {
     #[cfg(not(target_arch = "wasm32"))]
     ImportStyle(PathBuf),
     /// A file was dropped or pasted and its type should be detected by its `name`'s extension
-    FileDropped(String, Arc<[u8]>),
+    #[cfg(target_arch = "wasm32")]
+    DroppedFile(String, Arc<[u8]>),
 }
 
 impl MenuEvent {
@@ -147,7 +148,7 @@ impl MenuBar {
                 future_helper.execute(async move {
                     match file.bytes_async().await {
                         Ok(contents) => {
-                            let _ = sender.send(MenuEvent::FileDropped(name, contents.into()));
+                            let _ = sender.send(MenuEvent::DroppedFile(name, contents.into()));
                         }
                         Err(err) => log::error!("Failed to read dropped file: {err}"),
                     }
@@ -211,7 +212,8 @@ impl MenuBar {
                 MenuEvent::ImportMachine(path) => state.import_machine(&path),
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ImportStyle(path) => state.import_style(&path),
-                MenuEvent::FileDropped(name, contents) => {
+                #[cfg(target_arch = "wasm32")]
+                MenuEvent::DroppedFile(name, contents) => {
                     self.load_file_by_extension(&name, contents, state)
                 }
             }
