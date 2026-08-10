@@ -28,5 +28,6 @@ def export_video(
     """Export a video from the ``input_data`` to the ``output`` location.
 
     The video is exported at the specified ``resolution`` with the specified framerate (``fps``).
+    It uses the ``machine`` and ``style`` configs (use the ``Repository`` to get configs by identifier).
     When ``import_options`` are specified, the ``input`` is imported from the specified format.
     """
