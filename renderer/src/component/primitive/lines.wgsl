@@ -19,7 +19,8 @@ struct VOutput {
 	@location(2) pos: vec2<f32>,
 	@location(3) segment_length: f32,
 	@location(4) duty: f32,
-	@location(5) color: u32,
+	// integers cannot be interpolated, so this must be flat
+	@location(5) @interpolate(flat) color: u32,
 	@builtin(position) position: vec4<f32>,
 };
 
