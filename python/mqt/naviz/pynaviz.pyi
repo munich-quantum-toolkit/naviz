@@ -8,10 +8,10 @@ class Repository:
         """Get a config entry by ``identifier`` from this repository."""
     @staticmethod
     def machines() -> Repository:
-        """Get the machines-repository."""
+        """Get the machines repository."""
     @staticmethod
     def styles() -> Repository:
-        """Get the styles-repository."""
+        """Get the styles repository."""
 
 def default_import_settings(input_format: str) -> dict[str, Any]:
     """Get the default import settings for the specified ``import_format``."""

@@ -1,7 +1,17 @@
 use pyo3::{create_exception, exceptions::PyException, prelude::*};
 
-create_exception!(mqt.naviz.pynaviz, ParseError, PyException);
-create_exception!(mqt.naviz.pynaviz, VideoExportError, PyException);
+create_exception!(
+    mqt.naviz.pynaviz,
+    ParseError,
+    PyException,
+    "Raised when input data or a machine or style config cannot be parsed."
+);
+create_exception!(
+    mqt.naviz.pynaviz,
+    VideoExportError,
+    PyException,
+    "Raised when the video export fails."
+);
 
 /// The MQT NAViz Python bindings.
 #[pymodule]
@@ -26,7 +36,7 @@ pub mod pynaviz {
 
     #[pymethods]
     impl Repository {
-        /// Get the styles-repository
+        /// Get the styles repository.
         #[staticmethod]
         pub fn styles() -> PyResult<Self> {
             Ok(Self(
@@ -40,7 +50,7 @@ pub mod pynaviz {
             ))
         }
 
-        /// Get the machines-repository
+        /// Get the machines repository.
         #[staticmethod]
         pub fn machines() -> PyResult<Self> {
             Ok(Self(
@@ -54,7 +64,7 @@ pub mod pynaviz {
             ))
         }
 
-        /// Get a config entry by ``identifier`` from this repository
+        /// Get a config entry by ``identifier`` from this repository.
         pub fn get(&self, identifier: &str) -> PyResult<Option<String>> {
             if let Some(content) = self.0.get_raw(identifier) {
                 let content = content
@@ -118,7 +128,7 @@ pub mod pynaviz {
         let style: naviz_parser::config::generic::Config = style.into();
         let style: VisualConfig = style
             .try_into()
-            .map_err(|_| ParseError::new_err("Failed to convert machine to config"))?;
+            .map_err(|_| ParseError::new_err("Failed to convert style to config"))?;
 
         // Create animator
         let animator = Animator::new(machine, style, input_data);
