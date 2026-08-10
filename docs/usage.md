@@ -20,7 +20,7 @@ The Python library currently only has a simple functionality to export a
 visualization as a video. An example can be seen below:
 
 ```python
-from naviz import *
+from mqt.naviz import *
 
 # Get machine and style from repository
 machine = Repository.machines().get("example")
