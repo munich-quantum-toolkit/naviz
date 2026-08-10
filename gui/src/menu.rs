@@ -55,6 +55,9 @@ enum MenuEvent {
     /// The style at the specified `path` should be imported
     #[cfg(not(target_arch = "wasm32"))]
     ImportStyle(PathBuf),
+    /// A file was dropped or pasted and its type should be detected by its `name`'s extension
+    #[cfg(target_arch = "wasm32")]
+    DroppedFile(String, Arc<[u8]>),
 }
 
 impl MenuEvent {
@@ -120,10 +123,36 @@ impl MenuBar {
 
     /// Handles any files dropped onto the application.
     /// Will use [Self::load_file_by_extension] to load the file.
-    fn handle_file_drop(&mut self, ctx: &egui::Context, state: &mut AppState) -> Result<()> {
+    fn handle_file_drop(
+        &mut self,
+        ctx: &egui::Context,
+        #[cfg(not(target_arch = "wasm32"))] state: &mut AppState,
+        #[cfg(target_arch = "wasm32")] future_helper: &FutureHelper,
+    ) -> Result<()> {
         for file in ctx.input_mut(|input| std::mem::take(&mut input.raw.dropped_files)) {
-            if let Some(contents) = file.bytes {
-                self.load_file_by_extension(&file.name, contents, state)?;
+            let name = file
+                .path()
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_default();
+
+            #[cfg(not(target_arch = "wasm32"))]
+            match file.bytes() {
+                Ok(contents) => self.load_file_by_extension(&name, contents.into(), state)?,
+                Err(err) => log::error!("Failed to read dropped file: {err}"),
+            }
+
+            #[cfg(target_arch = "wasm32")]
+            {
+                let sender = self.event_channel.0.clone();
+                future_helper.execute(async move {
+                    match file.bytes_async().await {
+                        Ok(contents) => {
+                            let _ = sender.send(MenuEvent::DroppedFile(name, contents.into()));
+                        }
+                        Err(err) => log::error!("Failed to read dropped file: {err}"),
+                    }
+                });
             }
         }
         Ok(())
@@ -183,6 +212,10 @@ impl MenuBar {
                 MenuEvent::ImportMachine(path) => state.import_machine(&path),
                 #[cfg(not(target_arch = "wasm32"))]
                 MenuEvent::ImportStyle(path) => state.import_style(&path),
+                #[cfg(target_arch = "wasm32")]
+                MenuEvent::DroppedFile(name, contents) => {
+                    self.load_file_by_extension(&name, contents, state)
+                }
             }
             .pipe_void(errors);
         }
@@ -206,7 +239,14 @@ impl MenuBar {
         self.show_import_dialog(state, future_helper, ctx)
             .pipe_void(errors);
 
-        self.handle_file_drop(ctx, state).pipe_void(errors);
+        self.handle_file_drop(
+            ctx,
+            #[cfg(not(target_arch = "wasm32"))]
+            state,
+            #[cfg(target_arch = "wasm32")]
+            future_helper,
+        )
+        .pipe_void(errors);
 
         self.handle_clipboard(ctx, state, errors);
 

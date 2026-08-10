@@ -140,7 +140,7 @@ impl<Spec: bytemuck::NoUninit> Component<Spec> {
             vertex: VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
-                buffers: &[instance_buffer_layout],
+                buffers: &[Some(instance_buffer_layout)],
                 compilation_options: Default::default(),
             },
             fragment: Some(FragmentState {
