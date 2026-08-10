@@ -227,16 +227,19 @@ pub mod token {
         <I as Stream>::Token: AsChar + Clone,
         I::Slice: SliceLen,
     {
+        // `alt` supports at most 9 alternatives, so the delimiters are grouped into a nested `alt`
         alt((
             value,
             identifier,
             comment,
-            tuple_open,
-            tuple_close,
-            group_open,
-            group_close,
-            set_open,
-            set_close,
+            alt((
+                tuple_open,
+                tuple_close,
+                group_open,
+                group_close,
+                set_open,
+                set_close,
+            )),
             element_separator,
             time_symbol,
             directive,
