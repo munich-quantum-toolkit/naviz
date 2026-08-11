@@ -56,19 +56,19 @@ module-name = "mqt.naviz.pynaviz"
 sdist-generator = "git"
 exclude = [
     "docs/**/*",
-    "python/tests/**/*",
+    "test/python/**/*",
 ]
 
 [tool.check-sdist]
 git-only = [
     "docs/*",
-    "python/tests/*",
+    "test/python/*",
 ]
 
 
 [tool.pytest]
 minversion = "9.0"
-testpaths = ["python/tests"]
+testpaths = ["test/python"]
 strict = true
 addopts = [
     "-ra",
@@ -79,7 +79,7 @@ filterwarnings = ["error"]
 
 
 [tool.mypy]
-files = ["python/mqt", "python/tests", "noxfile.py"]
+files = ["python/mqt", "test/python", "noxfile.py"]
 mypy_path = ["$MYPY_CONFIG_FILE_DIR/python"]
 python_version = "3.10"
 warn_unused_configs = true
@@ -122,7 +122,7 @@ known-first-party = ["mqt.naviz"]
 [tool.ruff.lint.per-file-ignores]
 "*.pyi" = ["D418", "E501", "PYI021", "PYI011"]
 "docs/**" = ["INP001"]
-"python/tests/**" = ["INP001"]
+"test/python/**" = ["INP001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -156,7 +156,6 @@ PC111 = "We use ruff instead of blacken-docs"
 PC140 = "We use ty instead of mypy"
 PC160 = "We use a mirror of crate-ci/typos"
 PC170 = "We do not use rST files anymore"
-PY005 = "The tests are at python/tests"
 
 
 [dependency-groups]
