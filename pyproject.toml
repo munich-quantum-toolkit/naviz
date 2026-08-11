@@ -37,6 +37,7 @@ classifiers = [
     "Programming Language :: Python :: 3.15",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+    "Typing :: Typed",
 ]
 dynamic = ["version"]
 
@@ -50,29 +51,31 @@ Discussions = "https://github.com/munich-quantum-toolkit/naviz/discussions"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 manifest-path = "bindings/Cargo.toml"
+python-source = "python"
+module-name = "mqt.naviz.pynaviz"
 sdist-generator = "git"
 exclude = [
     "docs/**/*",
-    "test/**/*",
+    "test/python/**/*",
 ]
 
 [tool.check-sdist]
 git-only = [
     "docs/*",
-    "test/*",
+    "test/python/*",
 ]
 
 
-[tool.mypy]
-files = ["python/mqt", "noxfile.py"]
-mypy_path = ["$MYPY_CONFIG_FILE_DIR/python"]
-python_version = "3.10"
-warn_unused_configs = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+[tool.pytest]
+minversion = "9.0"
+testpaths = ["test/python"]
 strict = true
-disallow_untyped_defs = false
-explicit_package_bases = true
-warn_unreachable = true
+addopts = [
+    "-ra",
+    "--showlocals",
+]
+log_level = "INFO"
+filterwarnings = ["error"]
 
 
 [tool.ruff]
@@ -105,10 +108,22 @@ future-annotations = true
 known-first-party = ["mqt.naviz"]
 
 [tool.ruff.lint.per-file-ignores]
+"*.pyi" = ["D418", "E501", "PYI021", "PYI011"]
 "docs/**" = ["INP001"]
+"test/python/**" = ["INP001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
+[tool.ty.terminal]
+# Error if ty emits any warning-level diagnostics.
+error-on-warning = true
+
+[tool.ty.src]
+exclude = [
+    "docs/**",
+]
 
 
 [tool.uv]
@@ -139,14 +154,15 @@ PC111 = "We use ruff instead of blacken-docs"
 PC140 = "We use ty instead of mypy"
 PC160 = "We use a mirror of crate-ci/typos"
 PC170 = "We do not use rST files anymore"
-PP301 = "We do not have tests yet"
-PY005 = "We do not have tests yet"
 
 
 [dependency-groups]
 build = [
     "maturin>=1.10.2,<2.0",
     "setuptools-scm>=9.2.2",
+]
+test = [
+    "pytest>=9.0.1",
 ]
 docs = [
     "furo>=2025.09.25",
@@ -164,5 +180,6 @@ docs = [
 ]
 dev = [
     {include-group = "build"},
+    {include-group = "test"},
     "nox>=2025.11.12",
 ]
