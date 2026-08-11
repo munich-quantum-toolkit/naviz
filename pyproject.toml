@@ -78,18 +78,6 @@ log_level = "INFO"
 filterwarnings = ["error"]
 
 
-[tool.mypy]
-files = ["python/mqt", "test/python", "noxfile.py"]
-mypy_path = ["$MYPY_CONFIG_FILE_DIR/python"]
-python_version = "3.10"
-warn_unused_configs = true
-enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
-strict = true
-disallow_untyped_defs = false
-explicit_package_bases = true
-warn_unreachable = true
-
-
 [tool.ruff]
 line-length = 120
 namespace-packages = ["mqt"]
@@ -126,6 +114,16 @@ known-first-party = ["mqt.naviz"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
+[tool.ty.terminal]
+# Error if ty emits any warning-level diagnostics.
+error-on-warning = true
+
+[tool.ty.src]
+exclude = [
+    "docs/**",
+]
 
 
 [tool.uv]
