@@ -1,4 +1,4 @@
-name: 🐍 Test
+name: 🐍 Lint
 
 on:
   push:
@@ -16,8 +16,14 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test
+  python-linter:
+    name: 🐍 Lint
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@579203ef22082fa5d5483412f442e50d0c5ff4a7 # v2.2.2
+    with:
+      enable-mypy: false
+      enable-ty: true
+  check-stubs:
+    name: 🐍 Check stubs
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -28,9 +34,15 @@ jobs:
         # The Python bindings are a Rust extension module, so the tests need a compiler.
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-key: test-python
+          cache-key: lint-python
           rustflags: "" # Don't fail on warnings
       - name: Setup uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
-      - name: Run tests
-        run: uvx nox -s tests
+      - name: Check stubs
+        run: |
+          uvx nox -s stubs
+          if [[ $(git status --porcelain python) ]]; then
+            echo "Stub files are not up to date. Please run 'nox -s stubs' and commit the changes."
+            git --no-pager diff python
+            exit 1
+          fi

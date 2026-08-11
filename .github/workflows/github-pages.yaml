@@ -1,4 +1,4 @@
-name: GitHub Pages nightly web builds
+name: 📝 GitHub Pages
 
 # This workflow builds the latest web-version of naviz an publishes it to GitHub Pages.
 
@@ -26,6 +26,7 @@ env:
 
 jobs:
   build:
+    name: 📝 Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -55,12 +56,12 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main'
+    name: 📝 Deploy
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
-    name: Deploy
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

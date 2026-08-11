@@ -13,7 +13,8 @@ struct VOutput {
 	@location(0) center: vec2<f32>,
 	@location(1) radius: f32,
 	@location(2) radius_inner: f32,
-	@location(3) color: u32,
+	// integers cannot be interpolated, so this must be flat
+	@location(3) @interpolate(flat) color: u32,
 	// current position in input space
 	@location(4) pos: vec2<f32>,
 	@builtin(position) position: vec4<f32>,
