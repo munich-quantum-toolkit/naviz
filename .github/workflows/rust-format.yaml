@@ -1,4 +1,4 @@
-name: Format
+name: 🦀 Format
 
 # This workflow checks the formatting of the code and fails if it is not correctly formatted.
 
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   format:
-    name: Check Formatting
+    name: 🦀 Format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

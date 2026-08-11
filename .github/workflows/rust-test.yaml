@@ -35,7 +35,7 @@ jobs:
           - image: windows-11-arm
             target: aarch64-pc-windows-msvc
       fail-fast: false
-    name: Test ${{ matrix.target }}
+    name: 🦀 Test ${{ matrix.target }}
     runs-on: ${{ matrix.image }}
     steps:
       - name: Checkout
