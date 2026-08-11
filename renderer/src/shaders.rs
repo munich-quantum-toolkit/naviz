@@ -64,3 +64,43 @@ pub fn load_default_shaders(mut composer: Composer) -> Result<Composer, Box<Comp
 
     Ok(composer)
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    /// All shaders which are compiled at runtime.
+    /// New shaders should be added here to have them checked.
+    const SHADERS: [(&str, &str); 2] = [
+        (
+            include_str!("./component/primitive/lines.wgsl"),
+            "lines.wgsl",
+        ),
+        (
+            include_str!("./component/primitive/circles.wgsl"),
+            "circles.wgsl",
+        ),
+    ];
+
+    /// Checks that all shaders link and validate.
+    ///
+    /// Only covers the [Composer]-step of [compile_shader],
+    /// which needs no [Device] and therefore no GPU.
+    /// The [Composer] only validates iff `debug_assertions` are enabled
+    /// (see [create_composer]), which is the case when running tests.
+    #[test]
+    fn shaders_are_valid() {
+        let mut composer =
+            load_default_shaders(create_composer()).expect("Failed to load default shaders");
+
+        for (source, path) in SHADERS {
+            if let Err(e) = composer.make_naga_module(NagaModuleDescriptor {
+                source,
+                file_path: path,
+                ..Default::default()
+            }) {
+                panic!("Failed to compile shader {path}: {e:?}");
+            }
+        }
+    }
+}
