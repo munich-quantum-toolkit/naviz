@@ -21,7 +21,7 @@ naviz-animator = {path = "animator", version = "0.6.0"}
 naviz-gui = {path = "gui", version = "0.8.0"}
 naviz-import = {path = "import", version = "0.3.0"}
 naviz-parser = {path = "parser", version = "0.6.0"}
-naviz-bindings = {path = "bindings", version = "0.3.0"}
+naviz-bindings = {path = "bindings", version = "0.3.2"}
 naviz-renderer = {path = "renderer", version = "0.7.0"}
 naviz-repository = {path = "repository", version = "0.3.0"}
 naviz-state = {path = "state", version = "0.7.0"}
