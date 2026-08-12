@@ -69,7 +69,6 @@ jobs:
         with:
           name: wheels-sdist
           path: dist
-          archive: false
 
   release:
     name: Release
@@ -80,20 +79,18 @@ jobs:
       name: pypi
       url: https://pypi.org/p/mqt-naviz
     permissions:
-      # Use to sign the release artifacts
       id-token: write
-      # Used to upload release artifacts
-      contents: write
-      # Used to generate artifact attestation
       attestations: write
+      contents: read
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
       - name: Generate artifact attestation
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: "wheels-*/*"
+          subject-path: dist/*
       - name: Publish to PyPI
-        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
-        with:
-          command: upload
-          args: --non-interactive --skip-existing wheels-*/*
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
