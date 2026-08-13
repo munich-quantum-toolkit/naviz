@@ -21,8 +21,8 @@ use tempfile::TempDir;
 
 pub mod error;
 
-static BUNDLED_MACHINES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../configs/machines");
-static BUNDLED_STYLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/../configs/styles");
+static BUNDLED_MACHINES: Dir = include_dir!("$CARGO_MANIFEST_DIR/configs/machines");
+static BUNDLED_STYLES: Dir = include_dir!("$CARGO_MANIFEST_DIR/configs/styles");
 
 const MACHINES_SUBDIR: &str = "machines";
 const STYLES_SUBDIR: &str = "styles";
@@ -443,7 +443,7 @@ mod tests {
         );
 
         // Use bundled configs as source configs
-        let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../configs/{subdir}"));
+        let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("configs/{subdir}"));
 
         let configs: Vec<_> = fs::read_dir(&source_dir)
             .expect("Failed to read bundled configs to import")
@@ -571,7 +571,7 @@ mod tests {
         let target_dir = Repository::user_dir(subdir).expect("Failed to get config subdirectory");
 
         // Use bundled configs as source configs
-        let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../configs/{subdir}"));
+        let source_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("configs/{subdir}"));
 
         let configs: Vec<_> = fs::read_dir(&source_dir)
             .expect("Failed to read bundled configs to import")
