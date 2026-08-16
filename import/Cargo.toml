@@ -10,7 +10,7 @@ repository.workspace = true
 version = "0.3.0"
 
 [dependencies]
-fraction = "0.15.3"
+fraction = "0.16.0"
 naviz-parser = {workspace = true}
 serde = {version = "1.0.217", optional = true, features = ["serde_derive"]}
 winnow = "1.0.0"
