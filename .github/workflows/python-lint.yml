@@ -23,6 +23,7 @@ jobs:
       enable-ty: true
     permissions:
       contents: read
+
   check-stubs:
     name: 🐍 Check stubs
     runs-on: ubuntu-24.04

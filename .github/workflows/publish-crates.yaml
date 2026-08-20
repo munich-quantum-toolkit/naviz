@@ -7,9 +7,6 @@ on:
     types: [published]
   workflow_dispatch:
 
-env:
-  CACHE_KEY: publish
-
 permissions: {}
 
 jobs:
@@ -28,7 +25,6 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache: false # This workflow publishes artifacts, so it must not restore a cache
-          cache-key: ${{ env.CACHE_KEY }}
       - name: Install Tools
         run: cargo install --locked cargo-workspaces
       - name: Authenticate using Trusted Publishing

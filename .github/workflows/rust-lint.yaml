@@ -36,9 +36,9 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: clippy
+          target: wasm32-unknown-unknown # Also lint wasm
           cache-key: ${{ env.CACHE_KEY }}
-          rustflags: "" # Don't report warnings as errors
-          target: wasm32-unknown-unknown # also lint wasm
+          rustflags: "" # Don't fail on warnings
       - name: Install tools
         run: cargo install clippy-sarif sarif-fmt
       - name: Run Clippy
