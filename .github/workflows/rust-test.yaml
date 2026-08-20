@@ -39,6 +39,8 @@ jobs:
       fail-fast: false
     name: 🦀 Test ${{ matrix.target }}
     runs-on: ${{ matrix.image }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
