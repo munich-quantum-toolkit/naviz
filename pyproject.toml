@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "maturin>=1.10.2,<2.0",
-    "setuptools-scm>=9.2.2",
 ]
 build-backend = "maturin"
 
@@ -158,7 +157,6 @@ PC170 = "We do not use rST files anymore"
 [dependency-groups]
 build = [
     "maturin>=1.10.2,<2.0",
-    "setuptools-scm>=9.2.2",
 ]
 test = [
     "pytest>=9.0.1",
