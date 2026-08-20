@@ -12,8 +12,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   python-linter:
@@ -22,6 +21,8 @@ jobs:
     with:
       enable-mypy: false
       enable-ty: true
+    permissions:
+      contents: read
   check-stubs:
     name: 🐍 Check stubs
     runs-on: ubuntu-24.04

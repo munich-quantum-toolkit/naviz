@@ -10,6 +10,8 @@ on:
 env:
   CACHE_KEY: publish
 
+permissions: {}
+
 jobs:
   publish:
     name: Publish Crates
@@ -20,9 +22,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup Rust Toolchain
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
+          cache: false # This workflow publishes artifacts, so it must not restore a cache
           cache-key: ${{ env.CACHE_KEY }}
       - name: Install Tools
         run: cargo install --locked cargo-workspaces
