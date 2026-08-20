@@ -78,13 +78,13 @@ jobs:
           path: dist
 
   release:
-    name: Release
     if: ${{ github.event_name == 'release' || inputs.publish }}
+    name: Release
     runs-on: ubuntu-24.04
-    needs: [build, sdist]
     environment:
       name: pypi
       url: https://pypi.org/p/mqt-naviz
+    needs: [build, sdist]
     permissions:
       id-token: write
       attestations: write
