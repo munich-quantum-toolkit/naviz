@@ -2,10 +2,7 @@ name: 📝 GitHub Pages
 
 # This workflow builds the latest web-version of naviz an publishes it to GitHub Pages.
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 on:
   push:
@@ -21,13 +18,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-env:
-  CACHE_KEY: gh-pages_naviz-web
-
 jobs:
   build:
     name: 📝 Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -36,11 +32,12 @@ jobs:
           fetch-depth: 0
           # but only history (treeless)
           filter: "tree:0"
+          persist-credentials: false
       - name: Setup Rust Toolchain
         uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
-          cache-key: ${{ env.CACHE_KEY }}
           target: wasm32-unknown-unknown
+          cache: false # This workflow publishes artifacts, so it must not restore a cache
       - name: Install trunk
         run: cargo install --locked trunk
       - name: Setup Pages
@@ -48,7 +45,9 @@ jobs:
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Build
         working-directory: gui
-        run: trunk build --release --public-url "${{ steps.pages.outputs.base_path }}"
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: trunk build --release --public-url "$BASE_PATH"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
@@ -57,11 +56,14 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     name: 📝 Deploy
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
-    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Needed to verify the deployment originates from this workflow
+      pages: write # Needed to deploy to GitHub Pages
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

@@ -15,8 +15,7 @@ on:
         required: false
         default: false
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   build:
@@ -37,8 +36,12 @@ jobs:
             arch: x86_64
     name: Build target ${{ matrix.arch }} on ${{ matrix.image }}
     runs-on: ${{ matrix.image }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.x
@@ -47,7 +50,7 @@ jobs:
         with:
           target: ${{ matrix.arch }}
           args: --release --out dist
-          sccache: "true"
+          sccache: false # This workflow publishes artifacts, so it must not restore a cache
           manylinux: ${{ matrix.manylinux }}
       - name: Upload wheels
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -57,8 +60,12 @@ jobs:
 
   sdist:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Build sdist
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
         with:
@@ -71,13 +78,13 @@ jobs:
           path: dist
 
   release:
-    name: Release
     if: ${{ github.event_name == 'release' || inputs.publish }}
+    name: Release
     runs-on: ubuntu-24.04
-    needs: [build, sdist]
     environment:
       name: pypi
       url: https://pypi.org/p/mqt-naviz
+    needs: [build, sdist]
     permissions:
       id-token: write
       attestations: write
