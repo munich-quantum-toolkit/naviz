@@ -17,7 +17,7 @@ permissions: {}
 jobs:
   python-linter:
     name: 🐍 Lint
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@579203ef22082fa5d5483412f442e50d0c5ff4a7 # v2.2.2
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@f33c11c5cf68957b3074fff11ae43cfce2aaf593 # v2.2.3
     with:
       enable-mypy: false
       enable-ty: true
