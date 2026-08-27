@@ -59,6 +59,10 @@ exclude = [
     "test/python/**/*",
 ]
 
+[tool.maturin.target."aarch64-apple-darwin"]
+macos-deployment-target = "13.3"
+
+
 [tool.check-sdist]
 git-only = [
     "docs/*",

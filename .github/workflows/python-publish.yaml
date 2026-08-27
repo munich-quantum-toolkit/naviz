@@ -45,8 +45,6 @@ jobs:
           python-version: 3.x
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b # v1.51.0
-        env:
-          MACOSX_DEPLOYMENT_TARGET: ${{ runner.os == 'macOS' && '13.3' || '' }}
         with:
           target: ${{ matrix.arch }}
           args: --release --out dist
