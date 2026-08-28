@@ -30,8 +30,6 @@ jobs:
             manylinux: auto
           - image: macos-26
             arch: aarch64
-          - image: macos-26-intel
-            arch: x86_64-apple-darwin
           - image: windows-2025
             arch: x86_64
     name: Build target ${{ matrix.arch }} on ${{ matrix.image }}
