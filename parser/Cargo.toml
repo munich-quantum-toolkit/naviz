@@ -10,7 +10,7 @@ repository.workspace = true
 version = "0.6.0"
 
 [dependencies]
-fraction = "0.16.0"
+fraction = "0.17.0"
 itertools = "0.15.0"
 regex = "1.10.6"
 winnow = "1.0.0"
