@@ -40,5 +40,6 @@ jobs:
           repository: ${{ github.event.repository.name }}
           has-changelog-and-upgrade-guide: false
           synchronize-contribution-guide: false
+          synchronize-gitignore: false
           synchronize-installation-guide: false
           release-drafter-categories: ${{ steps.read-release-drafter-categories.outputs.release_drafter_categories }}
