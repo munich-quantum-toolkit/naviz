@@ -1,51 +1,79 @@
-# Rust build artifacts
-target/
-
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Distribution / packaging
-.Python
-/build/
-/test/*/build
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 *.so
 
-# Nox environments
-.nox/
+# Packaging
+/build/
+/dist/
+.eggs/
+*.egg
+*.egg-info/
+/_skbuild/
+/wheelhouse/
 
-# Sphinx documentation
+# Testing
+.coverage
+.coverage.*
+.hypothesis/
+.nox/
+.pytest_cache/
+.tox/
+*.cover
+*.profraw
+coverage.xml
+htmlcov/
+
+# Documentation
 docs/_build/
+docs/**/build/
 docs/api/
-docs/crates/
 
 # Environments
-.env*
-.venv*
+.env
+.env.*
+!.env.example
+!.env.*.example
+.venv/
+env/
+venv/
 
-# OS specific stuff
-.DS_Store
+# Tool caches
+.cache/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+.rumdl_cache/
 
-# IDEs and editors
+# Jupyter
+.ipynb_checkpoints/
+
+# Versioning
+python/**/_version.py
+src/**/_version.py
+
+# Editors
 .idea/
+.vs/
 .vscode/
-
-# Common editor files
-*~
 *.swp
+*~
+
+# Claude
+.claude/
+CLAUDE.md
+
+# Operating systems
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Custom
+/docs/crates/
+/target/
