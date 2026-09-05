@@ -3,6 +3,7 @@
 
 name-template: "MQT NAViz $RESOLVED_VERSION Release"
 tag-template: "v$RESOLVED_VERSION"
+filter-by-commitish: true
 categories:
   - title: "🧑‍💻 Updates to the CLI"
     when:
@@ -97,7 +98,7 @@ categories:
       label: "patch"
   - type: "version-resolver"
     semver-increment: "patch"
-change-template: "- $TITLE ([#$NUMBER]($URL)) (**@$AUTHOR**)"
+change-template: "- $TITLE (#$NUMBER) (@$AUTHOR)"
 change-title-escapes: '\<*_&'
 
 template: |
