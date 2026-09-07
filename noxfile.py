@@ -123,13 +123,14 @@ def stubs(session: nox.Session) -> None:
         env=env,
     )
 
-    package_root = Path(__file__).parent / "python" / "mqt" / "naviz"
+    python_root = Path(__file__).parent / "python"
+    package_root = python_root / "mqt" / "naviz"
 
     session.run(
         "maturin",
         "generate-stubs",
         "--out",
-        str(package_root),
+        str(python_root),
     )
 
     pyi_files = list(package_root.glob("**/*.pyi"))
