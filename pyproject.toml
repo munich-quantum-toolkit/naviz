@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "maturin>=1.10.2,<2.0",
+    "maturin>=1.15.0,<2.0",
 ]
 build-backend = "maturin"
 
@@ -60,7 +60,7 @@ exclude = [
 ]
 
 [tool.maturin.target."aarch64-apple-darwin"]
-macos-deployment-target = "13.3"
+macos-deployment-target = "13.0"
 
 
 [tool.check-sdist]
@@ -159,7 +159,7 @@ PC170 = "We do not use rST files anymore"
 
 [dependency-groups]
 build = [
-    "maturin>=1.10.2,<2.0",
+    "maturin>=1.15.0,<2.0",
 ]
 test = [
     "pytest>=9.0.1",

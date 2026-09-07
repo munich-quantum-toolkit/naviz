@@ -954,9 +954,9 @@ test = [
 [package.metadata]
 
 [package.metadata.requires-dev]
-build = [{ name = "maturin", specifier = ">=1.10.2,<2.0" }]
+build = [{ name = "maturin", specifier = ">=1.15.0,<2.0" }]
 dev = [
-    { name = "maturin", specifier = ">=1.10.2,<2.0" },
+    { name = "maturin", specifier = ">=1.15.0,<2.0" },
     { name = "nox", specifier = ">=2025.11.12" },
     { name = "pytest", specifier = ">=9.0.1" },
 ]
