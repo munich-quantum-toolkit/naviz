@@ -1,8 +1,5 @@
 [![PyPI](https://img.shields.io/pypi/v/mqt.naviz?logo=pypi&style=flat-square)](https://pypi.org/project/mqt.naviz/)
 ![OS](https://img.shields.io/badge/os-linux%20%7C%20macos%20%7C%20windows-blue?style=flat-square)
-[![License: LGPLv3+ with linking exception](https://img.shields.io/badge/license-LGPLv3%2B_with_linking_exception-blue.svg?style=flat-square)](LICENSE)
-[![CI](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/naviz/rust-test.yaml?branch=main&style=flat-square&logo=github&label=ci)](https://github.com/munich-quantum-toolkit/naviz/actions/workflows/rust-test.yaml)
-[![CD](https://img.shields.io/github/actions/workflow/status/munich-quantum-toolkit/naviz/python-publish.yaml?style=flat-square&logo=github&label=cd)](https://github.com/munich-quantum-toolkit/naviz/actions/workflows/python-publish.yaml)
 [![Documentation](https://img.shields.io/readthedocs/mqt-naviz?logo=readthedocs&style=flat-square)](https://mqt.readthedocs.io/projects/naviz)
 
 <p align="center">

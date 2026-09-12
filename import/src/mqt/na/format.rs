@@ -1,4 +1,4 @@
-//! Parsing and Serialization for the [`mqt` na file-format][super]
+//! Parsing and Serialization for the [`mqt` na file format][super]
 
 use std::{fmt::Display, sync::Arc};
 
@@ -380,8 +380,8 @@ mod test {
     /// Round trip of the example-file
     #[test]
     fn example_round_trip() {
-        // Legacy example from MQT QMAP; current state-preparation documentation:
-        // https://mqt.readthedocs.io/projects/qmap/en/stable/na_state_prep.html#neutral-atom-logical-state-preparation
+        // This example contains legacy MQT QMAP output.
+        // See the [current QMAP state-preparation documentation](https://mqt.readthedocs.io/projects/qmap/en/stable/na_state_prep.html#neutral-atom-logical-state-preparation).
         let input = include_str!("../../../rsc/test/example.na").trim();
 
         let parsed = parse(input).expect("Failed to parse!");
