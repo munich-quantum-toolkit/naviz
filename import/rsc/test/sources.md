@@ -1,4 +1,4 @@
 # Test-Files
 
-- `example.na`:
-  [Example from `mqt`-documentation](https://mqt.readthedocs.io/projects/qmap/en/latest/NAStatePrep.html#codecell11)
+- `example.na`: Legacy output from MQT QMAP; see the
+  [current state-preparation documentation](https://mqt.readthedocs.io/projects/qmap/en/stable/na_state_prep.html#neutral-atom-logical-state-preparation)
