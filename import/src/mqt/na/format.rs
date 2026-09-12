@@ -1,4 +1,4 @@
-//! Parsing and Serialization for the [`mqt` na file format][super]
+//! Parsing and serialization for the [legacy MQT QMAP `na` file format][super]
 
 use std::{fmt::Display, sync::Arc};
 
