@@ -24,9 +24,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: ubuntu-24.04
+          - image: ubuntu-26.04
             target: x86_64-unknown-linux-gnu
-          - image: ubuntu-24.04-arm
+          - image: ubuntu-26.04-arm
             target: aarch64-unknown-linux-gnu
           - image: macos-26
             target: aarch64-apple-darwin

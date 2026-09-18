@@ -22,10 +22,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - image: ubuntu-24.04
+          - image: ubuntu-26.04
             arch: x86_64
             manylinux: auto
-          - image: ubuntu-24.04-arm
+          - image: ubuntu-26.04-arm
             arch: aarch64
             manylinux: auto
           - image: macos-26
@@ -57,7 +57,7 @@ jobs:
           path: dist
 
   sdist:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:
@@ -78,7 +78,7 @@ jobs:
   release:
     if: ${{ github.event_name == 'release' || inputs.publish }}
     name: Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     environment:
       name: pypi
       url: https://pypi.org/p/mqt-naviz
