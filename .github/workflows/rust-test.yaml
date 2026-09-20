@@ -50,11 +50,11 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Setup Rust Toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           components: clippy
           target: ${{ matrix.target }}
           cache-key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
-          rustflags: "" # Don't fail on warnings
+          build-warnings: warn # Don't fail on warnings
       - name: Run Rust Tests
         run: cargo test --color=always --all-features --target=${{ matrix.target }}
