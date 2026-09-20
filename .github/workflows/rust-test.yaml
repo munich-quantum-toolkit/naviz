@@ -55,6 +55,6 @@ jobs:
           components: clippy
           target: ${{ matrix.target }}
           cache-key: ${{ env.CACHE_KEY }}-${{ matrix.target}}
-          rustflags: "" # Don't fail on warnings
+          build-warnings: warn # Don't fail on warnings
       - name: Run Rust Tests
         run: cargo test --color=always --all-features --target=${{ matrix.target }}

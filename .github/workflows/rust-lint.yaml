@@ -38,7 +38,7 @@ jobs:
           components: clippy
           target: wasm32-unknown-unknown # Also lint wasm
           cache-key: ${{ env.CACHE_KEY }}
-          rustflags: "" # Don't fail on warnings
+          build-warnings: warn # Don't fail on warnings
       - name: Install tools
         run: cargo install clippy-sarif sarif-fmt
       - name: Run Clippy
