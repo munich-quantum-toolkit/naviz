@@ -97,7 +97,7 @@ macos-deployment-target = "13.0"
 
 
 [tool.uv]
-required-version = ">=0.5.20"
+required-version = ">=0.13.4"
 reinstall-package = [ "mqt-naviz" ]
 
 [tool.uv.sources]
