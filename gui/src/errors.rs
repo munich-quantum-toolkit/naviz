@@ -69,7 +69,7 @@ impl Error {
         let mut close_requested = false;
 
         Window::new(&*self.title)
-            .id(Id::new(&self.id))
+            .id(Id::unique(&self.id))
             .open(&mut open)
             .resizable(true)
             .default_width(500.0)
