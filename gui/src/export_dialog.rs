@@ -227,7 +227,7 @@ impl ExportProgress {
 
         // Draw window based on state
         let window = Window::new("Export Progress")
-            .id(Id::new(&self.window_id))
+            .id(Id::unique(&self.window_id))
             .resizable(false)
             .max_width(480.)
             .collapsible(false);

@@ -533,9 +533,9 @@ mod selection_menu {
                 // Store previous widths to layout
 
                 // IDs
-                let delete_width_id = Id::new(format!("menu.{}.width#delete", M::NAME));
-                let full_width_id = Id::new(format!("menu.{}.width#full", M::NAME));
-                let hovered_index_id = Id::new(format!("menu.{}.width#hovered", M::NAME));
+                let delete_width_id = Id::unique(format!("menu.{}.width#delete", M::NAME));
+                let full_width_id = Id::unique(format!("menu.{}.width#full", M::NAME));
+                let hovered_index_id = Id::unique(format!("menu.{}.width#hovered", M::NAME));
 
                 // Values
                 // Width of delete button
