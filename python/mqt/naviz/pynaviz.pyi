@@ -1,6 +1,6 @@
 """The MQT NAViz Python bindings."""
 
-from typing import Any, final
+from typing import Any, SupportsIndex, final
 
 @final
 class Repository:
@@ -19,8 +19,8 @@ def default_import_settings(input_format: str) -> dict[str, Any]:
 def export_video(
     input_data: str,
     output: str,
-    resolution: tuple[int, int],
-    fps: int,
+    resolution: tuple[SupportsIndex, SupportsIndex],
+    fps: SupportsIndex,
     machine: str,
     style: str,
     import_options: dict | None = None,
