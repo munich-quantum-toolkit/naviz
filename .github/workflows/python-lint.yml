@@ -17,7 +17,7 @@ permissions: {}
 jobs:
   python-linter:
     name: 🐍 Lint
-    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@a4b4977405c7685f95e127cdb6db396bbadce787 # v2.5.5
+    uses: munich-quantum-toolkit/workflows/.github/workflows/reusable-python-linter.yml@d6345b25f19cb7223ac883e5333ae9d63ae9238b # v2.5.9
     with:
       enable-mypy: false
       enable-ty: true
@@ -36,12 +36,12 @@ jobs:
           persist-credentials: false
       - name: Setup Rust Toolchain
         # The Python bindings are a Rust extension module, so the tests need a compiler.
-        uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
+        uses: actions-rust-lang/setup-rust-toolchain@a188e68d0fd2bd36ad51dccb2b07ba6e75105f30 # v2.0.1
         with:
           cache-key: lint-python
           build-warnings: warn # Don't fail on warnings
       - name: Setup uv
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Check stubs
         run: |
           uvx nox -s stubs
