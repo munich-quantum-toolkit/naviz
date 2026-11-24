@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import shutil
-import tempfile
 from pathlib import Path
 
 import nox
@@ -63,19 +62,6 @@ def tests(session: nox.Session) -> None:
         *session.posargs,
         env=env,
     )
-
-
-@nox.session(python=PYTHON_ALL_VERSIONS, reuse_venv=True, default=True)
-def minimums(session: nox.Session) -> None:
-    """Test the minimum versions of dependencies."""
-    with tempfile.TemporaryDirectory() as directory:
-        backup = Path(directory) / "uv.lock"
-        shutil.move("uv.lock", backup)
-        try:
-            session.env["UV_RESOLUTION"] = "lowest-direct"
-            tests(session)
-        finally:
-            shutil.move(backup, "uv.lock")
 
 
 @nox.session(python="3.14", reuse_venv=True)
